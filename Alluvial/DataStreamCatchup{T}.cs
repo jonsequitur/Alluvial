@@ -8,7 +8,7 @@ namespace Alluvial
 {
     internal class DataStreamCatchup<TData> : IDataStreamCatchup<TData>, IDisposable
     {
-        private int isRunning = 0;
+        private int isRunning;
         private readonly IDataStream<IDataStream<TData>> dataStream;
 
         private readonly Dictionary<Type, AggregatorSubscription> aggregatorSubscriptions = new Dictionary<Type, AggregatorSubscription>();
@@ -48,20 +48,28 @@ namespace Alluvial
 
             if (streams.Any())
             {
-                foreach (var stream in streams)
-                {
-                    var innerQuery = stream.CreateQuery();
+                var batches =
+                    streams.Select(
+                        stream => stream.CreateQuery()
+                                        .NextBatch()
+                                        .ContinueWith(async t =>
+                                        {
+                                            var batch = t.Result;
 
-                    var batch = await innerQuery.NextBatch();
+                                            if (batch.Any())
+                                            {
+                                                var aggregatorUpdates =
+                                                    aggregatorSubscriptions.Values
+                                                                           .Select(subscription => Aggregate(stream.Id,
+                                                                                                             (dynamic) subscription,
+                                                                                                             batch))
+                                                                           .Cast<Task>();
 
-                    if (batch.Any())
-                    {
-                        foreach (var subscription in aggregatorSubscriptions.Values)
-                        {
-                            await Aggregate(stream.Id, (dynamic) subscription, batch);
-                        }
-                    }
-                }
+                                                await Task.WhenAll(aggregatorUpdates);
+                                            }
+                                        }));
+
+                await Task.WhenAll(batches);
             }
 
             await SaveCursor();
@@ -89,7 +97,7 @@ namespace Alluvial
         {
             if (Cursor == null)
             {
-                // FIX-JOSEQU: (GetCursor) retrieve from storage
+                // FIX: (GetCursor) retrieve from storage
                 Cursor = Alluvial.Cursor.New();
             }
         }
