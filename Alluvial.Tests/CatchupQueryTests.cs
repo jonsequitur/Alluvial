@@ -53,7 +53,8 @@ namespace Alluvial.Tests
                                  {
                                      StreamId = c.StreamId,
                                      CheckpointToken = c.CheckpointToken
-                                 }),
+                                 })
+                                 .Take(q.BatchCount ?? int.MaxValue),
                 advanceCursor: (query, batch) => query.Cursor.AdvanceTo(batch.Last().CheckpointToken))
                                 .Requery(k => streamStore.Open(k.StreamId));
         }
@@ -123,6 +124,21 @@ namespace Alluvial.Tests
                            .Count()
                            .Should()
                            .Be(1000);
+        }
+
+        [Test]
+        public async Task Catchup_outer_batch_size_can_be_specified()
+        {
+            var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
+
+            var catchup = Catchup.Create(streams, batchCount: 20)
+                                 .Subscribe(new BalanceProjector(), projectionStore);
+
+            await catchup.RunSingleBatch();
+
+            projectionStore.Count()
+                           .Should()
+                           .Be(20);
         }
     }
 }

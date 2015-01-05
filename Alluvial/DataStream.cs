@@ -88,7 +88,7 @@ namespace Alluvial
                 query: async q =>
                 {
                     var sourceBatch = await sourceStream.Fetch(
-                        sourceStream.CreateQuery(Cursor.New()));
+                        sourceStream.CreateQuery(Cursor.New(), q.BatchCount));
 
                     var batches = sourceBatch.Select(query);
 

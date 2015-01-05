@@ -10,16 +10,24 @@ namespace Alluvial
     {
         private int isRunning;
         private readonly IDataStream<IDataStream<TData>> dataStream;
+        private readonly int? batchCount;
 
         private readonly Dictionary<Type, AggregatorSubscription> aggregatorSubscriptions = new Dictionary<Type, AggregatorSubscription>();
 
-        public DataStreamCatchup(IDataStream<IDataStream<TData>> dataStream)
+        public DataStreamCatchup(
+            IDataStream<IDataStream<TData>> dataStream,
+            ICursor cursor = null,
+            int? batchCount = null)
         {
             if (dataStream == null)
             {
                 throw new ArgumentNullException("dataStream");
             }
+
+            Cursor = cursor;
+
             this.dataStream = dataStream;
+            this.batchCount = batchCount;
         }
 
         public ICursor Cursor { get; set; }
@@ -42,7 +50,7 @@ namespace Alluvial
 
             await EnsureCursorIsInitialized();
 
-            var outerQuery = dataStream.CreateQuery(Cursor);
+            var outerQuery = dataStream.CreateQuery(Cursor, batchCount);
 
             var streams = await outerQuery.NextBatch();
 
