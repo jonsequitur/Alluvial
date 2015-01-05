@@ -56,7 +56,6 @@ namespace Alluvial
 
                     if (batch.Any())
                     {
-                        // TODO-JOSEQU: (RunSingleBatch) parallellize projection updates
                         foreach (var subscription in aggregatorSubscriptions.Values)
                         {
                             await Aggregate(stream.Id, (dynamic) subscription, batch);
