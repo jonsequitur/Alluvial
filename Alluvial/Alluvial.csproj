@@ -38,14 +38,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AggregatorSubscription.cs" />
+    <Compile Include="AggregatorSubscription{TProjection,TData}.cs" />
     <Compile Include="AnonymousDataStream.cs" />
     <Compile Include="AnonymousDataStreamSource.cs" />
+    <Compile Include="AnonymousDisposable.cs" />
+    <Compile Include="ChronologicalCursor.cs" />
     <Compile Include="Cursor.cs" />
     <Compile Include="CursorWrapper.cs" />
     <Compile Include="DataStreamCatchup{T}.cs" />
     <Compile Include="DataStreamSource.cs" />
     <Compile Include="Catchup.cs" />
     <Compile Include="DataStream.cs" />
+    <Compile Include="Disposable.cs" />
     <Compile Include="ICursor.cs" />
     <Compile Include="IDataStream.cs" />
     <Compile Include="IDataStreamCatchup{T}.cs" />
@@ -61,6 +66,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReadOnlyCursor.cs" />
     <Compile Include="SequentialCursor.cs" />
+    <Compile Include="SingleInstanceProjectionCache.cs" />
     <Compile Include="StreamQuery.cs" />
     <Compile Include="StreamQueryBatch.cs" />
     <Compile Include="StreamQueryBatch{T}.cs" />

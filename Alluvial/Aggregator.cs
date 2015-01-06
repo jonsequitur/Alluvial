@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Alluvial
 {
-    public delegate TProjection Aggregate<TProjection, in TData>(TProjection initial, IEnumerable<TData> events);
+    public delegate TProjection Aggregate<TProjection, in TData>(TProjection initial, IStreamQueryBatch<TData> events);
 
     public static class Aggregator
     {
@@ -12,22 +11,22 @@ namespace Alluvial
             this IDataStreamAggregator<TProjection, TData> first,
             Aggregate<TProjection, TData> then)
         {
-            return Create<TProjection, TData>((projection, data) =>
+            return Create<TProjection, TData>((projection, batch) =>
             {
-                projection = first.Aggregate(projection, data);
-                projection = then(projection, data);
+                projection = first.Aggregate(projection, batch);
+                projection = then(projection, batch);
                 return projection;
             });
         }
 
         public static IDataStreamAggregator<TProjection, TData> After<TProjection, TData>(
             this IDataStreamAggregator<TProjection, TData> first,
-            Action<TProjection, IEnumerable<TData>> then)
+            Action<TProjection, IStreamQueryBatch<TData>> then)
         {
-            return Create<TProjection, TData>((projection, data) =>
+            return Create<TProjection, TData>((projection, batch) =>
             {
-                projection = first.Aggregate(projection, data);
-                then(projection, data);
+                projection = first.Aggregate(projection, batch);
+                then(projection, batch);
                 return projection;
             });
         }
@@ -36,21 +35,21 @@ namespace Alluvial
             this IDataStreamAggregator<TProjection, TData> then,
             Aggregate<TProjection, TData> first)
         {
-            return Create<TProjection, TData>((projection, data) =>
+            return Create<TProjection, TData>((projection, batch) =>
             {
-                projection = first(projection, data);
-                return then.Aggregate(projection, data);
+                projection = first(projection, batch);
+                return then.Aggregate(projection, batch);
             });
         }
 
         public static IDataStreamAggregator<TProjection, TData> Before<TProjection, TData>(
             this IDataStreamAggregator<TProjection, TData> then,
-            Action<TProjection, IEnumerable<TData>> first)
+            Action<TProjection, IStreamQueryBatch<TData>> first)
         {
-            return Create<TProjection, TData>((projection, data) =>
+            return Create<TProjection, TData>((projection, batch) =>
             {
-                first(projection, data);
-                return then.Aggregate(projection, data);
+                first(projection, batch);
+                return then.Aggregate(projection, batch);
             });
         }
 
@@ -58,19 +57,17 @@ namespace Alluvial
             Aggregate<TProjection, TData> aggregate)
         {
             return new AnonymousDataStreamAggregator<TProjection, TData>(
-                e => default(TProjection),
                 aggregate);
         }
 
         public static IDataStreamAggregator<TProjection, TData> Create<TProjection, TData>(
-            Action<TProjection, IEnumerable<TData>> aggregate)
+            Action<TProjection, IStreamQueryBatch<TData>> aggregate)
         {
             return new AnonymousDataStreamAggregator<TProjection, TData>(
-                e => default(TProjection),
-                (t, us) =>
+                (projection, batch) =>
                 {
-                    aggregate(t, us);
-                    return t;
+                    aggregate(projection, batch);
+                    return projection;
                 });
         }
     }

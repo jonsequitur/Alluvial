@@ -1,18 +1,19 @@
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Alluvial
 {
-    internal class DataStreamCatchup<TData> : IDataStreamCatchup<TData>, IDisposable
+    internal class DataStreamCatchup<TData> : IDataStreamCatchup<TData>
     {
         private int isRunning;
         private readonly IDataStream<IDataStream<TData>> dataStream;
         private readonly int? batchCount;
 
-        private readonly Dictionary<Type, AggregatorSubscription> aggregatorSubscriptions = new Dictionary<Type, AggregatorSubscription>();
+        private readonly ConcurrentDictionary<Type, AggregatorSubscription> aggregatorSubscriptions = new ConcurrentDictionary<Type, AggregatorSubscription>();
 
         public DataStreamCatchup(
             IDataStream<IDataStream<TData>> dataStream,
@@ -32,12 +33,23 @@ namespace Alluvial
 
         public ICursor Cursor { get; set; }
 
-        public void SubscribeAggregator<TProjection>(
+        public IDisposable SubscribeAggregator<TProjection>(
             IDataStreamAggregator<TProjection, TData> aggregator,
-            IProjectionStore<string, TProjection> projectionStore)
+            IProjectionStore<string, TProjection> projectionStore = null)
         {
-            aggregatorSubscriptions.Add(typeof (TProjection),
-                                        new AggregatorSubscription<TProjection, TData>(aggregator, projectionStore));
+            var added = aggregatorSubscriptions.TryAdd(typeof (TProjection),
+                                                       new AggregatorSubscription<TProjection, TData>(aggregator, projectionStore));
+
+            if (!added)
+            {
+                throw new InvalidOperationException(string.Format("Aggregator for projection of type {0} is already subscribed.", typeof (TProjection)));
+            }
+
+            return Disposable.Create(() =>
+            {
+                AggregatorSubscription _;
+                aggregatorSubscriptions.TryRemove(typeof (TProjection), out _);
+            });
         }
 
         public async Task<IStreamQuery<IDataStream<TData>>> RunSingleBatch()
@@ -64,7 +76,7 @@ namespace Alluvial
                                         {
                                             var batch = t.Result;
 
-                                            if (batch.Any())
+                                            if (batch.Count > 0)
                                             {
                                                 var aggregatorUpdates =
                                                     aggregatorSubscriptions.Values
@@ -112,36 +124,5 @@ namespace Alluvial
                 Cursor = Alluvial.Cursor.New();
             }
         }
-
-        public void Dispose()
-        {
-        }
-    }
-
-    internal abstract class AggregatorSubscription
-    {
-    }
-
-    internal class AggregatorSubscription<TProjection, TData> : AggregatorSubscription
-    {
-        public AggregatorSubscription(
-            IDataStreamAggregator<TProjection, TData> aggregator,
-            IProjectionStore<string, TProjection> projectionStore)
-        {
-            if (projectionStore == null)
-            {
-                throw new ArgumentNullException("projectionStore");
-            }
-            if (aggregator == null)
-            {
-                throw new ArgumentNullException("aggregator");
-            }
-            ProjectionStore = projectionStore;
-            Aggregator = aggregator;
-        }
-
-        public IDataStreamAggregator<TProjection, TData> Aggregator { get; private set; }
-        
-        public IProjectionStore<string, TProjection> ProjectionStore { get; private set; }
     }
 }

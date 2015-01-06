@@ -1,9 +1,11 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Alluvial
 {
+    [DebuggerStepThrough]
     internal class StreamQueryBatch<TData> : IStreamQueryBatch<TData>
     {
         private readonly TData[] results;
@@ -11,7 +13,7 @@ namespace Alluvial
         public StreamQueryBatch(TData[] results, dynamic startsAtCursorPosition)
         {
             StartsAtCursorPosition = startsAtCursorPosition;
-            this.results = results;
+            this.results = results ?? new TData[0];
         }
 
         public IEnumerator<TData> GetEnumerator()

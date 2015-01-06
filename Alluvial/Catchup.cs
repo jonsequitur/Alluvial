@@ -6,18 +6,29 @@ namespace Alluvial
     public static class Catchup
     {
         public static IDataStreamCatchup<TData> Create<TData>(
-            IDataStream<IDataStream<TData>> source, 
-            ICursor cursor = null, 
+            IDataStream<IDataStream<TData>> source,
+            ICursor cursor = null,
             int? batchCount = null)
         {
             return new DataStreamCatchup<TData>(source, cursor, batchCount);
         }
 
-        public static async Task<IStreamQuery<IDataStream<TProjection>>> RunUntilCaughtUp<TProjection>(this IDataStreamCatchup<TProjection> catchup)
+        public static async Task<IStreamQuery<IDataStream<TData>>> RunUntilCaughtUp<TData>(this IDataStreamCatchup<TData> catchup)
         {
-            // FIX: (RunUntilCaughtUp) 
+            IStreamQuery<IDataStream<TData>> query;
+            var counter = new Progress<TData>();
 
-            return await catchup.RunSingleBatch();
+            using (catchup.Subscribe<Progress<TData>, TData>((_, batch) => counter.Count(batch)))
+            {
+                int countBefore;
+                do
+                {
+                    countBefore = counter.AggregatedCount;
+                    query = await catchup.RunSingleBatch();
+                } while (countBefore != counter.AggregatedCount);
+            }
+
+            return query;
         }
 
         public static IDataStreamCatchup<TData> Subscribe<TProjection, TData>(
@@ -29,13 +40,31 @@ namespace Alluvial
             return catchup;
         }
 
-        public static IDataStreamCatchup<TData> Subscribe<TProjection, TData>(
+        public static IDisposable Subscribe<TProjection, TData>(
             this IDataStreamCatchup<TData> catchup,
             Aggregate<TProjection, TData> aggregate,
-            IProjectionStore<string, TProjection> projectionStore)
+            IProjectionStore<string, TProjection> projectionStore = null)
         {
-            catchup.SubscribeAggregator(Aggregator.Create(aggregate), projectionStore);
-            return catchup;
+          return  catchup.SubscribeAggregator(Aggregator.Create(aggregate), projectionStore);
+        }
+
+        public static IDisposable Subscribe<TProjection, TData>(
+            this IDataStreamCatchup<TData> catchup,
+            Action<TProjection, IStreamQueryBatch<TData>> aggregate,
+            IProjectionStore<string, TProjection> projectionStore = null)
+        {
+          return  catchup.SubscribeAggregator(Aggregator.Create(aggregate), projectionStore);
+        }
+
+        internal class Progress<TData>
+        {
+            public Progress<TData> Count(IStreamQueryBatch<TData> batch)
+            {
+                AggregatedCount += batch.Count;
+                return this;
+            }
+
+            public int AggregatedCount { get; private set; }
         }
     }
 }

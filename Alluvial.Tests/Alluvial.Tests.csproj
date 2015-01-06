@@ -72,11 +72,11 @@
     <Compile Include="BankDomain\IDomainEvent.cs" />
     <Compile Include="CursorTests.cs" />
     <Compile Include="Infrastructure\IMapProjection.cs" />
-    <Compile Include="Infrastructure\InMemoryProjectionStore.cs" />
     <Compile Include="CatchupQueryTests.cs" />
     <Compile Include="BankDomain\FundsWithdrawn.cs" />
     <Compile Include="Infrastructure\NEventStoreDataStream.cs" />
     <Compile Include="Infrastructure\TestEventStore.cs" />
+    <Compile Include="Infrastructure\InMemoryProjectionStore.cs" />
     <Compile Include="ProjectionTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StreamQueryTests.cs" />

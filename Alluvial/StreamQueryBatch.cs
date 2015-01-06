@@ -10,6 +10,11 @@ namespace Alluvial
             IEnumerable<TData> source,
             IStreamQuery<TData> query)
         {
+            if (source == null)
+            {
+                throw new ArgumentNullException("source");
+            }
+
             var results = source.ToArray();
 
             return new StreamQueryBatch<TData>(results,
@@ -19,6 +24,10 @@ namespace Alluvial
         public static IStreamQueryBatch<TData> Empty<TData>(
             IStreamQuery<TData> query)
         {
+            if (query == null)
+            {
+                throw new ArgumentNullException("query");
+            }
             return new StreamQueryBatch<TData>(Enumerable.Empty<TData>().ToArray(),
                                                query.Cursor.Position);
         }

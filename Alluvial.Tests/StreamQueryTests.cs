@@ -68,7 +68,7 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task When_a_query_consumes_the_entire_result_set_then_the_query_cursor_is_set_to_the_result_position()
+        public async Task When_a_query_consumes_the_entire_result_set_then_the_query_cursor_is_set_to_the_last_result_position()
         {
             var values = Enumerable.Range(1, 20);
 

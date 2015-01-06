@@ -45,7 +45,14 @@ namespace Alluvial.Tests
                                      CheckpointToken = c.CheckpointToken
                                  })
                                  .Take(q.BatchCount ?? int.MaxValue),
-                advanceCursor: (query, batch) => query.Cursor.AdvanceTo(batch.Last().CheckpointToken))
+                advanceCursor: (query, batch) =>
+                {
+                    var last = batch.LastOrDefault();
+                    if (last != null)
+                    {
+                        query.Cursor.AdvanceTo(last.CheckpointToken);
+                    }
+                })
                                 .Requery(k => streamStore.Open(k.StreamId));
         }
 
@@ -73,7 +80,7 @@ namespace Alluvial.Tests
 
             await Catchup.Create(streams)
                          .Subscribe(new BalanceProjector(), projectionStore)
-                         .RunUntilCaughtUp();
+                         .RunSingleBatch();
 
             projectionStore.Sum(b => b.Balance)
                            .Should()
@@ -93,7 +100,7 @@ namespace Alluvial.Tests
 
             var catchup = Catchup.Create(streams, batchCount: 1)
                                  .Subscribe(new BalanceProjector()
-                                 .After((projection, events) => barrier.SignalAndWait(1000)), projectionStore);
+                                                .After((projection, events) => barrier.SignalAndWait(1000)), projectionStore);
 
             catchup.RunSingleBatch();
             catchup.RunSingleBatch();
@@ -151,6 +158,28 @@ namespace Alluvial.Tests
 
             await catchup.RunSingleBatch();
             await catchup.RunSingleBatch();
+
+            projectionStore.Sum(b => b.Balance)
+                           .Should()
+                           .Be(1000);
+            projectionStore.Select(b => b.AggregateId)
+                           .Distinct()
+                           .Count()
+                           .Should()
+                           .Be(1000);
+        }
+
+        [Test]
+        public async Task Catchup_RunUntilCaughtUp_runs_until_the_stream_has_no_more_results()
+        {
+            var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
+
+            var catchup = Catchup.Create(streams, batchCount: 10)
+                                 .Subscribe(new BalanceProjector(), projectionStore);
+
+            TaskScheduler.UnobservedTaskException += (sender, args) => Console.WriteLine(args.Exception);
+
+            await catchup.RunUntilCaughtUp();
 
             projectionStore.Sum(b => b.Balance)
                            .Should()

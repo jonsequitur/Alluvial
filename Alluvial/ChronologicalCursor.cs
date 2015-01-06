@@ -1,14 +1,16 @@
+using System;
 using System.Diagnostics;
 
 namespace Alluvial
 {
     [DebuggerStepThrough]
-    internal class SequentialCursor : IIncrementalCursor
+    internal class ChronologicalCursor : IIncrementalCursor
     {
-        private int position;
+        private DateTimeOffset position;
 
-        public SequentialCursor(int position = 0,
-                                bool ascending = true)
+        public ChronologicalCursor(
+            DateTimeOffset position = default(DateTimeOffset),
+            bool ascending = true)
         {
             Ascending = ascending;
             this.position = position;
@@ -28,11 +30,11 @@ namespace Alluvial
         {
             if (Ascending)
             {
-                position += amount;
+                position = position.Add((TimeSpan) amount);
             }
             else
             {
-                position -= amount;
+                position = position.Subtract((TimeSpan) amount);
             }
         }
 
