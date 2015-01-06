@@ -10,6 +10,18 @@ namespace Alluvial
     {
         public static IDataStreamAggregator<TProjection, TData> After<TProjection, TData>(
             this IDataStreamAggregator<TProjection, TData> first,
+            Aggregate<TProjection, TData> then)
+        {
+            return Create<TProjection, TData>((projection, data) =>
+            {
+                projection = first.Aggregate(projection, data);
+                projection = then(projection, data);
+                return projection;
+            });
+        }
+
+        public static IDataStreamAggregator<TProjection, TData> After<TProjection, TData>(
+            this IDataStreamAggregator<TProjection, TData> first,
             Action<TProjection, IEnumerable<TData>> then)
         {
             return Create<TProjection, TData>((projection, data) =>
@@ -27,6 +39,17 @@ namespace Alluvial
             return Create<TProjection, TData>((projection, data) =>
             {
                 projection = first(projection, data);
+                return then.Aggregate(projection, data);
+            });
+        }
+
+        public static IDataStreamAggregator<TProjection, TData> Before<TProjection, TData>(
+            this IDataStreamAggregator<TProjection, TData> then,
+            Action<TProjection, IEnumerable<TData>> first)
+        {
+            return Create<TProjection, TData>((projection, data) =>
+            {
+                first(projection, data);
                 return then.Aggregate(projection, data);
             });
         }

@@ -8,7 +8,6 @@ namespace Alluvial
     {
         private readonly Action<IStreamQuery<TData>, IStreamQueryBatch<TData>> advanceCursor;
         private readonly Func<IStreamQuery<TData>, Task<IStreamQueryBatch<TData>>> fetch;
-        private string streamId;
 
         public AnonymousDataStream(
             string id,

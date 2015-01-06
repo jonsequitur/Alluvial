@@ -50,9 +50,9 @@ namespace Alluvial
 
             await EnsureCursorIsInitialized();
 
-            var outerQuery = dataStream.CreateQuery(Cursor, batchCount);
+            var upstreamQuery = dataStream.CreateQuery(Cursor, batchCount);
 
-            var streams = await outerQuery.NextBatch();
+            var streams = await upstreamQuery.NextBatch();
 
             if (streams.Any())
             {
@@ -82,11 +82,14 @@ namespace Alluvial
 
             await SaveCursor();
 
-            return outerQuery;
+            isRunning = 0;
+
+            return upstreamQuery;
         }
 
         private async Task SaveCursor()
         {
+            // TODO: (SaveCursor) 
         }
 
         private async Task Aggregate<TProjection>(
@@ -105,7 +108,7 @@ namespace Alluvial
         {
             if (Cursor == null)
             {
-                // FIX: (GetCursor) retrieve from storage
+                // TODO: (GetCursor) retrieve from storage
                 Cursor = Alluvial.Cursor.New();
             }
         }
@@ -138,6 +141,7 @@ namespace Alluvial
         }
 
         public IDataStreamAggregator<TProjection, TData> Aggregator { get; private set; }
+        
         public IProjectionStore<string, TProjection> ProjectionStore { get; private set; }
     }
 }

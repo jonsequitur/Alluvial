@@ -1,7 +1,9 @@
 using System;
+using System.Diagnostics;
 
 namespace Alluvial
 {
+    [DebuggerStepThrough]
     public static class Cursor
     {
         static Cursor()

@@ -41,6 +41,7 @@
     <Compile Include="AnonymousDataStream.cs" />
     <Compile Include="AnonymousDataStreamSource.cs" />
     <Compile Include="Cursor.cs" />
+    <Compile Include="CursorWrapper.cs" />
     <Compile Include="DataStreamCatchup{T}.cs" />
     <Compile Include="DataStreamSource.cs" />
     <Compile Include="Catchup.cs" />

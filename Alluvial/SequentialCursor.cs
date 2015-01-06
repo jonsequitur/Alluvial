@@ -1,5 +1,8 @@
+using System.Diagnostics;
+
 namespace Alluvial
 {
+    [DebuggerStepThrough]
     internal class SequentialCursor : ICursor, IIncrementalCursor
     {
         private int position;

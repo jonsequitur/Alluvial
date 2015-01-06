@@ -59,11 +59,11 @@ namespace Alluvial
 
         public static IDataStream<TTo> Map<TFrom, TTo>(
             this IDataStream<TFrom> sourceStream,
-            Func<IEnumerable<TFrom>, IEnumerable<TTo>> map, 
-            string id= null)
+            Func<IEnumerable<TFrom>, IEnumerable<TTo>> map,
+            string id = null)
         {
             return Create<TTo>(
-                id: id ?? (sourceStream.Id + " map ->" + typeof(TTo).Name),
+                id: id ?? (sourceStream.Id + " map ->" + typeof (TTo).Name),
                 query: async q =>
                 {
                     var sourceBatch = await sourceStream.Fetch(
@@ -73,26 +73,31 @@ namespace Alluvial
 
                     return StreamQueryBatch.Create(mappedBatch, q);
                 },
-                advanceCursor: async (query, tos) =>
+                advanceCursor: async (query, batch) =>
                 {
                     // don't advance the cursor in the map operation, since sourceStream.Fetch will already have done it
-                    await Task.Yield();
                 });
         }
 
-        public static IDataStream<IDataStream<TTo>> Requery<TFrom, TTo>(
-            this IDataStream<TFrom> sourceStream,
-            Func<TFrom, IDataStream<TTo>> query)
+        public static IDataStream<IDataStream<TDownstream>> Requery<TUpstream, TDownstream>(
+            this IDataStream<TUpstream> upstream,
+            Func<TUpstream, IDataStream<TDownstream>> queryDownstream)
         {
-            return Create<IDataStream<TTo>>(
+            return Create<IDataStream<TDownstream>>(
                 query: async q =>
                 {
-                    var sourceBatch = await sourceStream.Fetch(
-                        sourceStream.CreateQuery(Cursor.New(), q.BatchCount));
+                    var cursor = q.Cursor;
 
-                    var batches = sourceBatch.Select(query);
+                    var upstreamBatch = await upstream.Fetch(
+                        upstream.CreateQuery(cursor, q.BatchCount));
+
+                    var batches = upstreamBatch.Select(queryDownstream);
 
                     return batches;
+                },
+                advanceCursor: (query, batch) =>
+                {
+                    // we're passing the cursor through to the upstream query, so we don't want downstream queries to overwrite it
                 });
         }
 
