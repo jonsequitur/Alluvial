@@ -8,28 +8,38 @@ namespace Alluvial
     {
         public static IStreamQueryBatch<TData> Create<TData>(
             IEnumerable<TData> source,
-            IStreamQuery<TData> query)
+            ICursor cursor)
         {
             if (source == null)
             {
                 throw new ArgumentNullException("source");
             }
+            if (cursor == null)
+            {
+                throw new ArgumentNullException("cursor");
+            }
 
             var results = source.ToArray();
 
-            return new StreamQueryBatch<TData>(results,
-                                               query.Cursor.Position);
+            return new StreamQueryBatch<TData>(results, cursor.Position);
         }
 
-        public static IStreamQueryBatch<TData> Empty<TData>(
-            IStreamQuery<TData> query)
+        public static IStreamQueryBatch<TData> Empty<TData>(ICursor cursor)
         {
-            if (query == null)
+            if (cursor == null)
             {
-                throw new ArgumentNullException("query");
+                throw new ArgumentNullException("cursor");
             }
+
             return new StreamQueryBatch<TData>(Enumerable.Empty<TData>().ToArray(),
-                                               query.Cursor.Position);
+                                               cursor.Position);
+        }
+
+        public static IStreamQueryBatch<TData> Prune<TData>(
+            this IStreamQueryBatch<TData> batch,
+            ICursor cursor)
+        {
+            return Create(batch.Where(x => !cursor.HasReached(x)), cursor);
         }
     }
 }

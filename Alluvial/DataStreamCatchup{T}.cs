@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -70,24 +69,32 @@ namespace Alluvial
             {
                 var batches =
                     streams.Select(
-                        stream => stream.CreateQuery()
-                                        .NextBatch()
-                                        .ContinueWith(async t =>
-                                        {
-                                            var batch = t.Result;
+                        stream =>
+                        // TODO: (RunSingleBatch) optimize: pull up the projection first and use its cursor?
+                        {
+                            var streamQuery = stream.CreateQuery();
 
-                                            if (batch.Count > 0)
-                                            {
-                                                var aggregatorUpdates =
-                                                    aggregatorSubscriptions.Values
-                                                                           .Select(subscription => Aggregate(stream.Id,
-                                                                                                             (dynamic) subscription,
-                                                                                                             batch))
-                                                                           .Cast<Task>();
+                            return streamQuery
+                                .NextBatch()
+                                .ContinueWith(async t =>
+                                {
+                                    var batch = t.Result;
 
-                                                await Task.WhenAll(aggregatorUpdates);
-                                            }
-                                        }));
+                                    if (batch.Count > 0)
+                                    {
+                                        var aggregatorUpdates =
+                                            aggregatorSubscriptions
+                                                .Values
+                                                .Select(subscription => Aggregate(stream.Id,
+                                                                                  (dynamic) subscription,
+                                                                                  batch, 
+                                                                                  streamQuery.Cursor))
+                                                .Cast<Task>();
+
+                                        await Task.WhenAll(aggregatorUpdates);
+                                    }
+                                });
+                        });
 
                 await Task.WhenAll(batches);
             }
@@ -107,14 +114,27 @@ namespace Alluvial
         private async Task Aggregate<TProjection>(
             string streamId,
             AggregatorSubscription<TProjection, TData> subscription,
-            IStreamQueryBatch<TData> batch)
+            IStreamQueryBatch<TData> batch,
+            ICursor queryCursor)
         {
-            var projection = await subscription.ProjectionStore.Get(streamId);
+            var projection =  await subscription.ProjectionStore.Get(streamId);
+
+            var projectionCursor = projection as ICursor;
+            if (projectionCursor != null)
+            {
+                // TODO-JOSEQU: (Aggregate) optimize: this is unnecessary if we know we know this was a brand new projection
+            }
 
             projection = subscription.Aggregator.Aggregate(projection, batch);
 
+            if (projectionCursor != null)
+            {
+                projectionCursor.AdvanceTo(queryCursor.Position);
+            }
+
             await subscription.ProjectionStore.Put(projection);
         }
+
 
         private async Task EnsureCursorIsInitialized()
         {

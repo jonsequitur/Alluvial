@@ -29,7 +29,7 @@ namespace Alluvial.Tests
 
             foreach (var streamId in streamIds)
             {
-                WriteEvent(streamId);
+                WriteEvent(streamId, 1m);
             }
 
             streamStore = DataStreamSource.Create<string, IDomainEvent>(
@@ -56,18 +56,32 @@ namespace Alluvial.Tests
                                 .Requery(k => streamStore.Open(k.StreamId));
         }
 
-        private void WriteEvent(string streamId)
+        private void WriteEvent(string streamId, decimal amount = 1)
         {
             using (var stream = store.OpenStream(streamId, 0))
             {
-                stream.Add(new EventMessage
+                if (amount > 0)
                 {
-                    Body = new FundsDeposited
+                    stream.Add(new EventMessage
                     {
-                        AggregateId = streamId,
-                        Amount = 1m
-                    }
-                });
+                        Body = new FundsDeposited
+                        {
+                            AggregateId = streamId,
+                            Amount = amount
+                        }
+                    });
+                }
+                else
+                {
+                    stream.Add(new EventMessage
+                    {
+                        Body = new FundsWithdrawn
+                        {
+                            AggregateId = streamId,
+                            Amount = amount
+                        }
+                    });
+                }
 
                 stream.CommitChanges(Guid.NewGuid());
             }
@@ -189,6 +203,35 @@ namespace Alluvial.Tests
                            .Count()
                            .Should()
                            .Be(1000);
+        }
+
+        [Test]
+        public async Task Catchup_incrementally_updates_projections()
+        {
+            var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
+
+            var catchup = Catchup.Create(streams, batchCount: 1000)
+                                 .Subscribe(new BalanceProjector(), projectionStore);
+
+            TaskScheduler.UnobservedTaskException += (sender, args) => Console.WriteLine(args.Exception);
+
+            await catchup.RunUntilCaughtUp();
+
+            var streamId = streamIds.First();
+
+            WriteEvent(streamId, 100m);
+
+            var query = await catchup.RunUntilCaughtUp();
+
+            query.Cursor
+                 .As<string>()
+                 .Should()
+                 .Be("1001");
+
+            var balanceProjection = await projectionStore.Get(streamId);
+
+            balanceProjection.Balance.Should().Be(101);
+            balanceProjection.CursorPosition.Should().Be(2);
         }
     }
 }

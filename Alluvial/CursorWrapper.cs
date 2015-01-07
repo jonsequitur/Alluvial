@@ -4,7 +4,7 @@ using System.Diagnostics;
 namespace Alluvial
 {
     [DebuggerStepThrough]
-    internal class CursorWrapper : IIncrementalCursor
+    internal class CursorWrapper : IIncrementableCursor
     {
         private ICursor innerCursor = new SequentialCursor();
 
@@ -40,7 +40,7 @@ namespace Alluvial
         {
             IsInitialized = true;
 
-            var incrementalCursor = innerCursor as IIncrementalCursor;
+            var incrementalCursor = innerCursor as IIncrementableCursor;
             if (incrementalCursor != null)
             {
                 incrementalCursor.AdvanceBy(amount);

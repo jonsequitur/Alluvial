@@ -4,7 +4,7 @@ using System.Diagnostics;
 namespace Alluvial
 {
     [DebuggerStepThrough]
-    internal class ChronologicalCursor : IIncrementalCursor
+    internal class ChronologicalCursor : IIncrementableCursor
     {
         private DateTimeOffset position;
 

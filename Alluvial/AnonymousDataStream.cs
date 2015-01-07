@@ -26,7 +26,7 @@ namespace Alluvial
             this.advanceCursor = advanceCursor ??
                                  ((query, batch) =>
                                  {
-                                     var incrementalCursor = query.Cursor as IIncrementalCursor;
+                                     var incrementalCursor = query.Cursor as IIncrementableCursor;
                                      if (incrementalCursor != null)
                                      {
                                          incrementalCursor.AdvanceBy(batch.Count);

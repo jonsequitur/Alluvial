@@ -1,6 +1,8 @@
+using System;
+
 namespace Alluvial
 {
-    public interface IIncrementalCursor : ICursor
+    public interface IIncrementableCursor : ICursor
     {
         void AdvanceBy(dynamic amount);
     }

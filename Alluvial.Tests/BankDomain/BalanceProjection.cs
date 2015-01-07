@@ -29,11 +29,6 @@ namespace Alluvial.Tests.BankDomain
             }
         }
 
-        public void AdvanceBy(dynamic count)
-        {
-            CursorPosition += count;
-        }
-
         public void AdvanceTo(dynamic position)
         {
             CursorPosition = position;

@@ -56,14 +56,14 @@ namespace Alluvial.Tests
 
             if (maxExistingRevision <= lastFetchedRevision)
             {
-                return StreamQueryBatch.Empty(query);
+                return StreamQueryBatch.Empty<EventMessage>(query.Cursor);
             }
 
             using (var stream = store.OpenStream(streamId,
                                                  minRevision: lastFetchedRevision + 1,
                                                  maxRevision: maxRevisionToFetch))
             {
-                var batch = StreamQueryBatch.Create(stream.CommittedEvents.ToArray(), query);
+                var batch = StreamQueryBatch.Create(stream.CommittedEvents.ToArray(), query.Cursor);
 
                 query.Cursor.AdvanceTo(stream.StreamRevision);
 

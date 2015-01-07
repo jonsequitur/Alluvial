@@ -50,10 +50,14 @@ namespace Alluvial
             return new CursorWrapper();
         }
 
-        public static bool HasReached<TData>(this ICursor cursor, TData point)
-            where TData : IComparable<TData>
+        public static ICursor ReadOnly(ICursor cursor)
         {
-            var comparison = cursor.As<TData>().CompareTo(point);
+            return new ReadOnlyCursor(cursor);
+        }
+
+        public static bool HasReached<TData>(this ICursor cursor, TData point)
+        {
+            int comparison = Compare<TData>((dynamic) cursor, (dynamic) point);
 
             if (cursor.Ascending)
             {
@@ -63,9 +67,24 @@ namespace Alluvial
             return comparison <= 0;
         }
 
-        public static ICursor ReadOnly(ICursor cursor)
+        private static int Compare<TData>(IComparable<TData> comparable, TData point)
         {
-            return new ReadOnlyCursor(cursor);
+            return comparable.CompareTo(point);
+        }
+
+        private static int Compare<TData>(ICursor cursor1, ICursor cursor2)
+        {
+            return cursor1.Position.CompareTo(cursor2.Position);
+        }
+
+        private static int Compare<TData>(ICursor cursor, IComparable<TData> point)
+        {
+            return -(point.CompareTo(cursor.Position));
+        }
+
+        private static int Compare<TData>(object cursor, object point)
+        {
+            return cursor.Equals(point) ? 0 : 1;
         }
     }
 }

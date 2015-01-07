@@ -3,7 +3,7 @@ using System.Diagnostics;
 namespace Alluvial
 {
     [DebuggerStepThrough]
-    internal class SequentialCursor : IIncrementalCursor
+    internal class SequentialCursor : IIncrementableCursor
     {
         private int position;
 

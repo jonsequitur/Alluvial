@@ -30,7 +30,7 @@ namespace Alluvial
         {
             return new AnonymousDataStream<TData>(
                 id,
-                async q => StreamQueryBatch.Create(await query(q), q),
+                async q => StreamQueryBatch.Create(await query(q), q.Cursor),
                 advanceCursor);
         }
 
@@ -48,7 +48,7 @@ namespace Alluvial
         {
             return new AnonymousDataStream<TData>(
                 id,
-                async q => StreamQueryBatch.Create(query(q), q),
+                async q => StreamQueryBatch.Create(query(q), q.Cursor),
                 advanceCursor);
         }
 
@@ -63,7 +63,7 @@ namespace Alluvial
             string id = null)
         {
             return Create<TTo>(
-                id: id ?? (sourceStream.Id + " map ->" + typeof (TTo).Name),
+                id: id ?? sourceStream.Id,
                 query: async q =>
                 {
                     var sourceBatch = await sourceStream.Fetch(
@@ -71,7 +71,7 @@ namespace Alluvial
 
                     var mappedBatch = map(sourceBatch);
 
-                    return StreamQueryBatch.Create(mappedBatch, q);
+                    return StreamQueryBatch.Create(mappedBatch, q.Cursor);
                 },
                 advanceCursor: async (query, batch) =>
                 {
@@ -84,16 +84,14 @@ namespace Alluvial
             Func<TUpstream, IDataStream<TDownstream>> queryDownstream)
         {
             return Create<IDataStream<TDownstream>>(
-                query: async q =>
+                query: async upstreamQuery =>
                 {
-                    var cursor = q.Cursor;
+                    var cursor = upstreamQuery.Cursor;
 
                     var upstreamBatch = await upstream.Fetch(
-                        upstream.CreateQuery(cursor, q.BatchCount));
+                        upstream.CreateQuery(cursor, upstreamQuery.BatchCount));
 
-                    var batches = upstreamBatch.Select(queryDownstream);
-
-                    return batches;
+                    return upstreamBatch.Select(queryDownstream);
                 },
                 advanceCursor: (query, batch) =>
                 {

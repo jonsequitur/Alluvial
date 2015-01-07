@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Alluvial.Tests.BankDomain;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -127,7 +128,7 @@ namespace Alluvial.Tests
         [Test]
         public async Task ascending_int_Cursor_position_after_AdvanceBy_is_correct()
         {
-            var cursor = Cursor.Create(10, ascending: true) as IIncrementalCursor;
+            var cursor = Cursor.Create(10, ascending: true) as IIncrementableCursor;
 
             cursor.AdvanceBy(5);
 
@@ -137,7 +138,7 @@ namespace Alluvial.Tests
         [Test]
         public async Task descending_int_Cursor_position_after_AdvanceBy_is_correct()
         {
-            var cursor = Cursor.Create(10, ascending: false) as IIncrementalCursor;
+            var cursor = Cursor.Create(10, ascending: false) as IIncrementableCursor;
 
             cursor.AdvanceBy(5);
 
@@ -167,7 +168,7 @@ namespace Alluvial.Tests
         [Test]
         public async Task ascending_DateTimeOffset_Cursor_position_after_AdvanceBy_is_correct()
         {
-            var cursor = Cursor.Create(DateTimeOffset.Parse("2015-01-01 12am +00:00"), ascending: true) as IIncrementalCursor;
+            var cursor = Cursor.Create(DateTimeOffset.Parse("2015-01-01 12am +00:00"), ascending: true) as IIncrementableCursor;
 
             cursor.AdvanceBy(TimeSpan.FromDays(1));
 
@@ -178,7 +179,7 @@ namespace Alluvial.Tests
         [Test]
         public async Task descending_DateTimeOffset_Cursor_position_after_AdvanceBy_is_correct()
         {
-            var cursor = Cursor.Create(DateTimeOffset.Parse("2015-01-01 12am +00:00"), ascending: false) as IIncrementalCursor;
+            var cursor = Cursor.Create(DateTimeOffset.Parse("2015-01-01 12am +00:00"), ascending: false) as IIncrementableCursor;
 
             cursor.AdvanceBy(TimeSpan.FromDays(1));
 
@@ -208,6 +209,20 @@ namespace Alluvial.Tests
 
             ((DateTimeOffset) cursor.Position).Should()
                                               .Be(expectedPosition);
+        }
+
+        [Test]
+        public async Task A_projection_implementing_ICursor_can_be_compared_to_a_cursor()
+        {
+            var projection = new BalanceProjection
+            {
+                CursorPosition = 5
+            };
+
+            Cursor.Create(5)
+                  .HasReached(projection)
+                  .Should()
+                  .Be(true);
         }
     }
 }
