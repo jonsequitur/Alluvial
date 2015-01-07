@@ -205,15 +205,14 @@ namespace Alluvial.Tests
                            .Be(1000);
         }
 
+        [Ignore("Some discussion required")]
         [Test]
-        public async Task Catchup_incrementally_updates_projections()
+        public async Task When_projections_are_cursors_then_catchup_does_not_replay_previously_seen_events()
         {
             var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
 
             var catchup = Catchup.Create(streams, batchCount: 1000)
                                  .Subscribe(new BalanceProjector(), projectionStore);
-
-            TaskScheduler.UnobservedTaskException += (sender, args) => Console.WriteLine(args.Exception);
 
             await catchup.RunUntilCaughtUp();
 
