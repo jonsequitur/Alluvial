@@ -1,10 +1,12 @@
+using System;
+
 namespace Alluvial
 {
-    internal class StringCursor : ICursor
+    internal class AlphabeticalCursor : ICursor
     {
         private string position;
 
-        public StringCursor(string position = "",
+        public AlphabeticalCursor(string position = "",
                             bool ascending = true)
         {
             Ascending = ascending;
@@ -24,6 +26,18 @@ namespace Alluvial
         public void AdvanceTo(dynamic position)
         {
             this.position = position;
+        }
+
+        public virtual bool HasReached(dynamic point)
+        {
+            int comparison = StringComparer.OrdinalIgnoreCase.Compare(position, point);
+
+            if (Ascending)
+            {
+                return comparison >= 0;
+            }
+
+            return comparison <= 0;
         }
     }
 }

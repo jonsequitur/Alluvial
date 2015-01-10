@@ -11,7 +11,7 @@ namespace Alluvial
             By<int>.Create = () => new SequentialCursor();
             By<DateTime>.Create = () => new ChronologicalCursor();
             By<DateTimeOffset>.Create = () => new ChronologicalCursor();
-            By<string>.Create = () => new StringCursor();
+            By<string>.Create = () => new AlphabeticalCursor();
         }
 
         public static T As<T>(this ICursor cursor)
@@ -42,7 +42,7 @@ namespace Alluvial
 
         public static ICursor Create(string startAt, bool ascending = true)
         {
-            return new StringCursor(startAt, ascending);
+            return new AlphabeticalCursor(startAt, ascending);
         }
 
         public static ICursor New()
@@ -55,36 +55,11 @@ namespace Alluvial
             return new ReadOnlyCursor(cursor);
         }
 
-        public static bool HasReached<TData>(this ICursor cursor, TData point)
+        public static bool HasReached(int comparison, bool ascending)
         {
-            int comparison = Compare<TData>((dynamic) cursor, (dynamic) point);
-
-            if (cursor.Ascending)
-            {
-                return comparison >= 0;
-            }
-
-            return comparison <= 0;
-        }
-
-        private static int Compare<TData>(IComparable<TData> comparable, TData point)
-        {
-            return comparable.CompareTo(point);
-        }
-
-        private static int Compare<TData>(ICursor cursor1, ICursor cursor2)
-        {
-            return cursor1.Position.CompareTo(cursor2.Position);
-        }
-
-        private static int Compare<TData>(ICursor cursor, IComparable<TData> point)
-        {
-            return -(point.CompareTo(cursor.Position));
-        }
-
-        private static int Compare<TData>(object cursor, object point)
-        {
-            return cursor.Equals(point) ? 0 : 1;
+            return ascending
+                ? comparison >= 0
+                : comparison <= 0;
         }
     }
 }

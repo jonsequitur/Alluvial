@@ -71,7 +71,7 @@
     <Compile Include="StreamQueryBatch.cs" />
     <Compile Include="StreamQueryBatch{T}.cs" />
     <Compile Include="StreamQuery{T}.cs" />
-    <Compile Include="StringCursor.cs" />
+    <Compile Include="AlphabeticalCursor.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

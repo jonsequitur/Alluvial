@@ -42,5 +42,17 @@ namespace Alluvial
         {
             this.position = position;
         }
+
+        public virtual bool HasReached(dynamic point)
+        {
+            int comparison = position.CompareTo(point);
+
+            if (Ascending)
+            {
+                return comparison >= 0;
+            }
+
+            return comparison <= 0;
+        }
     }
 }

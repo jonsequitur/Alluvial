@@ -57,5 +57,10 @@ namespace Alluvial
 
             innerCursor.AdvanceTo(position);
         }
+
+        public bool HasReached(dynamic point)
+        {
+            return innerCursor.HasReached(point);
+        }
     }
 }

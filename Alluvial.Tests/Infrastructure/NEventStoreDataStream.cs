@@ -1,16 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using NEventStore;
 
 namespace Alluvial.Tests
 {
-    public class NEventStoreStreamUpdate
-    {
-        public string StreamId{get;set;}
-        public string CheckpointToken{get;set;}
-    }
-
     public class NEventStoreDataStream : IDataStream<EventMessage>, IDisposable
     {
         private readonly IStoreEvents store;
@@ -42,11 +37,9 @@ namespace Alluvial.Tests
         {
             int lastFetchedRevision = query.Cursor.Position;
 
-            int maxRevisionToFetch = query.BatchCount == null
-                                         ? int.MaxValue
-                                         : lastFetchedRevision + query.BatchCount.Value;
+            var maxRevisionToFetch = lastFetchedRevision + query.BatchCount ?? int.MaxValue;
 
-            int maxExistingRevision = store.Advanced
+            var maxExistingRevision = store.Advanced
                                            .GetFrom("default",
                                                     streamId,
                                                     lastFetchedRevision,
@@ -59,16 +52,40 @@ namespace Alluvial.Tests
                 return StreamQueryBatch.Empty<EventMessage>(query.Cursor);
             }
 
-            using (var stream = store.OpenStream(streamId,
-                                                 minRevision: lastFetchedRevision + 1,
-                                                 maxRevision: maxRevisionToFetch))
+            var events = new List<EventMessage>();
+
+            for (var i = lastFetchedRevision + 1; i < maxRevisionToFetch; i++)
             {
-                var batch = StreamQueryBatch.Create(stream.CommittedEvents.ToArray(), query.Cursor);
+                try
+                {
+                    using (var stream = store.OpenStream(streamId,
+                                                         minRevision: i,
+                                                         maxRevision: i))
+                    {
+                        if (stream.CommittedEvents.Count == 0)
+                        {
+                            break;
+                        }
 
-                query.Cursor.AdvanceTo(stream.StreamRevision);
-
-                return batch;
+                        events.AddRange(stream.CommittedEvents
+                                              .Select(e =>
+                                                      {
+                                                          e.Headers["StreamRevision"] = stream.StreamRevision;
+                                                          return e;
+                                                      }));
+                    }
+                }
+                catch (StreamNotFoundException)
+                {
+                    break;
+                }
             }
+
+            var batch = StreamQueryBatch.Create(events, query.Cursor);
+
+            query.Cursor.AdvanceTo(maxExistingRevision);
+
+            return batch;
         }
 
         public void Dispose()

@@ -45,10 +45,10 @@ namespace Alluvial
             }
 
             return Disposable.Create(() =>
-            {
-                AggregatorSubscription _;
-                aggregatorSubscriptions.TryRemove(typeof (TProjection), out _);
-            });
+                                     {
+                                         AggregatorSubscription _;
+                                         aggregatorSubscriptions.TryRemove(typeof (TProjection), out _);
+                                     });
         }
 
         public async Task<IStreamQuery<IDataStream<TData>>> RunSingleBatch()
@@ -70,30 +70,30 @@ namespace Alluvial
                 var batches =
                     streams.Select(
                         stream =>
-                        // TODO: (RunSingleBatch) optimize: pull up the projection first and use its cursor?
+                            // TODO: (RunSingleBatch) optimize: pull up the projection first and use its cursor?
                         {
                             var streamQuery = stream.CreateQuery();
 
                             return streamQuery
                                 .NextBatch()
                                 .ContinueWith(async t =>
-                                {
-                                    var batch = t.Result;
+                                                    {
+                                                        var batch = t.Result;
 
-                                    if (batch.Count > 0)
-                                    {
-                                        var aggregatorUpdates =
-                                            aggregatorSubscriptions
-                                                .Values
-                                                .Select(subscription => Aggregate(stream.Id,
-                                                                                  (dynamic) subscription,
-                                                                                  batch, 
-                                                                                  streamQuery.Cursor))
-                                                .Cast<Task>();
+                                                        if (batch.Count > 0)
+                                                        {
+                                                            var aggregatorUpdates =
+                                                                aggregatorSubscriptions
+                                                                    .Values
+                                                                    .Select(subscription => Aggregate(stream.Id,
+                                                                                                      (dynamic) subscription,
+                                                                                                      batch,
+                                                                                                      streamQuery.Cursor))
+                                                                    .Cast<Task>();
 
-                                        await Task.WhenAll(aggregatorUpdates);
-                                    }
-                                });
+                                                            await Task.WhenAll(aggregatorUpdates);
+                                                        }
+                                                    });
                         });
 
                 await Task.WhenAll(batches);
@@ -117,12 +117,13 @@ namespace Alluvial
             IStreamQueryBatch<TData> batch,
             ICursor queryCursor)
         {
-            var projection =  await subscription.ProjectionStore.Get(streamId);
+            var projection = await subscription.ProjectionStore.Get(streamId);
 
             var projectionCursor = projection as ICursor;
             if (projectionCursor != null)
             {
                 // TODO-JOSEQU: (Aggregate) optimize: this is unnecessary if we know we know this was a brand new projection
+                batch = batch.Prune(projectionCursor);
             }
 
             projection = subscription.Aggregator.Aggregate(projection, batch);
@@ -134,7 +135,6 @@ namespace Alluvial
 
             await subscription.ProjectionStore.Put(projection);
         }
-
 
         private async Task EnsureCursorIsInitialized()
         {

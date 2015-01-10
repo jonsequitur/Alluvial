@@ -210,19 +210,5 @@ namespace Alluvial.Tests
             ((DateTimeOffset) cursor.Position).Should()
                                               .Be(expectedPosition);
         }
-
-        [Test]
-        public async Task A_projection_implementing_ICursor_can_be_compared_to_a_cursor()
-        {
-            var projection = new BalanceProjection
-            {
-                CursorPosition = 5
-            };
-
-            Cursor.Create(5)
-                  .HasReached(projection)
-                  .Should()
-                  .Be(true);
-        }
     }
 }

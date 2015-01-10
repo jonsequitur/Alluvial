@@ -7,5 +7,6 @@ namespace Alluvial
         dynamic Position { get; }
         bool Ascending { get; }
         void AdvanceTo(dynamic position);
+        bool HasReached(dynamic point);
     }
 }

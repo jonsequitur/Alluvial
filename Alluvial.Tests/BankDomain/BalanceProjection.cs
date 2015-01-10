@@ -9,8 +9,6 @@ namespace Alluvial.Tests.BankDomain
 
         public string AggregateId { get; set; }
 
-        public int SequenceNumber { get; set; }
-
         public int CursorPosition { get; set; }
 
         dynamic ICursor.Position
@@ -32,6 +30,13 @@ namespace Alluvial.Tests.BankDomain
         public void AdvanceTo(dynamic position)
         {
             CursorPosition = position;
+        }
+
+        public bool HasReached(dynamic point)
+        {
+            return Cursor.HasReached(
+                CursorPosition.CompareTo(point.StreamRevision),
+                Ascending);
         }
     }
 }

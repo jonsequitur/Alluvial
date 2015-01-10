@@ -36,9 +36,16 @@ namespace Alluvial
             }
         }
 
-        public void AdvanceTo(dynamic position)
+        public void AdvanceTo(dynamic sequenceNumber)
         {
-            this.position = position;
+            position = sequenceNumber;
+        }
+
+        public virtual bool HasReached(dynamic point)
+        {
+            return Cursor.HasReached(
+                position.CompareTo((int) point),
+                Ascending);
         }
     }
 }

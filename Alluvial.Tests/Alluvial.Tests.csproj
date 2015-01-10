@@ -75,6 +75,8 @@
     <Compile Include="CatchupQueryTests.cs" />
     <Compile Include="BankDomain\FundsWithdrawn.cs" />
     <Compile Include="Infrastructure\NEventStoreDataStream.cs" />
+    <Compile Include="Infrastructure\NEventStoreDataStreamSource.cs" />
+    <Compile Include="Infrastructure\NEventStoreStreamUpdate.cs" />
     <Compile Include="Infrastructure\TestEventStore.cs" />
     <Compile Include="Infrastructure\InMemoryProjectionStore.cs" />
     <Compile Include="ProjectionTests.cs" />

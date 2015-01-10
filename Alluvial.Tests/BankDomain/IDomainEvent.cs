@@ -3,5 +3,6 @@
     public interface IDomainEvent
     {
         string AggregateId { get; }
+        int StreamRevision { get; set; }
     }
 }
