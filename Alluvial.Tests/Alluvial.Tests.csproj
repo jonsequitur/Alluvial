@@ -72,7 +72,7 @@
     <Compile Include="BankDomain\IDomainEvent.cs" />
     <Compile Include="CursorTests.cs" />
     <Compile Include="StreamImplementations\IMapProjection.cs" />
-    <Compile Include="CatchupQueryTests.cs" />
+    <Compile Include="DataStreamCatchupTests.cs" />
     <Compile Include="BankDomain\FundsWithdrawn.cs" />
     <Compile Include="StreamImplementations\NEventStore\NEventStoreDataStream.cs" />
     <Compile Include="StreamImplementations\NEventStore\NEventStoreDataStreamSource.cs" />
@@ -82,6 +82,7 @@
     <Compile Include="ProjectionTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StreamQueryTests.cs" />
+    <Compile Include="Wait.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config">

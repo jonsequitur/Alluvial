@@ -122,7 +122,7 @@ namespace Alluvial
             var projectionCursor = projection as ICursor;
             if (projectionCursor != null)
             {
-                // TODO-JOSEQU: (Aggregate) optimize: this is unnecessary if we know we know this was a brand new projection
+                // TODO: (Aggregate) optimize: this is unnecessary if we know we know this was a brand new projection
                 batch = batch.Prune(projectionCursor);
             }
 

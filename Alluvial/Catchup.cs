@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace Alluvial
@@ -31,6 +32,24 @@ namespace Alluvial
             return query;
         }
 
+        public static IDisposable Poll<TData>(
+            this IDataStreamCatchup<TData> catchup,
+            TimeSpan pollInterval)
+        {
+            var canceled = false;
+
+            Task.Run(async () =>
+                           {
+                               while (!canceled)
+                               {
+                                   await catchup.RunUntilCaughtUp();
+                                   await Task.Delay(pollInterval);
+                               }
+                           });
+
+            return Disposable.Create(() => { canceled = true; });
+        }
+
         public static IDataStreamCatchup<TData> Subscribe<TProjection, TData>(
             this IDataStreamCatchup<TData> catchup,
             IDataStreamAggregator<TProjection, TData> aggregator,
@@ -45,7 +64,7 @@ namespace Alluvial
             Aggregate<TProjection, TData> aggregate,
             IProjectionStore<string, TProjection> projectionStore = null)
         {
-          return  catchup.SubscribeAggregator(Aggregator.Create(aggregate), projectionStore);
+            return catchup.SubscribeAggregator(Aggregator.Create(aggregate), projectionStore);
         }
 
         public static IDisposable Subscribe<TProjection, TData>(
@@ -53,7 +72,7 @@ namespace Alluvial
             Action<TProjection, IStreamQueryBatch<TData>> aggregate,
             IProjectionStore<string, TProjection> projectionStore = null)
         {
-          return  catchup.SubscribeAggregator(Aggregator.Create(aggregate), projectionStore);
+            return catchup.SubscribeAggregator(Aggregator.Create(aggregate), projectionStore);
         }
 
         internal class Progress<TData>
