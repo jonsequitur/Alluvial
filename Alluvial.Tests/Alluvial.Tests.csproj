@@ -71,6 +71,7 @@
     <Compile Include="BankDomain\FundsDeposited.cs" />
     <Compile Include="BankDomain\IDomainEvent.cs" />
     <Compile Include="CursorTests.cs" />
+    <Compile Include="PipelineTests.cs" />
     <Compile Include="StreamImplementations\IMapProjection.cs" />
     <Compile Include="DataStreamCatchupTests.cs" />
     <Compile Include="BankDomain\FundsWithdrawn.cs" />
