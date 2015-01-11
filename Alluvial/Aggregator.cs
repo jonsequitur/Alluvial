@@ -57,17 +57,14 @@ namespace Alluvial
             this IDataStreamAggregator<TProjection, TData> then,
             Action<TProjection, IStreamQueryBatch<TData>, Action<TProjection, IStreamQueryBatch<TData>>> first)
         {
-            return Create<TProjection, TData>((projection, batch) =>
-            {
-                first(projection, batch, (p, xs) => then.Aggregate(p, xs));
-            });
+            return Create<TProjection, TData>((projection, batch) => { first(projection, batch, (p, xs) => then.Aggregate(p, xs)); });
         }
 
         public static IDataStreamAggregator<TProjection, TData> Pipeline<TProjection, TData>(
             this IDataStreamAggregator<TProjection, TData> then,
             Func<TProjection, IStreamQueryBatch<TData>, Aggregate<TProjection, TData>, TProjection> first)
         {
-            return Create<TProjection, TData>((projection, batch) => first(projection, batch,  then.Aggregate));
+            return Create<TProjection, TData>((projection, batch) => first(projection, batch, then.Aggregate));
         }
 
         public static IDataStreamAggregator<TProjection, TData> Create<TProjection, TData>(

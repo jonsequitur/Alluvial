@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package>
+  <metadata>
+    <id>Alluvial</id>
+    <title>Alluvial</title>
+    <version>0.1.0-alpha</version>
+    <authors>jonsequitur</authors>
+    <owners>jonsequitur</owners>
+    <projectUrl>https://github.com/jonsequitur/Alluvial</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <licenseUrl>http://opensource.org/licenses/MIT</licenseUrl>
+    <description>Treat all of your data as streams, process them sequentially, build projections and aggregations from historical and realtime data, parallelize and distribute the workload over multiple machines.</description>
+    <tags>data projections stream-processing</tags>
+  </metadata>
+</package>
