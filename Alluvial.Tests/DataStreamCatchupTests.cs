@@ -10,7 +10,7 @@ using NUnit.Framework;
 namespace Alluvial.Tests
 {
     [TestFixture]
-    public class CatchupQueryTests
+    public class DataStreamCatchupTests
     {
         private IStoreEvents store;
         private string[] streamIds;
@@ -208,6 +208,35 @@ namespace Alluvial.Tests
 
             balanceProjection.Balance.Should().Be(101);
             balanceProjection.CursorPosition.Should().Be(2);
+        }
+
+        [Test]
+        public async Task Catchup_Poll_keeps_projections_updated_as_new_events_are_written()
+        {
+            var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
+
+            var catchup = Catchup.Create(streamSource.Updates(), batchCount: 50)
+                                 .Subscribe(new BalanceProjector(), projectionStore);
+
+            using (catchup.Poll(TimeSpan.FromMilliseconds(10)))
+            {
+                // write more events
+                Task.Run(async () =>
+                               {
+                                   foreach (var streamId in streamIds.Take(200))
+                                   {
+                                       WriteEvent(streamId, 1m);
+                                       await Task.Delay(1);
+                                   }
+                               });
+
+                await Wait.Until(() =>
+                                 {
+                                     var sum = projectionStore.Sum(b => b.Balance);
+                                     Console.WriteLine("sum is " + sum);
+                                     return sum >= 1200;
+                                 });
+            }
         }
     }
 }
