@@ -222,21 +222,72 @@ namespace Alluvial.Tests
             {
                 // write more events
                 Task.Run(async () =>
-                               {
-                                   foreach (var streamId in streamIds.Take(200))
-                                   {
-                                       WriteEvent(streamId, 1m);
-                                       await Task.Delay(1);
-                                   }
-                               });
+                {
+                    foreach (var streamId in streamIds.Take(200))
+                    {
+                        WriteEvent(streamId, 1m);
+                        await Task.Delay(1);
+                    }
+                });
 
                 await Wait.Until(() =>
-                                 {
-                                     var sum = projectionStore.Sum(b => b.Balance);
-                                     Console.WriteLine("sum is " + sum);
-                                     return sum >= 1200;
-                                 });
+                {
+                    var sum = projectionStore.Sum(b => b.Balance);
+                    Console.WriteLine("sum is " + sum);
+                    return sum >= 1200;
+                });
             }
+        }
+
+        [Test]
+        public async Task By_default_a_catchup_run_stops_when_an_aggregator_throws_an_exception()
+        {
+            var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
+
+            var projector = new BalanceProjector()
+                .Pipeline((projection, batch, next) =>
+                {
+                    if (projectionStore.Count() >= 30)
+                    {
+                        throw new Exception("oops");
+                    }
+                    next(projection, batch);
+                });
+
+            var catchup = Catchup.Create(streamSource.Updates(), batchCount: 50)
+                                 .Subscribe(projector, projectionStore);
+
+            Action runSingleBatch = () => catchup.RunSingleBatch().Wait();
+
+            runSingleBatch.ShouldThrow<Exception>()
+                .And
+                .Message
+                .Should()
+                .Contain("oops");
+        }
+
+        [Test]
+        public async Task Catch_allows_aggregator_exceptions_to_be_prevented_from_stopping_catchup()
+        {
+            var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
+
+            var projector = new BalanceProjector()
+                .Pipeline((projection, batch, next) =>
+                {
+                    if (projectionStore.Count() == 30)
+                    {
+                        throw new Exception("oops");
+                    }
+                    next(projection, batch);
+                })
+                .Catch(continueIf: (projection, batch, next) => true);
+
+            var catchup = Catchup.Create(streamSource.Updates(), batchCount: 50)
+                                 .Subscribe(projector, projectionStore);
+
+            await catchup.RunSingleBatch();
+
+            projectionStore.Count().Should().Be(50);
         }
     }
 }
