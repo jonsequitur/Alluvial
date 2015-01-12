@@ -45,10 +45,10 @@ namespace Alluvial
             }
 
             return Disposable.Create(() =>
-                                     {
-                                         AggregatorSubscription _;
-                                         aggregatorSubscriptions.TryRemove(typeof (TProjection), out _);
-                                     });
+            {
+                AggregatorSubscription _;
+                aggregatorSubscriptions.TryRemove(typeof (TProjection), out _);
+            });
         }
 
         public async Task<IStreamQuery<IDataStream<TData>>> RunSingleBatch()
@@ -67,6 +67,8 @@ namespace Alluvial
 
             if (streams.Any())
             {
+                Exception aggregatorException = null;
+
                 var batches =
                     streams.Select(
                         stream =>
@@ -77,26 +79,39 @@ namespace Alluvial
                             return streamQuery
                                 .NextBatch()
                                 .ContinueWith(async t =>
-                                                    {
-                                                        var batch = t.Result;
+                                {
+                                    var batch = t.Result;
 
-                                                        if (batch.Count > 0)
-                                                        {
-                                                            var aggregatorUpdates =
-                                                                aggregatorSubscriptions
-                                                                    .Values
-                                                                    .Select(subscription => Aggregate(stream.Id,
-                                                                                                      (dynamic) subscription,
-                                                                                                      batch,
-                                                                                                      streamQuery.Cursor))
-                                                                    .Cast<Task>();
+                                    if (batch.Count > 0)
+                                    {
+                                        var aggregatorUpdates =
+                                            aggregatorSubscriptions
+                                                .Values
+                                                .Select(subscription => Aggregate(stream.Id,
+                                                                                  (dynamic) subscription,
+                                                                                  batch,
+                                                                                  streamQuery.Cursor))
+                                                .Cast<Task>();
 
-                                                            await Task.WhenAll(aggregatorUpdates);
-                                                        }
-                                                    });
+                                        try
+                                        {
+                                            await Task.WhenAll(aggregatorUpdates);
+                                        }
+                                        catch (Exception exception)
+                                        {
+                                            aggregatorException = exception;
+                                            throw;
+                                        }
+                                    }
+                                });
                         });
 
                 await Task.WhenAll(batches);
+
+                if (aggregatorException != null)
+                {
+                    throw aggregatorException;
+                }
             }
 
             await SaveCursor();

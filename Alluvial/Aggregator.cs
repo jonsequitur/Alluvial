@@ -98,7 +98,10 @@ namespace Alluvial
             Action<TProjection, IStreamQueryBatch<TData>,
                 Action<TProjection, IStreamQueryBatch<TData>>> initial)
         {
-            return Create<TProjection, TData>((projection, batch) => { initial(projection, batch, (p, xs) => aggregator.Aggregate(p, xs)); });
+            return Create<TProjection, TData>((projection, batch) =>
+            {
+                initial(projection, batch, (p, xs) => aggregator.Aggregate(p, xs));
+            });
         }
 
         public static IDataStreamAggregator<TProjection, TData> Pipeline<TProjection, TData>(
@@ -106,6 +109,23 @@ namespace Alluvial
             Func<TProjection, IStreamQueryBatch<TData>, Aggregate<TProjection, TData>, TProjection> initial)
         {
             return Create<TProjection, TData>((projection, batch) => initial(projection, batch, aggregator.Aggregate));
+        }
+
+        public static IDataStreamAggregator<TProjection, TData> Trace<TProjection, TData>(
+            this IDataStreamAggregator<TProjection, TData> aggregator)
+        {
+            return aggregator.Pipeline((projection, batch, next) =>
+            {
+                System.Diagnostics.Trace.WriteLine(
+                    string.Format("Projection {0} / batch of {1} starts @ {2}",
+                                  projection,
+                                  batch.Count,
+                                  (string) batch.StartsAtCursorPosition.ToString()));
+
+                projection = next(projection, batch);
+
+                return projection;
+            });
         }
     }
 }
