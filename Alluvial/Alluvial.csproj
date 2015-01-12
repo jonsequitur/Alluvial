@@ -40,6 +40,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Aggregate{TProjection,TData}.cs" />
     <Compile Include="AggregatorSubscription.cs" />
     <Compile Include="AggregatorSubscription{TProjection,TData}.cs" />
     <Compile Include="AnonymousDataStream.cs" />
