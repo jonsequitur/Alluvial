@@ -5,8 +5,14 @@ using System.Threading.Tasks;
 
 namespace Alluvial
 {
+    /// <summary>
+    /// Methods for working with data streams.
+    /// </summary>
     public static class DataStream
     {
+        /// <summary>
+        /// Creates a data stream based on an enumerable sequence.
+        /// </summary>
         public static IDataStream<TData> AsDataStream<TData>(
             this IEnumerable<TData> source)
             where TData : IComparable<TData>
@@ -52,11 +58,17 @@ namespace Alluvial
                 advanceCursor);
         }
 
+        /// <summary>
+        /// Creates a new cursor over a data stream.
+        /// </summary>
         public static ICursor CreateCursor<TData>(this IDataStream<TData> stream)
         {
             return Cursor.New();
         }
 
+        /// <summary>
+        /// Maps data from a stream into a new form.
+        /// </summary>
         public static IDataStream<TTo> Map<TFrom, TTo>(
             this IDataStream<TFrom> sourceStream,
             Func<IEnumerable<TFrom>, IEnumerable<TTo>> map,

@@ -12,9 +12,9 @@ namespace Alluvial.Tests
     {
         private readonly ConcurrentDictionary<string, TProjection> store = new ConcurrentDictionary<string, TProjection>();
 
-        public async Task Put(TProjection projection)
+        public async Task Put(string streamId, TProjection projection)
         {
-            store[projection.AggregateId] = projection;
+            store[streamId] = projection;
         }
 
         public async Task<TProjection> Get(string streamId)

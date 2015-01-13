@@ -59,7 +59,6 @@
     <Compile Include="IDataStreamCatchup{T}.cs" />
     <Compile Include="IDataStreamSource.cs" />
     <Compile Include="IIncrementableCursor.cs" />
-    <Compile Include="IntCursor.cs" />
     <Compile Include="IProjectionStore.cs" />
     <Compile Include="IStreamQuery.cs" />
     <Compile Include="IStreamQueryBatch.cs" />

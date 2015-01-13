@@ -148,7 +148,7 @@ namespace Alluvial
                 projectionCursor.AdvanceTo(queryCursor.Position);
             }
 
-            await subscription.ProjectionStore.Put(projection);
+            await subscription.ProjectionStore.Put(streamId, projection);
         }
 
         private async Task EnsureCursorIsInitialized()

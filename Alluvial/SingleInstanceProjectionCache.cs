@@ -21,7 +21,7 @@ namespace Alluvial
             };
         }
 
-        public async Task Put(TProjection projection)
+        public async Task Put(TKey key, TProjection projection)
         {
             instantiated = true;
             instance = projection;
@@ -31,7 +31,7 @@ namespace Alluvial
         {
             if (!instantiated)
             {
-                Put(create());
+                await Put(default(TKey), create());
             }
             return instance;
         }
