@@ -16,7 +16,6 @@ namespace Alluvial.Tests
             return Wireup.Init()
                          .UsingInMemoryPersistence()
                          .InitializeStorageEngine()
-                         .TrackPerformanceInstance("example")
                          .UsingJsonSerialization()
                          .Build();
         }
