@@ -16,7 +16,7 @@ namespace Alluvial
         /// <param name="key">The key under which to store the projection.</param>
         /// <param name="projection">The projection.</param>
         /// <returns></returns>
-        Task Put(TKey key ,TProjection projection);
+        Task Put(TKey key, TProjection projection);
 
         /// <summary>
         /// Gets a projection having the specified key, or null if it does not exist.

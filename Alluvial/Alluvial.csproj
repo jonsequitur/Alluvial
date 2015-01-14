@@ -54,6 +54,7 @@
     <Compile Include="Catchup.cs" />
     <Compile Include="DataStream.cs" />
     <Compile Include="Disposable.cs" />
+    <Compile Include="CatchupConfiguration.cs" />
     <Compile Include="ICursor.cs" />
     <Compile Include="IDataStream.cs" />
     <Compile Include="IDataStreamCatchup{T}.cs" />

@@ -260,10 +260,10 @@ namespace Alluvial.Tests
             Action runSingleBatch = () => catchup.RunSingleBatch().Wait();
 
             runSingleBatch.ShouldThrow<Exception>()
-                .And
-                .Message
-                .Should()
-                .Contain("oops");
+                          .And
+                          .Message
+                          .Should()
+                          .Contain("oops");
         }
 
         [Test]
@@ -288,6 +288,37 @@ namespace Alluvial.Tests
             await catchup.RunSingleBatch();
 
             projectionStore.Count().Should().Be(50);
+        }
+
+        [Test]
+        public async Task Catchup_cursor_storage_can_be_specified_using_catchup_configuration()
+        {
+            ICursor storedCursor = null;
+
+            var catchup = Catchup.Create(streamSource.Updates(),
+                                         batchCount: 1,
+                                         configure: c => c.StoreCursor(async (id, cursor) => storedCursor = cursor))
+                                 .Subscribe(new BalanceProjector());
+
+            var query = await catchup.RunSingleBatch();
+
+            storedCursor.Should().BeSameAs(query.Cursor);
+        }
+
+        [Test]
+        public async Task Catchup_cursor_retrieval_can_be_specified_using_catchup_configuration()
+        {
+            ICursor storedCursor = Cursor.Create("3");
+
+            var catchup = Catchup.Create(streamSource.Updates(),
+                                         batchCount: 1,
+                                         configure: c => c.GetCursor(async id => storedCursor))
+                                 .Subscribe(new BalanceProjector());
+
+            var query = await catchup.RunSingleBatch();
+
+            query.Cursor.Should().BeSameAs(storedCursor);
+            query.Cursor.As<string>().Should().Be("4");
         }
     }
 }
