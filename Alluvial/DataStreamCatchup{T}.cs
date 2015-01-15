@@ -11,13 +11,17 @@ namespace Alluvial
         private int isRunning;
         private readonly IDataStream<IDataStream<TData>> dataStream;
         private readonly int? batchCount;
+        private readonly GetCursor getCursor;
+        private readonly StoreCursor storeCursor;
 
         private readonly ConcurrentDictionary<Type, AggregatorSubscription> aggregatorSubscriptions = new ConcurrentDictionary<Type, AggregatorSubscription>();
 
         public DataStreamCatchup(
             IDataStream<IDataStream<TData>> dataStream,
             ICursor cursor = null,
-            int? batchCount = null)
+            int? batchCount = null,
+            GetCursor getCursor = null,
+            StoreCursor storeCursor = null)
         {
             if (dataStream == null)
             {
@@ -28,6 +32,8 @@ namespace Alluvial
 
             this.dataStream = dataStream;
             this.batchCount = batchCount;
+            this.getCursor = getCursor;
+            this.storeCursor = storeCursor;
         }
 
         public ICursor Cursor { get; set; }
@@ -114,16 +120,11 @@ namespace Alluvial
                 }
             }
 
-            await SaveCursor();
+            await StoreCursor();
 
             isRunning = 0;
 
             return upstreamQuery;
-        }
-
-        private async Task SaveCursor()
-        {
-            // TODO: (SaveCursor) 
         }
 
         private async Task Aggregate<TProjection>(
@@ -155,9 +156,13 @@ namespace Alluvial
         {
             if (Cursor == null)
             {
-                // TODO: (GetCursor) retrieve from storage
-                Cursor = Alluvial.Cursor.New();
+                Cursor = await getCursor(dataStream.Id);
             }
+        }
+
+        private async Task StoreCursor()
+        {
+            await storeCursor(dataStream.Id, Cursor);
         }
     }
 }
