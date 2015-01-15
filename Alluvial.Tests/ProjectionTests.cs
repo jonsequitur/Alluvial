@@ -133,12 +133,15 @@ namespace Alluvial.Tests
                                                .OfType<FundsDeposited>()
                                                .Sum(e => e.Amount);
                 })
-                             .Before((projection, e) => projection ?? new BalanceProjection
+                             .Pipeline(async (projection, e, next) =>
                              {
-                                 AggregateId = e.Select(m => m.Body)
-                                                .OfType<IDomainEvent>()
-                                                .First()
-                                                .AggregateId
+                                 return await next(projection ?? new BalanceProjection
+                                 {
+                                     AggregateId = e.Select(m => m.Body)
+                                                    .OfType<IDomainEvent>()
+                                                    .First()
+                                                    .AggregateId
+                                 }, e);
                              });
         }
 

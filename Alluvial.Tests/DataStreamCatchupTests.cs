@@ -92,7 +92,11 @@ namespace Alluvial.Tests
 
             var catchup = Catchup.Create(streamSource.Updates(), batchCount: 1)
                                  .Subscribe(new BalanceProjector()
-                                                .After((projection, events) => barrier.SignalAndWait(1000)), projectionStore);
+                                                .Pipeline(async (projection, batch, next) =>
+                                                {
+                                                    await next(projection, batch);
+                                                    barrier.SignalAndWait(1000);
+                                                }), projectionStore);
 
             catchup.RunSingleBatch();
             catchup.RunSingleBatch();

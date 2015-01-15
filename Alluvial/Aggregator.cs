@@ -9,52 +9,6 @@ namespace Alluvial
     /// </summary>
     public static class Aggregator
     {
-        public static IStreamAggregator<TProjection, TData> After<TProjection, TData>(
-            this IStreamAggregator<TProjection, TData> first,
-            Aggregate<TProjection, TData> then)
-        {
-            return Create<TProjection, TData>(async (projection, batch) =>
-            {
-                projection = await first.Aggregate(projection, batch);
-                projection = then(projection, batch);
-                return projection;
-            });
-        }
-
-        public static IStreamAggregator<TProjection, TData> After<TProjection, TData>(
-            this IStreamAggregator<TProjection, TData> first,
-            Action<TProjection, IStreamBatch<TData>> then)
-        {
-            return Create<TProjection, TData>(async (projection, batch) =>
-            {
-                projection = await first.Aggregate(projection, batch);
-                then(projection, batch);
-                return projection;
-            });
-        }
-
-        public static IStreamAggregator<TProjection, TData> Before<TProjection, TData>(
-            this IStreamAggregator<TProjection, TData> then,
-            Aggregate<TProjection, TData> first)
-        {
-            return Create<TProjection, TData>(async (projection, batch) =>
-            {
-                projection = first(projection, batch);
-                return await then.Aggregate(projection, batch);
-            });
-        }
-
-        public static IStreamAggregator<TProjection, TData> Before<TProjection, TData>(
-            this IStreamAggregator<TProjection, TData> then,
-            Func<TProjection, IStreamBatch<TData>, Task> first)
-        {
-            return Create<TProjection, TData>(async (projection, batch) =>
-            {
-                await first(projection, batch);
-                return await then.Aggregate(projection, batch);
-            });
-        }
-
         public static IStreamAggregator<TProjection, TData> Catch<TProjection, TData>(
             this IStreamAggregator<TProjection, TData> aggregator,
             Func<TProjection, IStreamBatch<TData>, Exception, bool> continueIf)
