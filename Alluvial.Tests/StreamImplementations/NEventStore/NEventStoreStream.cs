@@ -6,12 +6,12 @@ using NEventStore;
 
 namespace Alluvial.Tests
 {
-    public class NEventStoreDataStream : IDataStream<EventMessage>, IDisposable
+    public class NEventStoreStream : IStream<EventMessage>, IDisposable
     {
         private readonly IStoreEvents store;
         private readonly string streamId;
 
-        public NEventStoreDataStream(IStoreEvents store, string streamId)
+        public NEventStoreStream(IStoreEvents store, string streamId)
         {
             if (store == null)
             {
@@ -33,7 +33,7 @@ namespace Alluvial.Tests
             }
         }
 
-        public async Task<IStreamQueryBatch<EventMessage>> Fetch(IStreamQuery<EventMessage> query)
+        public async Task<IStreamBatch<EventMessage>> Fetch(IStreamQuery query)
         {
             int lastFetchedRevision = query.Cursor.Position;
 

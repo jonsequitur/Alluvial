@@ -14,7 +14,7 @@ namespace Alluvial.Tests
     {
         private IStoreEvents store;
         private string[] streamIds;
-        private NEventStoreDataStreamSource streamSource;
+        private NEventStoreStreamSource streamSource;
 
         [SetUp]
         public void SetUp()
@@ -31,7 +31,7 @@ namespace Alluvial.Tests
                 WriteEvent(streamId, 1m);
             }
 
-            streamSource = new NEventStoreDataStreamSource(store);
+            streamSource = new NEventStoreStreamSource(store);
         }
 
         private void WriteEvent(string streamId, decimal amount = 1)

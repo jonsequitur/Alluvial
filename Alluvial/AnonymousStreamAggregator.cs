@@ -2,11 +2,11 @@
 
 namespace Alluvial
 {
-    internal class AnonymousDataStreamAggregator<TProjection, TEvent> : IDataStreamAggregator<TProjection, TEvent>
+    internal class AnonymousStreamAggregator<TProjection, TEvent> : IStreamAggregator<TProjection, TEvent>
     {
         private readonly Aggregate<TProjection, TEvent> aggregate;
 
-        public AnonymousDataStreamAggregator(
+        public AnonymousStreamAggregator(
             Aggregate<TProjection, TEvent> aggregate)
         {
             if (aggregate == null)
@@ -16,7 +16,7 @@ namespace Alluvial
             this.aggregate = aggregate;
         }
 
-        public TProjection Aggregate(TProjection projection, IStreamQueryBatch<TEvent> events)
+        public TProjection Aggregate(TProjection projection, IStreamBatch<TEvent> events)
         {
             return aggregate(projection, events);
         }

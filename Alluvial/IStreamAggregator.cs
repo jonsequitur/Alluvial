@@ -5,11 +5,11 @@ namespace Alluvial
     /// </summary>
     /// <typeparam name="TProjection">The type of the projection.</typeparam>
     /// <typeparam name="TData">The type of the data.</typeparam>
-    public interface IDataStreamAggregator<TProjection, in TData>
+    public interface IStreamAggregator<TProjection, in TData>
     {
         /// <summary>
         /// Applies a batch of data to a projection and returns the updated projection.
         /// </summary>
-        TProjection Aggregate(TProjection projection, IStreamQueryBatch<TData> events);
+        TProjection Aggregate(TProjection projection, IStreamBatch<TData> events);
     }
 }

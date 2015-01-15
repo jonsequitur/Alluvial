@@ -13,7 +13,7 @@ namespace Alluvial.Tests
     {
         private string streamId;
         private IStoreEvents store;
-        private NEventStoreDataStream dataStream;
+        private NEventStoreStream stream;
 
         [SetUp]
         public void SetUp()
@@ -21,7 +21,7 @@ namespace Alluvial.Tests
             streamId = Guid.NewGuid().ToString();
             store = TestEventStore.Create();
             PopulateEventStream(store, streamId);
-            dataStream = new NEventStoreDataStream(store, streamId);
+            stream = new NEventStoreStream(store, streamId);
         }
 
         [Test]
@@ -29,7 +29,7 @@ namespace Alluvial.Tests
         {
             var projector = AccountBalanceProjector();
 
-            var balanceProjection = await dataStream.ProjectWith(projector);
+            var balanceProjection = await stream.ProjectWith(projector);
 
             balanceProjection.Balance.Should().Be(11.11m);
         }
@@ -44,7 +44,7 @@ namespace Alluvial.Tests
                 CursorPosition = 2
             };
 
-            var balanceProjection = await dataStream.ProjectWith(AccountBalanceProjector(),
+            var balanceProjection = await stream.ProjectWith(AccountBalanceProjector(),
                                                                  projection);
 
             balanceProjection.Balance
@@ -63,7 +63,7 @@ namespace Alluvial.Tests
                 CursorPosition = 5
             };
 
-            var finalProjection = await dataStream.ProjectWith(AccountBalanceProjector(),
+            var finalProjection = await stream.ProjectWith(AccountBalanceProjector(),
                                                                initialProjection);
 
             finalProjection.ShouldBeEquivalentTo(initialProjection,
@@ -73,7 +73,7 @@ namespace Alluvial.Tests
         [Test]
         public async Task A_data_stream_can_be_mapped_at_query_time()
         {
-            var domainEvents = dataStream.Map(es => es.Select(e => e.Body).OfType<IDomainEvent>());
+            var domainEvents = stream.Map(es => es.Select(e => e.Body).OfType<IDomainEvent>());
 
             var query = domainEvents.CreateQuery();
 
@@ -87,11 +87,11 @@ namespace Alluvial.Tests
         [Test]
         public async Task A_mapped_data_stream_can_be_traversed_using_the_outer_query_cursor()
         {
-            using (var stream = store.OpenStream(streamId))
+            using (var nEventStoreStream = store.OpenStream(streamId))
             {
                 for (var i = 0; i < 5; i++)
                 {
-                    stream.Add(new EventMessage
+                    nEventStoreStream.Add(new EventMessage
                     {
                         Body = new FundsWithdrawn
                         {
@@ -100,10 +100,10 @@ namespace Alluvial.Tests
                         }
                     });
                 }
-                stream.CommitChanges(Guid.NewGuid());
+                nEventStoreStream.CommitChanges(Guid.NewGuid());
             }
 
-            var domainEvents = dataStream.Map(es => es.Select(e => e.Body)
+            var domainEvents = stream.Map(es => es.Select(e => e.Body)
                                                       .OfType<FundsWithdrawn>());
 
             var query = domainEvents.CreateQuery();
@@ -118,7 +118,7 @@ namespace Alluvial.Tests
                  .Be(9);
         }
 
-        private static IDataStreamAggregator<BalanceProjection, EventMessage> AccountBalanceProjector()
+        private static IStreamAggregator<BalanceProjection, EventMessage> AccountBalanceProjector()
         {
             return Aggregator.Create<BalanceProjection, EventMessage>(
                 (projection, events) =>

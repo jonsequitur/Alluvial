@@ -2,9 +2,9 @@
 
 namespace Alluvial.Tests.BankDomain
 {
-    public class BalanceProjector : IDataStreamAggregator<BalanceProjection, IDomainEvent>
+    public class BalanceProjector : IStreamAggregator<BalanceProjection, IDomainEvent>
     {
-        public BalanceProjection Aggregate(BalanceProjection projection, IStreamQueryBatch<IDomainEvent> events)
+        public BalanceProjection Aggregate(BalanceProjection projection, IStreamBatch<IDomainEvent> events)
         {
             var eventsArray = events.ToArray();
             projection.Balance += eventsArray.OfType<FundsDeposited>().Sum(f => f.Amount);

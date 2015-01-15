@@ -2,10 +2,14 @@ using System.Threading.Tasks;
 
 namespace Alluvial
 {
-    public interface IStreamQuery<TData>
+    public interface IStreamQuery
     {
-        Task<IStreamQueryBatch<TData>> NextBatch();
         ICursor Cursor { get; }
         int? BatchCount { get; set; }
+    }
+
+    public interface IStreamIterator<TData> : IStreamQuery
+    {
+        Task<IStreamBatch<TData>> NextBatch();
     }
 }

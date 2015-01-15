@@ -5,12 +5,12 @@ using NEventStore;
 
 namespace Alluvial.Tests
 {
-    public class NEventStoreDataStreamSource :
-        IDataStreamSource<string, IDomainEvent>
+    public class NEventStoreStreamSource :
+        IStreamSource<string, IDomainEvent>
     {
         private readonly IStoreEvents store;
 
-        public NEventStoreDataStreamSource(IStoreEvents store)
+        public NEventStoreStreamSource(IStoreEvents store)
         {
             if (store == null)
             {
@@ -19,9 +19,9 @@ namespace Alluvial.Tests
             this.store = store;
         }
 
-        public IDataStream<IDomainEvent> Open(string streamId)
+        public IStream<IDomainEvent> Open(string streamId)
         {
-            return new NEventStoreDataStream(store, streamId)
+            return new NEventStoreStream(store, streamId)
                 .Map(es => es.Select(e =>
                                      {
                                          var de = e.Body as IDomainEvent;
@@ -34,7 +34,7 @@ namespace Alluvial.Tests
                              .OfType<IDomainEvent>());
         }
 
-        public IDataStream<IDataStream<IDomainEvent>> Updates()
+        public IStream<IStream<IDomainEvent>> Updates()
         {
             return DataStream.Create<NEventStoreStreamUpdate>(
                 // get only changes since the last checkpoint

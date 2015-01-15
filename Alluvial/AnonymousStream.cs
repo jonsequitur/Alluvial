@@ -4,15 +4,15 @@ using System.Threading.Tasks;
 
 namespace Alluvial
 {
-    internal class AnonymousDataStream<TData> : IDataStream<TData>
+    internal class AnonymousStream<TData> : IStream<TData>
     {
-        private readonly Action<IStreamQuery<TData>, IStreamQueryBatch<TData>> advanceCursor;
-        private readonly Func<IStreamQuery<TData>, Task<IStreamQueryBatch<TData>>> fetch;
+        private readonly Action<IStreamQuery, IStreamBatch<TData>> advanceCursor;
+        private readonly Func<IStreamQuery, Task<IStreamBatch<TData>>> fetch;
 
-        public AnonymousDataStream(
+        public AnonymousStream(
             string id,
-            Func<IStreamQuery<TData>, Task<IStreamQueryBatch<TData>>> fetch,
-            Action<IStreamQuery<TData>, IStreamQueryBatch<TData>> advanceCursor = null)
+            Func<IStreamQuery, Task<IStreamBatch<TData>>> fetch,
+            Action<IStreamQuery, IStreamBatch<TData>> advanceCursor = null)
         {
             if (id == null)
             {
@@ -43,7 +43,7 @@ namespace Alluvial
 
         public string Id { get; private set; }
 
-        public async Task<IStreamQueryBatch<TData>> Fetch(IStreamQuery<TData> query)
+        public async Task<IStreamBatch<TData>> Fetch(IStreamQuery query)
         {
             var batch = await fetch(query);
 

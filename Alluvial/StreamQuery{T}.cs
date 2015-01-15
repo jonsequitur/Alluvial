@@ -3,12 +3,12 @@ using System.Threading.Tasks;
 
 namespace Alluvial
 {
-    internal class StreamQuery<TData> : IStreamQuery<TData>
+    internal class StreamQuery<TData> : IStreamIterator<TData>
     {
-        private readonly IDataStream<TData> stream;
+        private readonly IStream<TData> stream;
         private readonly ICursor cursor;
 
-        public StreamQuery(IDataStream<TData> stream, ICursor cursor)
+        public StreamQuery(IStream<TData> stream, ICursor cursor)
         {
             if (stream == null)
             {
@@ -32,8 +32,9 @@ namespace Alluvial
 
         public int? BatchCount { get; set; }
 
-        public async Task<IStreamQueryBatch<TData>> NextBatch()
+        public async Task<IStreamBatch<TData>> NextBatch()
         {
+            // TODO-JOSEQU: (NextBatch) make this an extension method and remove it from the interface
             var batch = await stream.Fetch(this);
             return batch;
         }

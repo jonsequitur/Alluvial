@@ -10,5 +10,5 @@ namespace Alluvial
     /// <returns>The updated projection.</returns>
     public delegate TProjection Aggregate<TProjection, in TData>(
         TProjection initial,
-        IStreamQueryBatch<TData> batch);
+        IStreamBatch<TData> batch);
 }

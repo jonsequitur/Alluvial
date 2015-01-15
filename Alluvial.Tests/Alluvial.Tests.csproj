@@ -75,8 +75,8 @@
     <Compile Include="StreamImplementations\IMapProjection.cs" />
     <Compile Include="DataStreamCatchupTests.cs" />
     <Compile Include="BankDomain\FundsWithdrawn.cs" />
-    <Compile Include="StreamImplementations\NEventStore\NEventStoreDataStream.cs" />
-    <Compile Include="StreamImplementations\NEventStore\NEventStoreDataStreamSource.cs" />
+    <Compile Include="StreamImplementations\NEventStore\NEventStoreStream.cs" />
+    <Compile Include="StreamImplementations\NEventStore\NEventStoreStreamSource.cs" />
     <Compile Include="StreamImplementations\NEventStore\NEventStoreStreamUpdate.cs" />
     <Compile Include="StreamImplementations\NEventStore\TestEventStore.cs" />
     <Compile Include="StreamImplementations\InMemoryProjectionStore.cs" />

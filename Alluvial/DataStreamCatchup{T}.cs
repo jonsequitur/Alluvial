@@ -6,31 +6,31 @@ using System.Threading.Tasks;
 
 namespace Alluvial
 {
-    internal class DataStreamCatchup<TData> : IDataStreamCatchup<TData>
+    internal class StreamCatchup<TData> : IStreamCatchup<TData>
     {
         private int isRunning;
-        private readonly IDataStream<IDataStream<TData>> dataStream;
+        private readonly IStream<IStream<TData>> stream;
         private readonly int? batchCount;
         private readonly GetCursor getCursor;
         private readonly StoreCursor storeCursor;
 
         private readonly ConcurrentDictionary<Type, AggregatorSubscription> aggregatorSubscriptions = new ConcurrentDictionary<Type, AggregatorSubscription>();
 
-        public DataStreamCatchup(
-            IDataStream<IDataStream<TData>> dataStream,
+        public StreamCatchup(
+            IStream<IStream<TData>> stream,
             ICursor cursor = null,
             int? batchCount = null,
             GetCursor getCursor = null,
             StoreCursor storeCursor = null)
         {
-            if (dataStream == null)
+            if (stream == null)
             {
-                throw new ArgumentNullException("dataStream");
+                throw new ArgumentNullException("stream");
             }
 
             Cursor = cursor;
 
-            this.dataStream = dataStream;
+            this.stream = stream;
             this.batchCount = batchCount;
             this.getCursor = getCursor;
             this.storeCursor = storeCursor;
@@ -39,7 +39,7 @@ namespace Alluvial
         public ICursor Cursor { get; set; }
 
         public IDisposable SubscribeAggregator<TProjection>(
-            IDataStreamAggregator<TProjection, TData> aggregator,
+            IStreamAggregator<TProjection, TData> aggregator,
             IProjectionStore<string, TProjection> projectionStore = null)
         {
             var added = aggregatorSubscriptions.TryAdd(typeof (TProjection),
@@ -57,17 +57,17 @@ namespace Alluvial
             });
         }
 
-        public async Task<IStreamQuery<IDataStream<TData>>> RunSingleBatch()
+        public async Task<IStreamIterator<IStream<TData>>> RunSingleBatch()
         {
             if (Interlocked.CompareExchange(ref isRunning, 1, 0) != 0)
             {
-                var streamQuery = dataStream.CreateQuery(Alluvial.Cursor.ReadOnly(Cursor));
+                var streamQuery = stream.CreateQuery(Alluvial.Cursor.ReadOnly(Cursor));
                 return streamQuery;
             }
 
             await EnsureCursorIsInitialized();
 
-            var upstreamQuery = dataStream.CreateQuery(Cursor, batchCount);
+            var upstreamQuery = stream.CreateQuery(Cursor, batchCount);
 
             var streams = await upstreamQuery.NextBatch();
 
@@ -77,10 +77,10 @@ namespace Alluvial
 
                 var batches =
                     streams.Select(
-                        stream =>
+                        s =>
                             // TODO: (RunSingleBatch) optimize: pull up the projection first and use its cursor?
                         {
-                            var streamQuery = stream.CreateQuery();
+                            var streamQuery = s.CreateQuery();
 
                             return streamQuery
                                 .NextBatch()
@@ -93,7 +93,7 @@ namespace Alluvial
                                         var aggregatorUpdates =
                                             aggregatorSubscriptions
                                                 .Values
-                                                .Select(subscription => Aggregate(stream.Id,
+                                                .Select(subscription => Aggregate(s.Id,
                                                                                   (dynamic) subscription,
                                                                                   batch,
                                                                                   streamQuery.Cursor))
@@ -130,7 +130,7 @@ namespace Alluvial
         private async Task Aggregate<TProjection>(
             string streamId,
             AggregatorSubscription<TProjection, TData> subscription,
-            IStreamQueryBatch<TData> batch,
+            IStreamBatch<TData> batch,
             ICursor queryCursor)
         {
             var projection = await subscription.ProjectionStore.Get(streamId);
@@ -156,13 +156,13 @@ namespace Alluvial
         {
             if (Cursor == null)
             {
-                Cursor = await getCursor(dataStream.Id);
+                Cursor = await getCursor(stream.Id);
             }
         }
 
         private async Task StoreCursor()
         {
-            await storeCursor(dataStream.Id, Cursor);
+            await storeCursor(stream.Id, Cursor);
         }
     }
 }

@@ -17,7 +17,7 @@ namespace Alluvial
         /// <param name="cursor">The cursor that marks the location of the beginning of the batch within the source stream.</param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException">source</exception>
-        public static IStreamQueryBatch<TData> Create<TData>(
+        public static IStreamBatch<TData> Create<TData>(
             IEnumerable<TData> source,
             ICursor cursor)
         {
@@ -32,7 +32,7 @@ namespace Alluvial
 
             var results = source.ToArray();
 
-            return new StreamQueryBatch<TData>(results, cursor.Position);
+            return new StreamBatch<TData>(results, cursor.Position);
         }
 
         /// <summary>
@@ -41,14 +41,14 @@ namespace Alluvial
         /// <typeparam name="TData">The type of the data in the source stream.</typeparam>
         /// <param name="cursor">The cursor that marks the location of the beginning of the batch within the source stream.</param>
         /// <exception cref="ArgumentNullException">cursor</exception>
-        public static IStreamQueryBatch<TData> Empty<TData>(ICursor cursor)
+        public static IStreamBatch<TData> Empty<TData>(ICursor cursor)
         {
             if (cursor == null)
             {
                 throw new ArgumentNullException("cursor");
             }
 
-            return new StreamQueryBatch<TData>(Enumerable.Empty<TData>().ToArray(),
+            return new StreamBatch<TData>(Enumerable.Empty<TData>().ToArray(),
                                                cursor.Position);
         }
 
@@ -58,8 +58,8 @@ namespace Alluvial
         /// <typeparam name="TData">The type of the data.</typeparam>
         /// <param name="batch">The batch.</param>
         /// <param name="cursor">The cursor.</param>
-        public static IStreamQueryBatch<TData> Prune<TData>(
-            this IStreamQueryBatch<TData> batch,
+        public static IStreamBatch<TData> Prune<TData>(
+            this IStreamBatch<TData> batch,
             ICursor cursor)
         {
             return Create(batch.Where(x => !cursor.HasReached(x)), cursor);

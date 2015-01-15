@@ -4,9 +4,9 @@ namespace Alluvial
 {
     public static class DataStreamSource
     {
-        public static IDataStreamSource<TKey, TData> Create<TKey, TData>(Func<TKey, IDataStream<TData>> open)
+        public static IStreamSource<TKey, TData> Create<TKey, TData>(Func<TKey, IStream<TData>> open)
         {
-            return new AnonymousDataStreamSource<TKey, TData>(open);
+            return new AnonymousStreamSource<TKey, TData>(open);
         }
     }
 }

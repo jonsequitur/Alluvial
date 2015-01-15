@@ -6,11 +6,11 @@ using System.Linq;
 namespace Alluvial
 {
     [DebuggerStepThrough]
-    internal class StreamQueryBatch<TData> : IStreamQueryBatch<TData>
+    internal class StreamBatch<TData> : IStreamBatch<TData>
     {
         private readonly TData[] results;
 
-        public StreamQueryBatch(TData[] results, dynamic startsAtCursorPosition)
+        public StreamBatch(TData[] results, dynamic startsAtCursorPosition)
         {
             StartsAtCursorPosition = startsAtCursorPosition;
             this.results = results ?? new TData[0];

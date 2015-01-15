@@ -5,7 +5,7 @@ namespace Alluvial
     internal class AggregatorSubscription<TProjection, TData> : AggregatorSubscription
     {
         public AggregatorSubscription(
-            IDataStreamAggregator<TProjection, TData> aggregator,
+            IStreamAggregator<TProjection, TData> aggregator,
             IProjectionStore<string, TProjection> projectionStore = null)
         {
             if (aggregator == null)
@@ -17,7 +17,7 @@ namespace Alluvial
             Aggregator = aggregator;
         }
 
-        public IDataStreamAggregator<TProjection, TData> Aggregator { get; private set; }
+        public IStreamAggregator<TProjection, TData> Aggregator { get; private set; }
 
         public IProjectionStore<string, TProjection> ProjectionStore { get; private set; }
     }

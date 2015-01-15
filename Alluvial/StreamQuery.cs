@@ -10,8 +10,8 @@ namespace Alluvial
         /// <summary>
         /// Creates a query over the specified stream.
         /// </summary>
-        public static IStreamQuery<TData> CreateQuery<TData>(
-            this IDataStream<TData> stream,
+        public static IStreamIterator<TData> CreateQuery<TData>(
+            this IStream<TData> stream,
             ICursor cursor = null,
             int? batchCount = null)
         {

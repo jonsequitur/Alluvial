@@ -13,7 +13,7 @@ namespace Alluvial
         /// <summary>
         /// Creates a data stream based on an enumerable sequence.
         /// </summary>
-        public static IDataStream<TData> AsDataStream<TData>(
+        public static IStream<TData> AsDataStream<TData>(
             this IEnumerable<TData> source)
             where TData : IComparable<TData>
         {
@@ -22,37 +22,37 @@ namespace Alluvial
                                                 .Take(query.BatchCount ?? int.MaxValue));
         }
 
-        public static IDataStream<TData> Create<TData>(
-            Func<IStreamQuery<TData>, Task<IEnumerable<TData>>> query,
-            Action<IStreamQuery<TData>, IStreamQueryBatch<TData>> advanceCursor = null)
+        public static IStream<TData> Create<TData>(
+            Func<IStreamQuery, Task<IEnumerable<TData>>> query,
+            Action<IStreamQuery, IStreamBatch<TData>> advanceCursor = null)
         {
             return Create(Guid.NewGuid().ToString(), query, advanceCursor);
         }
 
-        public static IDataStream<TData> Create<TData>(
+        public static IStream<TData> Create<TData>(
             string id,
-            Func<IStreamQuery<TData>, Task<IEnumerable<TData>>> query,
-            Action<IStreamQuery<TData>, IStreamQueryBatch<TData>> advanceCursor = null)
+            Func<IStreamQuery, Task<IEnumerable<TData>>> query,
+            Action<IStreamQuery, IStreamBatch<TData>> advanceCursor = null)
         {
-            return new AnonymousDataStream<TData>(
+            return new AnonymousStream<TData>(
                 id,
                 async q => StreamQueryBatch.Create(await query(q), q.Cursor),
                 advanceCursor);
         }
 
-        public static IDataStream<TData> Create<TData>(
-            Func<IStreamQuery<TData>, IEnumerable<TData>> query,
-            Action<IStreamQuery<TData>, IStreamQueryBatch<TData>> advanceCursor = null)
+        public static IStream<TData> Create<TData>(
+            Func<IStreamQuery, IEnumerable<TData>> query,
+            Action<IStreamQuery, IStreamBatch<TData>> advanceCursor = null)
         {
             return Create(Guid.NewGuid().ToString(), query, advanceCursor);
         }
 
-        public static IDataStream<TData> Create<TData>(
+        public static IStream<TData> Create<TData>(
             string id,
-            Func<IStreamQuery<TData>, IEnumerable<TData>> query,
-            Action<IStreamQuery<TData>, IStreamQueryBatch<TData>> advanceCursor = null)
+            Func<IStreamQuery, IEnumerable<TData>> query,
+            Action<IStreamQuery, IStreamBatch<TData>> advanceCursor = null)
         {
-            return new AnonymousDataStream<TData>(
+            return new AnonymousStream<TData>(
                 id,
                 async q => StreamQueryBatch.Create(query(q), q.Cursor),
                 advanceCursor);
@@ -61,7 +61,7 @@ namespace Alluvial
         /// <summary>
         /// Creates a new cursor over a data stream.
         /// </summary>
-        public static ICursor CreateCursor<TData>(this IDataStream<TData> stream)
+        public static ICursor CreateCursor<TData>(this IStream<TData> stream)
         {
             return Cursor.New();
         }
@@ -69,8 +69,8 @@ namespace Alluvial
         /// <summary>
         /// Maps data from a stream into a new form.
         /// </summary>
-        public static IDataStream<TTo> Map<TFrom, TTo>(
-            this IDataStream<TFrom> sourceStream,
+        public static IStream<TTo> Map<TFrom, TTo>(
+            this IStream<TFrom> sourceStream,
             Func<IEnumerable<TFrom>, IEnumerable<TTo>> map,
             string id = null)
         {
@@ -91,11 +91,11 @@ namespace Alluvial
                 });
         }
 
-        public static IDataStream<IDataStream<TDownstream>> Requery<TUpstream, TDownstream>(
-            this IDataStream<TUpstream> upstream,
-            Func<TUpstream, IDataStream<TDownstream>> queryDownstream)
+        public static IStream<IStream<TDownstream>> Requery<TUpstream, TDownstream>(
+            this IStream<TUpstream> upstream,
+            Func<TUpstream, IStream<TDownstream>> queryDownstream)
         {
-            return Create<IDataStream<TDownstream>>(
+            return Create<IStream<TDownstream>>(
                 query: async upstreamQuery =>
                 {
                     var cursor = upstreamQuery.Cursor;
@@ -112,8 +112,8 @@ namespace Alluvial
         }
 
         public static async Task<TProjection> ProjectWith<TProjection, TData>(
-            this IDataStream<TData> dataStream,
-            IDataStreamAggregator<TProjection, TData> projector,
+            this IStream<TData> stream,
+            IStreamAggregator<TProjection, TData> projector,
             TProjection projection = null)
             where TProjection : class
         {
@@ -122,7 +122,7 @@ namespace Alluvial
             var cursor = (projection as ICursor) ??
                          Cursor.New();
 
-            var query = dataStream.CreateQuery(cursor);
+            var query = stream.CreateQuery(cursor);
 
             var data = await query.NextBatch();
 

@@ -2,11 +2,11 @@ using System;
 
 namespace Alluvial
 {
-    internal class AnonymousDataStreamSource<TKey, TData> : IDataStreamSource<TKey, TData>
+    internal class AnonymousStreamSource<TKey, TData> : IStreamSource<TKey, TData>
     {
-        private readonly Func<TKey, IDataStream<TData>> open;
+        private readonly Func<TKey, IStream<TData>> open;
 
-        public AnonymousDataStreamSource(Func<TKey, IDataStream<TData>> open)
+        public AnonymousStreamSource(Func<TKey, IStream<TData>> open)
         {
             if (open == null)
             {
@@ -15,7 +15,7 @@ namespace Alluvial
             this.open = open;
         }
 
-        public IDataStream<TData> Open(TKey key)
+        public IStream<TData> Open(TKey key)
         {
             return open(key);
         }
