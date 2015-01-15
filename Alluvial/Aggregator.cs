@@ -78,7 +78,7 @@ namespace Alluvial
 
         public static IStreamAggregator<TProjection, TData> Pipeline<TProjection, TData>(
             this IStreamAggregator<TProjection, TData> aggregator,
-            Func<TProjection, IStreamBatch<TData>, AggregateAsync<TProjection, TData>, Task<TProjection>> initial)
+            PipeAsync<TProjection, TData> initial)
         {
             return Create<TProjection, TData>(async (projection, batch) =>
                                                   await initial(projection,
