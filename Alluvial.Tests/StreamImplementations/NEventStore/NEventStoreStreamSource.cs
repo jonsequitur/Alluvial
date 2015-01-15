@@ -36,7 +36,7 @@ namespace Alluvial.Tests
 
         public IStream<IStream<IDomainEvent>> Updates()
         {
-            return DataStream.Create<NEventStoreStreamUpdate>(
+            return Stream.Create(
                 // get only changes since the last checkpoint
                 query: q => store.Advanced
                                  .GetFrom(q.Cursor.As<string>())

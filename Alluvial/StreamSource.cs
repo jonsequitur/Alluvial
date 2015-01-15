@@ -2,7 +2,7 @@ using System;
 
 namespace Alluvial
 {
-    public static class DataStreamSource
+    public static class StreamSource
     {
         public static IStreamSource<TKey, TData> Create<TKey, TData>(Func<TKey, IStream<TData>> open)
         {

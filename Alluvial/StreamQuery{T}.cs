@@ -34,9 +34,7 @@ namespace Alluvial
 
         public async Task<IStreamBatch<TData>> NextBatch()
         {
-            // TODO-JOSEQU: (NextBatch) make this an extension method and remove it from the interface
-            var batch = await stream.Fetch(this);
-            return batch;
+            return await stream.Fetch(this);
         }
     }
 }

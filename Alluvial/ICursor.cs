@@ -3,7 +3,7 @@ using System;
 namespace Alluvial
 {
     /// <summary>
-    /// Records a position within a data stream.
+    /// Records a position within a stream.
     /// </summary>
     public interface ICursor
     {
@@ -13,7 +13,7 @@ namespace Alluvial
         dynamic Position { get; }
 
         /// <summary>
-        /// Gets a value indicating whether this <see cref="ICursor"/> is ascending relative to the data stream's intrinsic ordering.
+        /// Gets a value indicating whether this <see cref="ICursor"/> is ascending relative to the stream's intrinsic ordering.
         /// </summary>
         bool Ascending { get; }
 
@@ -23,7 +23,7 @@ namespace Alluvial
         void AdvanceTo(dynamic position);
 
         /// <summary>
-        /// Determines whether the specified point in the data stream has been reached.
+        /// Determines whether the specified point in the stream has been reached.
         /// </summary>
         bool HasReached(dynamic point);
     }

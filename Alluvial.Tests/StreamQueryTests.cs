@@ -12,7 +12,7 @@ namespace Alluvial.Tests
         [Test]
         public async Task A_stream_can_be_queried_from_the_beginning()
         {
-            var stream = DataStream.Create<int>(async query =>
+            var stream = Stream.Create<int>(async query =>
                                                 Enumerable.Range(query.Cursor.Position, query.BatchCount.Value));
 
             var value = stream.CreateQuery(Cursor.Create(0), 1).NextBatch().Result.Single();
@@ -23,7 +23,7 @@ namespace Alluvial.Tests
         [Test]
         public async Task Stream_items_can_be_batched_and_cursored()
         {
-            var stream = DataStream.Create<int>(async query =>
+            var stream = Stream.Create<int>(async query =>
                                                 Enumerable.Range(query.Cursor.Position, query.BatchCount.Value));
 
             var batch = stream.CreateQuery(Cursor.Create(5), 3).NextBatch().Result;
@@ -41,7 +41,7 @@ namespace Alluvial.Tests
                                                        .Select(j => j.ToString())
                                                        .ToArray());
 
-            var keyStream = DataStream.Create<Guid>(q => sequences.Keys);
+            var keyStream = Stream.Create<Guid>(q => sequences.Keys);
 
             var allKeys = await keyStream.CreateQuery(Cursor.Create(0), 1000).NextBatch();
 
@@ -56,7 +56,7 @@ namespace Alluvial.Tests
         {
             var values = Enumerable.Range(1, 20);
 
-            var stream = values.AsDataStream();
+            var stream = values.AsStream();
 
             var query = stream.CreateQuery(Cursor.New(), 5);
 
@@ -72,7 +72,7 @@ namespace Alluvial.Tests
         {
             var values = Enumerable.Range(1, 20);
 
-            var stream = values.AsDataStream();
+            var stream = values.AsStream();
 
             var query = stream.CreateQuery(Cursor.New(), 25);
 
@@ -86,7 +86,7 @@ namespace Alluvial.Tests
         {
             var values = Enumerable.Range(1, 20);
 
-            var stream = values.AsDataStream();
+            var stream = values.AsStream();
 
             var query = stream.CreateQuery(Cursor.Create(10), 25);
 
@@ -100,7 +100,7 @@ namespace Alluvial.Tests
         [Test]
         public async Task Streams_can_be_traversed_by_calling_Query_NextBatch_repeatedly()
         {
-            var stream = Enumerable.Range(1, 25).AsDataStream();
+            var stream = Enumerable.Range(1, 25).AsStream();
 
             var query = stream.CreateQuery(Cursor.Create(5), 5);
             var firstBatch = await query.NextBatch();
@@ -113,7 +113,7 @@ namespace Alluvial.Tests
         [Test]
         public async Task Batch_cursors_reflect_the_cursor_position_at_the_start_of_the_batch()
         {
-            var stream = DataStream.Create<int>(async query =>
+            var stream = Stream.Create<int>(async query =>
                                                 Enumerable.Range(query.Cursor.Position, query.BatchCount.Value));
 
             var batch = await stream.CreateQuery(Cursor.Create(15), 10)
@@ -128,7 +128,7 @@ namespace Alluvial.Tests
             var startTime = DateTimeOffset.Parse("2014-12-29 00:00 +00:00");
             var times = Enumerable.Range(1, 24).Select(i => startTime.AddHours(i));
 
-            var stream = DataStream.Create<DateTimeOffset>(query: async q =>
+            var stream = Stream.Create<DateTimeOffset>(query: async q =>
                                                                   times.OrderBy(time => time)
                                                                        .Where(time => time > q.Cursor.As<DateTimeOffset>())
                                                                        .Take(q.BatchCount ?? int.MaxValue),
@@ -162,7 +162,7 @@ namespace Alluvial.Tests
             var alphabetStrings = Enumerable.Range(97, 26)
                                             .Select(i => new string(Convert.ToChar(i), 1))
                                             .ToArray();
-            var alphabetStream = alphabetStrings.AsDataStream();
+            var alphabetStream = alphabetStrings.AsStream();
 
             var query = alphabetStream.CreateQuery(Cursor.Create(""), 13);
 
@@ -191,7 +191,7 @@ namespace Alluvial.Tests
         public async Task A_string_based_cursor_can_be_used_traverse_a_stream_from_the_middle()
         {
             var alphabetStrings = Enumerable.Range(97, 26).Select(i => new string(Convert.ToChar(i), 1)).ToArray();
-            var alphabetStream = alphabetStrings.AsDataStream();
+            var alphabetStream = alphabetStrings.AsStream();
 
             var query = alphabetStream.CreateQuery(Cursor.Create("j"), 5);
 
@@ -212,7 +212,7 @@ namespace Alluvial.Tests
         public async Task AsDataStream_can_use_non_default_ordering()
         {
             var alphabetStrings = Enumerable.Range(97, 26).Select(i => new string(Convert.ToChar(i), 1)).Reverse().ToArray();
-            var alphabetStream = alphabetStrings.AsDataStream();
+            var alphabetStream = alphabetStrings.AsStream();
 
             var query = alphabetStream.CreateQuery(Cursor.Create("o", ascending: false), 5);
 

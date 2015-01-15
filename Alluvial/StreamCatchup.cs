@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Alluvial
 {
-    public static class Catchup
+    public static class StreamCatchup
     {
         public static IStreamCatchup<TData> Create<TData>(
             IStream<IStream<TData>> source,

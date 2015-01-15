@@ -6,20 +6,20 @@ using System.Threading.Tasks;
 namespace Alluvial
 {
     /// <summary>
-    /// Methods for working with data streams.
+    /// Methods for working with streams.
     /// </summary>
-    public static class DataStream
+    public static class Stream
     {
         /// <summary>
-        /// Creates a data stream based on an enumerable sequence.
+        /// Creates a stream based on an enumerable sequence.
         /// </summary>
-        public static IStream<TData> AsDataStream<TData>(
+        public static IStream<TData> AsStream<TData>(
             this IEnumerable<TData> source)
             where TData : IComparable<TData>
         {
-            return Create<TData>(Guid.NewGuid().ToString(),
-                                 query => source.SkipWhile(x => query.Cursor.HasReached(x))
-                                                .Take(query.BatchCount ?? int.MaxValue));
+            return Create(Guid.NewGuid().ToString(),
+                          query => source.SkipWhile(x => query.Cursor.HasReached(x))
+                                         .Take(query.BatchCount ?? int.MaxValue));
         }
 
         public static IStream<TData> Create<TData>(
@@ -59,7 +59,7 @@ namespace Alluvial
         }
 
         /// <summary>
-        /// Creates a new cursor over a data stream.
+        /// Creates a new cursor over a stream.
         /// </summary>
         public static ICursor CreateCursor<TData>(this IStream<TData> stream)
         {
@@ -95,7 +95,7 @@ namespace Alluvial
             this IStream<TUpstream> upstream,
             Func<TUpstream, IStream<TDownstream>> queryDownstream)
         {
-            return Create<IStream<TDownstream>>(
+            return Create(
                 query: async upstreamQuery =>
                 {
                     var cursor = upstreamQuery.Cursor;

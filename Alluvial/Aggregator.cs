@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 namespace Alluvial
 {
     /// <summary>
-    /// Methods for creating and composing data stream aggregators.
+    /// Methods for creating and composing stream aggregators.
     /// </summary>
     public static class Aggregator
     {
