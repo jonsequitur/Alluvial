@@ -142,7 +142,7 @@ namespace Alluvial
                 batch = batch.Prune(projectionCursor);
             }
 
-            projection = subscription.Aggregator.Aggregate(projection, batch);
+            projection = await subscription.Aggregator.Aggregate(projection, batch);
 
             if (projectionCursor != null)
             {

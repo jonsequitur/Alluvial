@@ -33,7 +33,7 @@ namespace Alluvial
             IStreamIterator<IStream<TData>> query;
             var counter = new Progress<TData>();
 
-            using (catchup.Subscribe<Progress<TData>, TData>((_, batch) => counter.Count(batch)))
+            using (catchup.Subscribe<Progress<TData>, TData>(async (_, batch) => counter.Count(batch)))
             {
                 int countBefore;
                 do
@@ -78,7 +78,7 @@ namespace Alluvial
 
         public static IDisposable Subscribe<TProjection, TData>(
             this IStreamCatchup<TData> catchup,
-            Aggregate<TProjection, TData> aggregate,
+            AggregateAsync<TProjection, TData> aggregate,
             IProjectionStore<string, TProjection> projectionStore = null)
         {
             return catchup.SubscribeAggregator(Aggregator.Create(aggregate), projectionStore);
@@ -86,7 +86,7 @@ namespace Alluvial
 
         public static IDisposable Subscribe<TProjection, TData>(
             this IStreamCatchup<TData> catchup,
-            Action<TProjection, IStreamBatch<TData>> aggregate,
+            Func<TProjection, IStreamBatch<TData>, Task> aggregate,
             IProjectionStore<string, TProjection> projectionStore = null)
         {
             return catchup.SubscribeAggregator(Aggregator.Create(aggregate), projectionStore);

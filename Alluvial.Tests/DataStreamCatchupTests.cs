@@ -245,13 +245,13 @@ namespace Alluvial.Tests
             var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
 
             var projector = new BalanceProjector()
-                .Pipeline((projection, batch, next) =>
+                .Pipeline(async (projection, batch, next) =>
                 {
                     if (projectionStore.Count() >= 30)
                     {
                         throw new Exception("oops");
                     }
-                    next(projection, batch);
+                    await next(projection, batch);
                 });
 
             var catchup = Catchup.Create(streamSource.Updates(), batchCount: 50)
@@ -272,13 +272,13 @@ namespace Alluvial.Tests
             var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
 
             var projector = new BalanceProjector()
-                .Pipeline((projection, batch, next) =>
+                .Pipeline(async (projection, batch, next) =>
                 {
                     if (projectionStore.Count() == 30)
                     {
                         throw new Exception("oops");
                     }
-                    next(projection, batch);
+                    await next(projection, batch);
                 })
                 .Catch(continueIf: (projection, batch, next) => true);
 

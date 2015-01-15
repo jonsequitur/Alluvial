@@ -128,7 +128,7 @@ namespace Alluvial
 
             if (data.Any())
             {
-                projection = projector.Aggregate(projection, data);
+                projection = await projector.Aggregate(projection, data);
             }
 
             return projection;

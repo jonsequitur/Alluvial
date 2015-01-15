@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Alluvial
 {
@@ -12,9 +13,9 @@ namespace Alluvial
             this IStreamAggregator<TProjection, TData> first,
             Aggregate<TProjection, TData> then)
         {
-            return Create<TProjection, TData>((projection, batch) =>
+            return Create<TProjection, TData>(async (projection, batch) =>
             {
-                projection = first.Aggregate(projection, batch);
+                projection = await first.Aggregate(projection, batch);
                 projection = then(projection, batch);
                 return projection;
             });
@@ -24,9 +25,9 @@ namespace Alluvial
             this IStreamAggregator<TProjection, TData> first,
             Action<TProjection, IStreamBatch<TData>> then)
         {
-            return Create<TProjection, TData>((projection, batch) =>
+            return Create<TProjection, TData>(async (projection, batch) =>
             {
-                projection = first.Aggregate(projection, batch);
+                projection = await first.Aggregate(projection, batch);
                 then(projection, batch);
                 return projection;
             });
@@ -36,21 +37,21 @@ namespace Alluvial
             this IStreamAggregator<TProjection, TData> then,
             Aggregate<TProjection, TData> first)
         {
-            return Create<TProjection, TData>((projection, batch) =>
+            return Create<TProjection, TData>(async (projection, batch) =>
             {
                 projection = first(projection, batch);
-                return then.Aggregate(projection, batch);
+                return await then.Aggregate(projection, batch);
             });
         }
 
         public static IStreamAggregator<TProjection, TData> Before<TProjection, TData>(
             this IStreamAggregator<TProjection, TData> then,
-            Action<TProjection, IStreamBatch<TData>> first)
+            Func<TProjection, IStreamBatch<TData>, Task> first)
         {
-            return Create<TProjection, TData>((projection, batch) =>
+            return Create<TProjection, TData>(async (projection, batch) =>
             {
-                first(projection, batch);
-                return then.Aggregate(projection, batch);
+                await first(projection, batch);
+                return await then.Aggregate(projection, batch);
             });
         }
 
@@ -58,11 +59,11 @@ namespace Alluvial
             this IStreamAggregator<TProjection, TData> aggregator,
             Func<TProjection, IStreamBatch<TData>, Exception, bool> continueIf)
         {
-            return aggregator.Pipeline((projection, batch, next) =>
+            return aggregator.Pipeline(async (projection, batch, next) =>
             {
                 try
                 {
-                    return next(projection, batch);
+                    return await next(projection, batch);
                 }
                 catch (Exception exception)
                 {
@@ -76,10 +77,26 @@ namespace Alluvial
         }
 
         public static IStreamAggregator<TProjection, TData> Create<TProjection, TData>(
+            AggregateAsync<TProjection, TData> aggregate)
+        {
+            return new AnonymousStreamAggregator<TProjection, TData>(aggregate);
+        }
+
+        public static IStreamAggregator<TProjection, TData> Create<TProjection, TData>(
             Aggregate<TProjection, TData> aggregate)
         {
+            return new AnonymousStreamAggregator<TProjection, TData>(async (initial, batch) => aggregate(initial, batch));
+        }
+
+        public static IStreamAggregator<TProjection, TData> Create<TProjection, TData>(
+            Func<TProjection, IStreamBatch<TData>, Task> aggregate)
+        {
             return new AnonymousStreamAggregator<TProjection, TData>(
-                aggregate);
+                async (projection, batch) =>
+                {
+                    await aggregate(projection, batch);
+                    return projection;
+                });
         }
 
         public static IStreamAggregator<TProjection, TData> Create<TProjection, TData>(
@@ -89,26 +106,30 @@ namespace Alluvial
                 (projection, batch) =>
                 {
                     aggregate(projection, batch);
-                    return projection;
+                    return Task.FromResult(projection);
                 });
         }
 
         public static IStreamAggregator<TProjection, TData> Pipeline<TProjection, TData>(
             this IStreamAggregator<TProjection, TData> aggregator,
-            Action<TProjection, IStreamBatch<TData>,
-                Action<TProjection, IStreamBatch<TData>>> initial)
+            Func<TProjection, IStreamBatch<TData>, AggregateAsync<TProjection, TData>, Task> initial)
         {
-            return Create<TProjection, TData>((projection, batch) =>
+            return Create<TProjection, TData>(async (projection, batch) =>
             {
-                initial(projection, batch, (p, xs) => aggregator.Aggregate(p, xs));
+                await initial(projection,
+                              batch,
+                              aggregator.Aggregate);
             });
         }
 
         public static IStreamAggregator<TProjection, TData> Pipeline<TProjection, TData>(
             this IStreamAggregator<TProjection, TData> aggregator,
-            Func<TProjection, IStreamBatch<TData>, Aggregate<TProjection, TData>, TProjection> initial)
+            Func<TProjection, IStreamBatch<TData>, AggregateAsync<TProjection, TData>, Task<TProjection>> initial)
         {
-            return Create<TProjection, TData>((projection, batch) => initial(projection, batch, aggregator.Aggregate));
+            return Create<TProjection, TData>(async (projection, batch) =>
+                                                  await initial(projection,
+                                                                batch,
+                                                                aggregator.Aggregate));
         }
 
         public static IStreamAggregator<TProjection, TData> Trace<TProjection, TData>(
@@ -122,9 +143,7 @@ namespace Alluvial
                                   batch.Count,
                                   (string) batch.StartsAtCursorPosition.ToString()));
 
-                projection = next(projection, batch);
-
-                return projection;
+                return next(projection, batch);
             });
         }
     }

@@ -1,13 +1,14 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace Alluvial
 {
     internal class AnonymousStreamAggregator<TProjection, TEvent> : IStreamAggregator<TProjection, TEvent>
     {
-        private readonly Aggregate<TProjection, TEvent> aggregate;
+        private readonly AggregateAsync<TProjection, TEvent> aggregate;
 
         public AnonymousStreamAggregator(
-            Aggregate<TProjection, TEvent> aggregate)
+            AggregateAsync<TProjection, TEvent> aggregate)
         {
             if (aggregate == null)
             {
@@ -16,9 +17,9 @@ namespace Alluvial
             this.aggregate = aggregate;
         }
 
-        public TProjection Aggregate(TProjection projection, IStreamBatch<TEvent> events)
+        public async Task<TProjection> Aggregate(TProjection projection, IStreamBatch<TEvent> events)
         {
-            return aggregate(projection, events);
+            return await aggregate(projection, events);
         }
     }
 }

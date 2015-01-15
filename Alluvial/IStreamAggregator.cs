@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+
 namespace Alluvial
 {
     /// <summary>
@@ -10,6 +12,6 @@ namespace Alluvial
         /// <summary>
         /// Applies a batch of data to a projection and returns the updated projection.
         /// </summary>
-        TProjection Aggregate(TProjection projection, IStreamBatch<TData> events);
+        Task<TProjection> Aggregate(TProjection projection, IStreamBatch<TData> events);
     }
 }

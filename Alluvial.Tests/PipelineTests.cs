@@ -18,8 +18,13 @@ namespace Alluvial.Tests
         {
             var wasCalled = false;
 
-            var aggregator = Aggregator.Create<BalanceProjection, IDomainEvent>((projection, events) => { wasCalled = true; })
-                                       .Pipeline((projection, events, next) => { });
+            var aggregator = Aggregator.Create<BalanceProjection, IDomainEvent>((projection, events) =>
+            {
+                wasCalled = true;
+            })
+                                       .Pipeline(async (projection, events, next) =>
+                                       {
+                                       });
 
             aggregator.Aggregate(null, null);
 
@@ -31,11 +36,11 @@ namespace Alluvial.Tests
         {
             var wasCalled = false;
 
-            var aggregator = Aggregator.Create<BalanceProjection, IDomainEvent>((projection, events) => { wasCalled = true; })
-                                       .Pipeline((projection, events, next) => projection);
+            var aggregator = Aggregator.Create<BalanceProjection, IDomainEvent>((projection, events) => wasCalled = true)
+                                       .Pipeline(async (projection, events, next) => projection);
 
             var balanceProjection = new BalanceProjection();
-            var returnedProjection = aggregator.Aggregate(balanceProjection, null);
+            var returnedProjection = await aggregator.Aggregate(balanceProjection, null);
 
             wasCalled.Should().BeFalse();
             balanceProjection.Should().BeSameAs(returnedProjection);
@@ -45,12 +50,18 @@ namespace Alluvial.Tests
         public async Task A_pipeline_can_be_used_to_continue_on_exceptions()
         {
             var aggregator = Aggregator
-                .Create<BalanceProjection, IDomainEvent>((projection, events) => { throw new Exception("DRAT!"); })
-                .Pipeline((projection, events, next) =>
+                .Create<BalanceProjection, IDomainEvent>((projection, events) =>
+                {
+                    Task.Run(() =>
+                    {
+                        throw new Exception("DRAT!");
+                    });
+                })
+                .Pipeline(async (projection, events, next) =>
                 {
                     try
                     {
-                        return next(projection, events);
+                        return await next(projection, events);
                     }
                     catch (Exception)
                     {
@@ -59,7 +70,7 @@ namespace Alluvial.Tests
                 });
 
             var balanceProjection = new BalanceProjection();
-            var returnedProjection = aggregator.Aggregate(balanceProjection, null);
+            var returnedProjection = await aggregator.Aggregate(balanceProjection, null);
 
             balanceProjection.Should().BeSameAs(returnedProjection);
         }
@@ -67,17 +78,18 @@ namespace Alluvial.Tests
         [Test]
         public async Task Catch_can_be_used_to_continue_on_exceptions()
         {
-            Exception caughtException;
             var aggregator = Aggregator
-                .Create<BalanceProjection, IDomainEvent>((projection, events) => { throw new Exception("DRAT!"); })
-                .Catch((projection, events, exception) =>
+                .Create<BalanceProjection, IDomainEvent>((projection, events) =>
                 {
-                    caughtException = exception;
-                    return true;
-                });
+                    Task.Run(() =>
+                    {
+                        throw new Exception("DRAT!");
+                    });
+                })
+                .Catch((projection, events, exception) => true);
 
             var balanceProjection = new BalanceProjection();
-            var returnedProjection = aggregator.Aggregate(balanceProjection, null);
+            var returnedProjection = await aggregator.Aggregate(balanceProjection, null);
 
             balanceProjection.Should().BeSameAs(returnedProjection);
         }
@@ -89,17 +101,17 @@ namespace Alluvial.Tests
             var aggregator = Aggregator
                 .Create<BalanceProjection, IDomainEvent>((projection, events) =>
                 {
-                    Thread.Sleep(1000);
+                    return Task.Run(() => Thread.Sleep(1000));
                 })
-                .Pipeline((projection, batch, next) =>
+                .Pipeline(async (projection, batch, next) =>
                 {
                     var stopwatch = new Stopwatch();
                     stopwatch.Start();
-                    next(projection, batch);
+                    await next(projection, batch);
                     time = stopwatch.Elapsed;
                 });
 
-            aggregator.Aggregate(null, null);
+            await aggregator.Aggregate(null, null);
 
             time.Should().BeGreaterOrEqualTo(TimeSpan.FromSeconds(1));
         }
@@ -107,21 +119,21 @@ namespace Alluvial.Tests
         [Test]
         public async Task Pipelines_affect_projections_in_reverse_order_relative_to_the_Pipeline_calls_when_next_is_called_after_modifying_the_projection()
         {
-            var aggregator = Aggregator.Create<List<int>, string>((projection, events) => projection.Add(1))
-                                       .Pipeline((projection, batch, next) =>
+            var aggregator = Aggregator.Create<List<int>, string>(async (projection, events) => projection.Add(1))
+                                       .Pipeline(async (projection, batch, next) =>
                                        {
                                            projection.Add(2);
-                                           next(projection, batch);
+                                           await next(projection, batch);
                                            return projection;
                                        })
-                                       .Pipeline((projection, batch, next) =>
+                                       .Pipeline(async (projection, batch, next) =>
                                        {
                                            projection.Add(3);
-                                           next(projection, batch);
+                                           await next(projection, batch);
                                            return projection;
                                        });
 
-            var result = aggregator.Aggregate(new List<int>(), null);
+            var result = await aggregator.Aggregate(new List<int>(), null);
 
             Console.WriteLine(result.ToLogString());
 
@@ -131,21 +143,21 @@ namespace Alluvial.Tests
         [Test]
         public async Task Pipelines_affect_projections_in_the_same_order_as_the_Pipeline_calls_when_next_is_called_before_modifying_the_projection()
         {
-            var aggregator = Aggregator.Create<List<int>, string>((projection, events) => projection.Add(1))
-                                       .Pipeline((projection, batch, next) =>
+            var aggregator = Aggregator.Create<List<int>, string>(async (projection, events) => projection.Add(1))
+                                       .Pipeline(async (projection, batch, next) =>
                                        {
-                                           next(projection, batch);
+                                           await next(projection, batch);
                                            projection.Add(2);
                                            return projection;
                                        })
-                                       .Pipeline((projection, batch, next) =>
+                                       .Pipeline(async (projection, batch, next) =>
                                        {
-                                           next(projection, batch);
+                                           await next(projection, batch);
                                            projection.Add(3);
                                            return projection;
                                        });
 
-            var result = aggregator.Aggregate(new List<int>(), null);
+            var result = await aggregator.Aggregate(new List<int>(), null);
 
             Console.WriteLine(result.ToLogString());
 

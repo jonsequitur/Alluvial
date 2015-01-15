@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+
 namespace Alluvial
 {
     /// <summary>
@@ -8,6 +10,11 @@ namespace Alluvial
     /// <param name="initial">The initial state of the projection prior to the data being applied.</param>
     /// <param name="batch">The data to be applied to the projection.</param>
     /// <returns>The updated projection.</returns>
+    public delegate Task<TProjection> AggregateAsync<TProjection, in TData>(
+        TProjection initial,
+        IStreamBatch<TData> batch);
+    
+    
     public delegate TProjection Aggregate<TProjection, in TData>(
         TProjection initial,
         IStreamBatch<TData> batch);
