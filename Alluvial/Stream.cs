@@ -15,7 +15,6 @@ namespace Alluvial
         /// </summary>
         public static IStream<TData> AsStream<TData>(
             this IEnumerable<TData> source)
-            where TData : IComparable<TData>
         {
             return Create(Guid.NewGuid().ToString(),
                           query => source.SkipWhile(x => query.Cursor.HasReached(x))
