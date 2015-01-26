@@ -20,5 +20,21 @@ namespace Alluvial
         public IStreamAggregator<TProjection, TData> Aggregator { get; private set; }
 
         public IProjectionStore<string, TProjection> ProjectionStore { get; private set; }
+
+        public override Type ProjectionType
+        {
+            get
+            {
+                return typeof (TProjection);
+            }
+        }
+
+        public override Type StreamDataType
+        {
+            get
+            {
+                return typeof (TData);
+            }
+        }
     }
 }
