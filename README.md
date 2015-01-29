@@ -1,4 +1,4 @@
-Alluvial [![Build Status](https://ci.appveyor.com/api/projects/status/github/jonsequitur/alluvial?svg=true)](https://ci.appveyor.com/project/jonsequitur/alluvial)
+Alluvial [![Build Status](https://ci.appveyor.com/api/projects/status/github/jonsequitur/alluvial/branch/master?svg=true)](https://ci.appveyor.com/project/jonsequitur/alluvial/branch/master)
 ========
 
 [Alluvial](http://en.wiktionary.org/wiki/alluvial) is for aggregating and transforming streams of data. It's intended to address the need to both aggregate historical data and also process new data in realtime, to catch up and stay caught up, or to jump into the stream at any point. Use cases include: 
