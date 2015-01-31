@@ -1,8 +1,8 @@
 ﻿using System;
+using FluentAssertions;
 using System.Linq;
 using System.Threading.Tasks;
 using Alluvial.Tests.BankDomain;
-using FluentAssertions;
 using NEventStore;
 using NUnit.Framework;
 
@@ -20,7 +20,7 @@ namespace Alluvial.Tests
         {
             streamId = Guid.NewGuid().ToString();
             store = TestEventStore.Create();
-            PopulateEventStream(store, streamId);
+            store.Populate(streamId);
             stream = new NEventStoreStream(store, streamId);
         }
 
@@ -45,7 +45,7 @@ namespace Alluvial.Tests
             };
 
             var balanceProjection = await stream.ProjectWith(AccountBalanceProjector(),
-                                                                 projection);
+                                                             projection);
 
             balanceProjection.Balance
                              .Should()
@@ -64,7 +64,7 @@ namespace Alluvial.Tests
             };
 
             var finalProjection = await stream.ProjectWith(AccountBalanceProjector(),
-                                                               initialProjection);
+                                                           initialProjection);
 
             finalProjection.ShouldBeEquivalentTo(initialProjection,
                                                  "the projection cursor is past the end of the event stream so no events should be applied");
@@ -104,7 +104,7 @@ namespace Alluvial.Tests
             }
 
             var domainEvents = stream.Map(es => es.Select(e => e.Body)
-                                                      .OfType<FundsWithdrawn>());
+                                                  .OfType<FundsWithdrawn>());
 
             var query = domainEvents.CreateQuery();
 
@@ -127,11 +127,11 @@ namespace Alluvial.Tests
 
                     projection.Balance = projection.Balance
                                          - domainEvents
-                                               .OfType<FundsWithdrawn>()
-                                               .Sum(e => e.Amount)
+                                             .OfType<FundsWithdrawn>()
+                                             .Sum(e => e.Amount)
                                          + domainEvents
-                                               .OfType<FundsDeposited>()
-                                               .Sum(e => e.Amount);
+                                             .OfType<FundsDeposited>()
+                                             .Sum(e => e.Amount);
                 })
                              .Pipeline(async (projection, e, next) =>
                              {
@@ -143,46 +143,6 @@ namespace Alluvial.Tests
                                                     .AggregateId
                                  }, e);
                              });
-        }
-
-        private static void PopulateEventStream(IStoreEvents store, string streamId)
-        {
-            using (var stream = store.OpenStream(streamId, 0))
-            {
-                stream.Add(new EventMessage
-                {
-                    Body = new FundsDeposited
-                    {
-                        AggregateId = streamId,
-                        Amount = .01m
-                    }
-                });
-                stream.Add(new EventMessage
-                {
-                    Body = new FundsDeposited
-                    {
-                        AggregateId = streamId,
-                        Amount = .1m
-                    }
-                });
-                stream.Add(new EventMessage
-                {
-                    Body = new FundsDeposited
-                    {
-                        AggregateId = streamId,
-                        Amount = 1m
-                    }
-                });
-                stream.Add(new EventMessage
-                {
-                    Body = new FundsDeposited
-                    {
-                        AggregateId = streamId,
-                        Amount = 10m
-                    }
-                });
-                stream.CommitChanges(Guid.NewGuid());
-            }
         }
     }
 }

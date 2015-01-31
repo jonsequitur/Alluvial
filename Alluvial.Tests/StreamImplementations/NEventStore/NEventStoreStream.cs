@@ -49,7 +49,7 @@ namespace Alluvial.Tests
 
             if (maxExistingRevision <= lastFetchedRevision)
             {
-                return StreamQueryBatch.Empty<EventMessage>(query.Cursor);
+                return StreamBatch.Empty<EventMessage>(query.Cursor);
             }
 
             var events = new List<EventMessage>();
@@ -69,10 +69,10 @@ namespace Alluvial.Tests
 
                         events.AddRange(stream.CommittedEvents
                                               .Select(e =>
-                                                      {
-                                                          e.Headers["StreamRevision"] = stream.StreamRevision;
-                                                          return e;
-                                                      }));
+                                              {
+                                                  e.Headers["StreamRevision"] = stream.StreamRevision;
+                                                  return e;
+                                              }));
                     }
                 }
                 catch (StreamNotFoundException)
@@ -81,7 +81,7 @@ namespace Alluvial.Tests
                 }
             }
 
-            var batch = StreamQueryBatch.Create(events, query.Cursor);
+            var batch = StreamBatch.Create(events, query.Cursor);
 
             query.Cursor.AdvanceTo(maxExistingRevision);
 

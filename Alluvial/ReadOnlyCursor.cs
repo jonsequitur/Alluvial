@@ -1,7 +1,10 @@
 using System;
+using System.Diagnostics;
 
 namespace Alluvial
 {
+    [DebuggerStepThrough]
+    [DebuggerDisplay("Position: {Position}")]
     internal class ReadOnlyCursor : CursorWrapper
     {
         public ReadOnlyCursor(ICursor innerCursor)

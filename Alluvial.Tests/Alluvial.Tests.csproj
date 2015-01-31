@@ -66,10 +66,12 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
+    <Compile Include="BankDomain\AccountHistoryProjection.cs" />
     <Compile Include="BankDomain\BalanceProjection.cs" />
     <Compile Include="BankDomain\BalanceProjector.cs" />
     <Compile Include="BankDomain\FundsDeposited.cs" />
     <Compile Include="BankDomain\IDomainEvent.cs" />
+    <Compile Include="BankDomain\ProjectionBase.cs" />
     <Compile Include="CursorTests.cs" />
     <Compile Include="PipelineTests.cs" />
     <Compile Include="StreamImplementations\IMapProjection.cs" />
@@ -83,6 +85,7 @@
     <Compile Include="ProjectionTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StreamQueryTests.cs" />
+    <Compile Include="TracingTests.cs" />
     <Compile Include="Wait.cs" />
   </ItemGroup>
   <ItemGroup>

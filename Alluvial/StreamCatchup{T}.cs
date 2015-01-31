@@ -16,7 +16,7 @@ namespace Alluvial
         private readonly GetCursor getCursor;
         private readonly StoreCursor storeCursor;
 
-        private readonly ConcurrentDictionary<Type, AggregatorSubscription> aggregatorSubscriptions = new ConcurrentDictionary<Type, AggregatorSubscription>();
+        private readonly ConcurrentDictionary<Type, IAggregatorSubscription> aggregatorSubscriptions = new ConcurrentDictionary<Type, IAggregatorSubscription>();
 
         public StreamCatchup(
             IStream<IStream<TData>> stream,
@@ -54,7 +54,7 @@ namespace Alluvial
 
             return Disposable.Create(() =>
             {
-                AggregatorSubscription _;
+                IAggregatorSubscription _;
                 aggregatorSubscriptions.TryRemove(typeof (TProjection), out _);
             });
         }
@@ -63,7 +63,7 @@ namespace Alluvial
         {
             if (Interlocked.CompareExchange(ref isRunning, 1, 0) != 0)
             {
-                var streamQuery = stream.CreateQuery(Alluvial.Cursor.ReadOnly(Cursor));
+                var streamQuery = stream.CreateQuery(Cursor.ReadOnly());
                 return streamQuery;
             }
 
@@ -75,62 +75,44 @@ namespace Alluvial
 
             if (streams.Any())
             {
-                Exception aggregatorException = null;
-
                 var batches =
                     streams.Select(
-                        s =>
-                            // TODO: (RunSingleBatch) optimize: pull up the projection first and use its cursor?
+                        async s =>
                         {
-                            var streamQuery = s.CreateQuery();
+                            var cursors = await GetCursorProjections(s.Id);
 
-                            return streamQuery
-                                .NextBatch()
-                                .ContinueWith(async t =>
-                                {
-                                    var batch = t.Result;
+                            ICursor cursor = Alluvial.Cursor.Create(cursors.MinimumPosition());
+                            var streamQuery = s.CreateQuery(cursor);
 
-                                    if (batch.Count > 0)
+                            var batch = await streamQuery.NextBatch();
+
+                            if (batch.Count > 0)
+                            {
+                                var aggregatorUpdates = aggregatorSubscriptions
+                                    .Values
+                                    .Select(subscription =>
                                     {
-                                        var aggregatorUpdates = aggregatorSubscriptions
-                                            .Values
-                                            .Select(subscription =>
-                                            {
-                                                try
-                                                {
-                                                    return Aggregate(s.Id,
-                                                                     (dynamic) subscription,
-                                                                     batch,
-                                                                     streamQuery.Cursor);
-                                                }
-                                                catch (RuntimeBinderException exception)
-                                                {
-                                                    throw new RuntimeBinderException(
-                                                        string.Format("Unable to call Aggregate, possibly due to {0} using non-public types for its generic parameters",
-                                                                      subscription), exception);
-                                                }
-                                            })
-                                            .Cast<Task>();
-
                                         try
                                         {
-                                            await Task.WhenAll(aggregatorUpdates);
+                                            return Aggregate(s.Id,
+                                                             (dynamic) subscription,
+                                                             batch,
+                                                             streamQuery.Cursor);
                                         }
-                                        catch (Exception exception)
+                                        catch (RuntimeBinderException exception)
                                         {
-                                            aggregatorException = exception;
-                                            throw;
+                                            throw new RuntimeBinderException(
+                                                string.Format("Unable to call Aggregate, possibly due to {0} having non-public types for its generic parameters",
+                                                              subscription), exception);
                                         }
-                                    }
-                                });
+                                    })
+                                    .Cast<Task>();
+
+                                await Task.WhenAll(aggregatorUpdates);
+                            }
                         });
 
                 await Task.WhenAll(batches);
-
-                if (aggregatorException != null)
-                {
-                    throw aggregatorException;
-                }
             }
 
             await StoreCursor();
@@ -138,6 +120,15 @@ namespace Alluvial
             isRunning = 0;
 
             return upstreamQuery;
+        }
+
+        private async Task<IEnumerable<ICursor>> GetCursorProjections(string streamId)
+        {
+            return (await aggregatorSubscriptions.Values
+                                                 .Where(p => p.IsCursor)
+                                                 .Select(p => p.GetProjection(streamId))
+                                                 .AwaitAll())
+                .Cast<ICursor>();
         }
 
         private async Task Aggregate<TProjection>(

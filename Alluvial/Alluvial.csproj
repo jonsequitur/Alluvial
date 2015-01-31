@@ -42,7 +42,7 @@
   <ItemGroup>
     <Compile Include="AggregateAsync{TProjection,TData}.cs" />
     <Compile Include="Aggregate{TProjection,TData}.cs" />
-    <Compile Include="AggregatorSubscription.cs" />
+    <Compile Include="IAggregatorSubscription.cs" />
     <Compile Include="AggregatorSubscription{TProjection,TData}.cs" />
     <Compile Include="AnonymousStream.cs" />
     <Compile Include="AnonymousStreamSource{TKey,TData}.cs" />
@@ -74,10 +74,11 @@
     <Compile Include="SequentialCursor.cs" />
     <Compile Include="SingleInstanceProjectionCache{TKey,TProjection}.cs" />
     <Compile Include="StreamQuery.cs" />
-    <Compile Include="StreamQueryBatch.cs" />
+    <Compile Include="StreamBatch.cs" />
     <Compile Include="StreamQueryBatch{T}.cs" />
     <Compile Include="StreamQuery{T}.cs" />
     <Compile Include="AlphabeticalCursor.cs" />
+    <Compile Include="TaskExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Alluvial.nuspec" />

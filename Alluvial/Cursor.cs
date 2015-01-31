@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace Alluvial
 {
@@ -71,9 +73,14 @@ namespace Alluvial
         /// <summary>
         /// Creates a non-movable cursor based on the position of another cursor.
         /// </summary>
-        public static ICursor ReadOnly(ICursor cursor)
+        public static ICursor ReadOnly(this ICursor cursor)
         {
             return new ReadOnlyCursor(cursor);
+        }
+
+        internal static dynamic MinimumPosition(this IEnumerable<ICursor> cursors)
+        {
+            return cursors.Select(c => (object) c.Position).Min();
         }
 
         /// <summary>

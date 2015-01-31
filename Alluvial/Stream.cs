@@ -35,7 +35,7 @@ namespace Alluvial
         {
             return new AnonymousStream<TData>(
                 id,
-                async q => StreamQueryBatch.Create(await query(q), q.Cursor),
+                async q => StreamBatch.Create(await query(q), q.Cursor),
                 advanceCursor);
         }
 
@@ -53,7 +53,7 @@ namespace Alluvial
         {
             return new AnonymousStream<TData>(
                 id,
-                async q => StreamQueryBatch.Create(query(q), q.Cursor),
+                async q => StreamBatch.Create(query(q), q.Cursor),
                 advanceCursor);
         }
 
@@ -82,7 +82,7 @@ namespace Alluvial
 
                     var mappedBatch = map(sourceBatch);
 
-                    return StreamQueryBatch.Create(mappedBatch, q.Cursor);
+                    return StreamBatch.Create(mappedBatch, q.Cursor);
                 },
                 advanceCursor: async (query, batch) =>
                 {
@@ -95,6 +95,7 @@ namespace Alluvial
             Func<TUpstream, IStream<TDownstream>> queryDownstream)
         {
             return Create(
+                id: upstream.Id + ".Requery",
                 query: async upstreamQuery =>
                 {
                     var cursor = upstreamQuery.Cursor;
@@ -132,5 +133,40 @@ namespace Alluvial
 
             return projection;
         }
+
+        public static IStream<TData> Trace<TData>(
+            this IStream<TData> stream,
+            Action<IStreamQuery> onSendQuery = null,
+            Action<IStreamQuery, IStreamBatch<TData>> onResults = null)
+        {
+            onSendQuery = onSendQuery ??
+                          (q => System.Diagnostics.Trace.WriteLine(
+                              string.Format("Query: stream {0} @ cursor position {1}",
+                                            stream.Id,
+                                            (object) q.Cursor.Position)));
+
+            onResults = onResults ?? 
+                ((q, streamBatch) => System.Diagnostics.Trace.WriteLine(
+                    string.Format("Fetched: stream {0} batch of {1}, now @ cursor position {2}",
+                                  stream.Id,
+                                  streamBatch.Count,
+                                  (object) q.Cursor.Position)));
+
+            return Create<TData>(
+                id: stream.Id,
+                query: async q =>
+                {
+                    onSendQuery(q);
+
+                    var streamBatch = await stream.Fetch(q);
+
+                    onResults(q, streamBatch);
+
+                    return streamBatch;
+                },
+                advanceCursor: (q, b) =>
+                {
+                });
+        }
     }
-}
+} 

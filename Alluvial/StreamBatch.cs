@@ -7,7 +7,7 @@ namespace Alluvial
     /// <summary>
     /// Methods for working with stream query batches.
     /// </summary>
-    public static class StreamQueryBatch
+    public static class StreamBatch
     {
         /// <summary>
         /// Creates a stream query batch from an enumerable sequence.

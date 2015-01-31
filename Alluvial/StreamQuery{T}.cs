@@ -1,8 +1,10 @@
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace Alluvial
 {
+    [DebuggerStepThrough]
     internal class StreamQuery<TData> : IStreamIterator<TData>
     {
         private readonly IStream<TData> stream;

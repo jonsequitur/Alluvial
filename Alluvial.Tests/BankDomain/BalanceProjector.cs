@@ -5,11 +5,19 @@ namespace Alluvial.Tests.BankDomain
 {
     public class BalanceProjector : IStreamAggregator<BalanceProjection, IDomainEvent>
     {
-        public async Task<BalanceProjection> Aggregate(BalanceProjection projection, IStreamBatch<IDomainEvent> events)
+        public async Task<BalanceProjection> Aggregate(BalanceProjection balanceProjection, IStreamBatch<IDomainEvent> events)
         {
             var eventsArray = events.ToArray();
-            projection.Balance += eventsArray.OfType<FundsDeposited>().Sum(f => f.Amount);
-            projection.Balance -= eventsArray.OfType<FundsWithdrawn>().Sum(f => f.Amount);
+            balanceProjection.Balance += eventsArray.OfType<FundsDeposited>().Sum(f => f.Amount);
+            balanceProjection.Balance -= eventsArray.OfType<FundsWithdrawn>().Sum(f => f.Amount);
+            return balanceProjection;
+        }
+    }
+
+    public class AccountHistoryProjector : IStreamAggregator<AccountHistoryProjection, IDomainEvent>
+    {
+        public async Task<AccountHistoryProjection> Aggregate(AccountHistoryProjection projection, IStreamBatch<IDomainEvent> events)
+        {
             return projection;
         }
     }

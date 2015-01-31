@@ -1,8 +1,9 @@
 using System;
+using System.Threading.Tasks;
 
 namespace Alluvial
 {
-    internal class AggregatorSubscription<TProjection, TData> : AggregatorSubscription
+    internal class AggregatorSubscription<TProjection, TData> : IAggregatorSubscription
     {
         public AggregatorSubscription(
             IStreamAggregator<TProjection, TData> aggregator,
@@ -15,13 +16,16 @@ namespace Alluvial
             ProjectionStore = projectionStore ??
                               new SingleInstanceProjectionCache<string, TProjection>();
             Aggregator = aggregator;
+            IsCursor = typeof (ICursor).IsAssignableFrom(typeof (TProjection));
         }
 
         public IStreamAggregator<TProjection, TData> Aggregator { get; private set; }
 
         public IProjectionStore<string, TProjection> ProjectionStore { get; private set; }
 
-        public override Type ProjectionType
+        public bool IsCursor { get; protected set; }
+
+        public Type ProjectionType
         {
             get
             {
@@ -29,12 +33,17 @@ namespace Alluvial
             }
         }
 
-        public override Type StreamDataType
+        public Type StreamDataType
         {
             get
             {
                 return typeof (TData);
             }
+        }
+
+        public async Task<object> GetProjection(string streamId)
+        {
+            return await ProjectionStore.Get(streamId);
         }
     }
 }

@@ -76,6 +76,15 @@ namespace Alluvial
             return catchup;
         }
 
+        public static IStreamCatchup<TData> Subscribe<TProjection, TData>(
+            this IStreamCatchup<TData> catchup,
+             Action<TProjection, IStreamBatch<TData>> aggregate,
+            IProjectionStore<string, TProjection> projectionStore = null)
+        {
+            catchup.SubscribeAggregator(Aggregator.Create(aggregate), projectionStore);
+            return catchup;
+        }
+
         public static IDisposable Subscribe<TProjection, TData>(
             this IStreamCatchup<TData> catchup,
             AggregateAsync<TProjection, TData> aggregate,
