@@ -21,22 +21,27 @@ namespace Alluvial.Tests
 
         public IStream<IDomainEvent> Open(string streamId)
         {
-            return new NEventStoreStream(store, streamId)
-                .Map(es => es.Select(e =>
-                                     {
-                                         var de = e.Body as IDomainEvent;
-                                         if (de != null)
-                                         {
-                                             de.StreamRevision = (int) e.Headers["StreamRevision"];
-                                         }
-                                         return e.Body;
-                                     })
-                             .OfType<IDomainEvent>());
+            return OpenStream(streamId);
         }
 
-        public IStream<IStream<IDomainEvent>> Updates()
+        private IStream<IDomainEvent> OpenStream(string streamId, string startAfter = null)
+        {
+            return new NEventStoreStream(store, streamId)
+                .Map(es => es.Select(e =>
+                {
+                    var de = e.Body as IDomainEvent;
+                    if (de != null)
+                    {
+                        de.StreamRevision = (int) e.Headers["StreamRevision"];
+                    }
+                    return e.Body;
+                }).OfType<IDomainEvent>());
+        }
+
+        public IStream<IStream<IDomainEvent>> UpdatedStreams()
         {
             return Stream.Create(
+                id: "NEventStoreStreamSource.UpdatedStreams",
                 // get only changes since the last checkpoint
                 query: q => store.Advanced
                                  .GetFrom(q.Cursor.As<string>())
@@ -48,14 +53,15 @@ namespace Alluvial.Tests
                                  })
                                  .Take(q.BatchCount ?? int.MaxValue),
                 advanceCursor: (query, batch) =>
-                               {
-                                   var last = batch.LastOrDefault();
-                                   if (last != null)
-                                   {
-                                       query.Cursor.AdvanceTo(last.CheckpointToken);
-                                   }
-                               })
-                             .Requery(update => Open(update.StreamId));
+                {
+                    var last = batch.LastOrDefault();
+                    if (last != null)
+                    {
+                        query.Cursor.AdvanceTo(last.CheckpointToken);
+                    }
+                })
+                         .Requery(update => OpenStream(update.StreamId,
+                                                       startAfter: update.CheckpointToken));
         }
     }
 }

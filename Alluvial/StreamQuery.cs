@@ -1,10 +1,12 @@
 using System;
+using System.Diagnostics;
 
 namespace Alluvial
 {
     /// <summary>
     /// Provides methods for working with stream queries.
     /// </summary>
+    [DebuggerStepThrough]
     public static class StreamQuery
     {
         /// <summary>

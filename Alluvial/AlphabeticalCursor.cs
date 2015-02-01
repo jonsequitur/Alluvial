@@ -1,13 +1,16 @@
 using System;
+using System.Diagnostics;
 
 namespace Alluvial
 {
+    [DebuggerStepThrough]
+    [DebuggerDisplay("Position: {Position}")]
     internal class AlphabeticalCursor : ICursor
     {
         private string position;
 
         public AlphabeticalCursor(string position = "",
-                            bool ascending = true)
+                                  bool ascending = true)
         {
             Ascending = ascending;
             this.position = position;
