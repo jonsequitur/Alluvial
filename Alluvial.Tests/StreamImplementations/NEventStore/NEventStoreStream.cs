@@ -35,7 +35,7 @@ namespace Alluvial.Tests
 
         public async Task<IStreamBatch<EventMessage>> Fetch(IStreamQuery query)
         {
-            int lastFetchedRevision = query.Cursor.Position;
+            int lastFetchedRevision = (int) query.Cursor.Position;
 
             var maxRevisionToFetch = lastFetchedRevision + query.BatchCount ?? int.MaxValue;
 

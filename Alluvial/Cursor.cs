@@ -13,7 +13,8 @@ namespace Alluvial
     {
         static Cursor()
         {
-            By<int>.Create = () => new SequentialCursor();
+            By<int>.Create = () => new SequentialCursor<int>();
+            By<long>.Create = () => new SequentialCursor<long>();
             By<DateTime>.Create = () => new ChronologicalCursor();
             By<DateTimeOffset>.Create = () => new ChronologicalCursor();
             By<string>.Create = () => new AlphabeticalCursor();
@@ -30,7 +31,7 @@ namespace Alluvial
                 cursorWrapper.Wrap(By<T>.Create());
             }
 
-            return cursor.Position;
+            return (T) cursor.Position;
         }
 
         internal static class By<T>
@@ -43,7 +44,15 @@ namespace Alluvial
         /// </summary>
         public static ICursor Create(int startAt, bool ascending = true)
         {
-            return new SequentialCursor(startAt, ascending);
+            return new SequentialCursor<int>(startAt, ascending);
+        }
+        
+        /// <summary>
+        /// Creates a sequential cursor.
+        /// </summary>
+        public static ICursor Create(long startAt, bool ascending = true)
+        {
+            return new SequentialCursor<long>(startAt, ascending);
         }
 
         /// <summary>
@@ -78,15 +87,23 @@ namespace Alluvial
             return new ReadOnlyCursor(cursor);
         }
 
-        internal static dynamic MinimumPosition(this IEnumerable<ICursor> cursors)
+        internal static ICursor Minimum(this IEnumerable<ICursor> cursors)
         {
-            return cursors.Select(c => (object) c.Position).Min();
+            return cursors.OrderBy(c => (object) c.Position)
+                          .Select(c => c.Clone())
+                          .FirstOrDefault() ??
+                   New();
+        }
+
+        internal static ICursor Clone(this ICursor cursor)
+        {
+            return Create(cursor.Position);
         }
 
         /// <summary>
         /// Determines whether the specified comparison has reached a specific point.
         /// </summary>
-        /// <param name="comparison">The result of a call to <see cref="IComparable.CompareTo" />.</param>
+        /// <param name="comparison">The result of a call to <see cref="IComparable.CompareTo" />, comparing the cursor to .</param>
         /// <param name="ascending"></param>
         /// <returns></returns>
         public static bool HasReached(int comparison, bool ascending)

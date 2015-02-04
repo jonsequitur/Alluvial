@@ -7,7 +7,7 @@ namespace Alluvial
     [DebuggerDisplay("Position: {Position}")]
     internal class CursorWrapper : IIncrementableCursor
     {
-        private ICursor innerCursor = new SequentialCursor();
+        private ICursor innerCursor = new SequentialCursor<long>();
 
         internal void Wrap(ICursor cursor)
         {

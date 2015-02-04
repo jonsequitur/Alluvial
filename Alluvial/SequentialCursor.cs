@@ -1,14 +1,16 @@
+using System;
 using System.Diagnostics;
 
 namespace Alluvial
 {
     [DebuggerStepThrough]
     [DebuggerDisplay("Position: {Position}")]
-    internal class SequentialCursor : IIncrementableCursor
+    internal class SequentialCursor<T> : IIncrementableCursor
+        where T : IComparable<T>
     {
-        private int position;
+        private T position;
 
-        public SequentialCursor(int position = 0,
+        public SequentialCursor(T position = default(T),
                                 bool ascending = true)
         {
             Ascending = ascending;
@@ -45,7 +47,7 @@ namespace Alluvial
         public virtual bool HasReached(dynamic point)
         {
             return Cursor.HasReached(
-                position.CompareTo((int) point),
+                position.CompareTo((T) point),
                 Ascending);
         }
     }

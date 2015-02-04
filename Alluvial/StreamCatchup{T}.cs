@@ -81,7 +81,7 @@ namespace Alluvial
                         {
                             var cursors = await GetCursorProjections(s.Id);
 
-                            ICursor cursor = Alluvial.Cursor.Create(cursors.MinimumPosition());
+                            var cursor = cursors.Minimum();
                             var streamQuery = s.CreateQuery(cursor);
 
                             var batch = await streamQuery.NextBatch();
