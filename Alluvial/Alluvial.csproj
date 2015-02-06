@@ -42,6 +42,7 @@
   <ItemGroup>
     <Compile Include="AggregateAsync{TProjection,TData}.cs" />
     <Compile Include="Aggregate{TProjection,TData}.cs" />
+    <Compile Include="AnonymousProjectionStore{TKey,TProjection}.cs" />
     <Compile Include="IAggregatorSubscription.cs" />
     <Compile Include="AggregatorSubscription{TProjection,TData}.cs" />
     <Compile Include="AnonymousStream.cs" />
@@ -50,6 +51,7 @@
     <Compile Include="ChronologicalCursor.cs" />
     <Compile Include="Cursor.cs" />
     <Compile Include="CursorWrapper.cs" />
+    <Compile Include="ProjectionStore.cs" />
     <Compile Include="StreamCatchup{T}.cs" />
     <Compile Include="PipeAsync{TProjection,TData}.cs" />
     <Compile Include="StreamSource.cs" />

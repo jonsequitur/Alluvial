@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using FluentAssertions;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Alluvial.Tests.BankDomain;
 using NEventStore;
@@ -388,12 +389,12 @@ namespace Alluvial.Tests
 
             await catchup.RunSingleBatch();
             queriedEvents.Count
-                .Should()
-                .Be(1, 
-                "the first two events should be skipped because of the starting cursor position");
+                         .Should()
+                         .Be(1,
+                             "the first two events should be skipped because of the starting cursor position");
             queriedEvents.Should()
-            .ContainSingle(e => e.StreamRevision == 3,
-              "only the most recent event should be queried");
+                         .ContainSingle(e => e.StreamRevision == 3,
+                                        "only the most recent event should be queried");
 
             var accountHistoryProjections = new InMemoryProjectionStore<AccountHistoryProjection>();
             await accountHistoryProjections.Put(streamId, new AccountHistoryProjection
@@ -406,10 +407,51 @@ namespace Alluvial.Tests
             WriteEvent(streamId);
             await catchup.RunSingleBatch();
 
-
             queriedEvents.Select(e => e.StreamRevision)
                          .ShouldBeEquivalentTo(new[] { 3, 3, 4 },
-                          "event 3 needs to be repeated because the newly-subscribed aggregator hasn't seen it yet");
+                                               "event 3 needs to be repeated because the newly-subscribed aggregator hasn't seen it yet");
+        }
+
+        [Test]
+        public async Task The_same_projection_is_not_queried_more_than_once_during_a_batch()
+        {
+            var streamId = "hello";
+            var projection = new BalanceProjection
+            {
+                AggregateId = streamId,
+                CursorPosition = 1
+            };
+
+            var getCount = 0;
+            var projectionStore = ProjectionStore.Create<string, BalanceProjection>(
+                get: async key =>
+                {
+                    if (streamId == key)
+                    {
+                        Console.WriteLine("Get");
+                        Interlocked.Increment(ref getCount);
+                    }
+                    return projection;
+                },
+                put: async (key, p) =>
+                {
+                    if (streamId == key)
+                    {
+                        Console.WriteLine("Put");
+                    }
+                    projection = p;
+                });
+
+            var catchup = StreamCatchup.Create(streamSource.UpdatedStreams())
+                                       .Subscribe(new BalanceProjector(), projectionStore);
+
+            WriteEvent(streamId);
+            WriteEvent(streamId);
+            WriteEvent(streamId);
+
+            await catchup.RunSingleBatch();
+
+            getCount.Should().Be(1);
         }
     }
 }

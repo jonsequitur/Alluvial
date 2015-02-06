@@ -81,7 +81,7 @@ namespace Alluvial
                         {
                             var cursors = await GetCursorProjections(s.Id);
 
-                            var cursor = cursors.Minimum();
+                            var cursor = cursors.Values.Minimum();
                             var streamQuery = s.CreateQuery(cursor);
 
                             var batch = await streamQuery.NextBatch();
@@ -97,7 +97,8 @@ namespace Alluvial
                                             return Aggregate(s.Id,
                                                              (dynamic) subscription,
                                                              batch,
-                                                             streamQuery.Cursor);
+                                                             streamQuery.Cursor,
+                                                             cursors);
                                         }
                                         catch (RuntimeBinderException exception)
                                         {
@@ -122,24 +123,39 @@ namespace Alluvial
             return upstreamQuery;
         }
 
-        private async Task<IEnumerable<ICursor>> GetCursorProjections(string streamId)
+        private async Task<IDictionary<Type, ICursor>> GetCursorProjections(string streamId)
         {
-            return (await aggregatorSubscriptions.Values
-                                                 .Where(p => p.IsCursor)
-                                                 .Select(p => p.GetProjection(streamId))
+            return (await aggregatorSubscriptions.Where(p => p.Value.IsCursor)
+                                                 .Select(async p => new
+                                                 {
+                                                     p.Key,
+                                                     CursorProjection = await p.Value.GetProjection(streamId)
+                                                 })
                                                  .AwaitAll())
-                .Cast<ICursor>();
+                .ToDictionary(p => p.Key, p => (ICursor) p.CursorProjection);
         }
 
         private async Task Aggregate<TProjection>(
             string streamId,
             AggregatorSubscription<TProjection, TData> subscription,
             IStreamBatch<TData> batch,
-            ICursor queryCursor)
+            ICursor queryCursor,
+            IDictionary<Type, ICursor> projectionCursors)
         {
-            var projection = await subscription.ProjectionStore.Get(streamId);
+            ICursor projectionCursor;
+            TProjection projection = default(TProjection);
 
-            var projectionCursor = projection as ICursor;
+            if (!projectionCursors.TryGetValue(typeof (TProjection), out projectionCursor))
+            {
+                projection = await subscription.ProjectionStore.Get(streamId);
+            }
+            else
+            {
+                projection = (TProjection) projectionCursor;
+            }
+
+            projectionCursor = projection as ICursor;
+
             if (projectionCursor != null)
             {
                 // TODO: (Aggregate) optimize: this is unnecessary if we know we know this was a brand new projection

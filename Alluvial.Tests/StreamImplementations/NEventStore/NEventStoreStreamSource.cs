@@ -45,11 +45,12 @@ namespace Alluvial.Tests
                 // get only changes since the last checkpoint
                 query: q => store.Advanced
                                  .GetFrom(q.Cursor.As<string>())
+                                 .GroupBy(c => c.StreamId)
                                  .Select(c => new NEventStoreStreamUpdate
                                  {
-                                     StreamId = c.StreamId,
-                                     CheckpointToken = c.CheckpointToken,
-                                     StreamRevision = c.StreamRevision
+                                     StreamId = c.Key,
+                                     CheckpointToken = c.Max(e => e.CheckpointToken),
+                                     StreamRevision = c.Max(e => e.StreamRevision)
                                  })
                                  .Take(q.BatchCount ?? int.MaxValue),
                 advanceCursor: (query, batch) =>

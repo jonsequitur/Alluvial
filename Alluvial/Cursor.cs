@@ -89,9 +89,11 @@ namespace Alluvial
 
         internal static ICursor Minimum(this IEnumerable<ICursor> cursors)
         {
-            return cursors.OrderBy(c => (object) c.Position)
-                          .Select(c => c.Clone())
-                          .FirstOrDefault() ??
+            return cursors
+                .Where(c => c != null)
+                .OrderBy(c => (object) c.Position)
+                .Select(c => c.Clone())
+                .FirstOrDefault() ??
                    New();
         }
 
