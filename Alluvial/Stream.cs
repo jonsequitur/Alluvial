@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using trace = System.Diagnostics.Trace;
 
 namespace Alluvial
 {
@@ -111,9 +112,9 @@ namespace Alluvial
                 });
         }
 
-        public static async Task<TProjection> ProjectWith<TProjection, TData>(
+        public static async Task<TProjection> Aggregate<TProjection, TData>(
             this IStream<TData> stream,
-            IStreamAggregator<TProjection, TData> projector,
+            IStreamAggregator<TProjection, TData> aggregator,
             TProjection projection = null)
             where TProjection : class
         {
@@ -128,7 +129,7 @@ namespace Alluvial
 
             if (data.Any())
             {
-                projection = await projector.Aggregate(projection, data);
+                projection = await aggregator.Aggregate(projection, data);
             }
 
             return projection;
@@ -140,13 +141,13 @@ namespace Alluvial
             Action<IStreamQuery, IStreamBatch<TData>> onResults = null)
         {
             onSendQuery = onSendQuery ??
-                          (q => System.Diagnostics.Trace.WriteLine(
+                          (q => trace.WriteLine(
                               string.Format("Query: stream {0} @ cursor position {1}",
                                             stream.Id,
                                             (object) q.Cursor.Position)));
 
             onResults = onResults ?? 
-                ((q, streamBatch) => System.Diagnostics.Trace.WriteLine(
+                ((q, streamBatch) => trace.WriteLine(
                     string.Format("Fetched: stream {0} batch of {1}, now @ cursor position {2}",
                                   stream.Id,
                                   streamBatch.Count,

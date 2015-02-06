@@ -29,7 +29,7 @@ namespace Alluvial.Tests
         {
             var projector = AccountBalanceProjector();
 
-            var balanceProjection = await stream.ProjectWith(projector);
+            var balanceProjection = await stream.Aggregate(projector);
 
             balanceProjection.Balance.Should().Be(11.11m);
         }
@@ -44,7 +44,7 @@ namespace Alluvial.Tests
                 CursorPosition = 2
             };
 
-            var balanceProjection = await stream.ProjectWith(AccountBalanceProjector(),
+            var balanceProjection = await stream.Aggregate(AccountBalanceProjector(),
                                                              projection);
 
             balanceProjection.Balance
@@ -63,8 +63,8 @@ namespace Alluvial.Tests
                 CursorPosition = 5
             };
 
-            var finalProjection = await stream.ProjectWith(AccountBalanceProjector(),
-                                                           initialProjection);
+            var finalProjection = await stream.Aggregate(AccountBalanceProjector(),
+                                                         initialProjection);
 
             finalProjection.ShouldBeEquivalentTo(initialProjection,
                                                  "the projection cursor is past the end of the event stream so no events should be applied");
