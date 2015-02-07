@@ -52,6 +52,7 @@
     <Compile Include="Cursor.cs" />
     <Compile Include="CursorWrapper.cs" />
     <Compile Include="ProjectionStore.cs" />
+    <Compile Include="SingleStreamCatchup{T}.cs" />
     <Compile Include="StreamCatchup{T}.cs" />
     <Compile Include="PipeAsync{TProjection,TData}.cs" />
     <Compile Include="StreamSource.cs" />

@@ -8,37 +8,26 @@ using Microsoft.CSharp.RuntimeBinder;
 
 namespace Alluvial
 {
-    internal class StreamCatchup<TData> : IStreamCatchup<TData>
+    internal class SingleStreamCatchup<TData> : IStreamCatchup<TData>
     {
         private int isRunning;
-        private readonly IStream<IStream<TData>> stream;
+        private readonly IStream<TData> stream;
         private readonly int? batchCount;
-        private readonly GetCursor getCursor;
-        private readonly StoreCursor storeCursor;
 
         private readonly ConcurrentDictionary<Type, IAggregatorSubscription> aggregatorSubscriptions = new ConcurrentDictionary<Type, IAggregatorSubscription>();
 
-        public StreamCatchup(
-            IStream<IStream<TData>> stream,
-            ICursor cursor = null,
-            int? batchCount = null,
-            GetCursor getCursor = null,
-            StoreCursor storeCursor = null)
+        public SingleStreamCatchup(
+            IStream<TData> stream,
+            int? batchCount = null)
         {
             if (stream == null)
             {
                 throw new ArgumentNullException("stream");
             }
 
-            Cursor = cursor;
-
             this.stream = stream;
-            this.batchCount = batchCount;
-            this.getCursor = getCursor;
-            this.storeCursor = storeCursor;
+            this.batchCount = batchCount ?? int.MaxValue;
         }
-
-        public ICursor Cursor { get; set; }
 
         public IDisposable SubscribeAggregator<TProjection>(
             IStreamAggregator<TProjection, TData> aggregator,
@@ -63,63 +52,45 @@ namespace Alluvial
         {
             if (Interlocked.CompareExchange(ref isRunning, 1, 0) != 0)
             {
-                return Cursor.ReadOnly();
+                // FIX: (RunSingleBatch): what would be a better behavior here?
+                return Cursor.New();
             }
 
-            await EnsureCursorIsInitialized();
+            var cursors = await GetCursorProjections(stream.Id);
 
-            var upstreamQuery = stream.CreateQuery(Cursor, batchCount);
+            var cursor = cursors.Values.Minimum();
+            var query = stream.CreateQuery(cursor, batchCount);
 
-            var streams = await upstreamQuery.NextBatch();
+            var batch = await query.NextBatch();
 
-            if (streams.Any())
+            if (batch.Count > 0)
             {
-                var batches =
-                    streams.Select(
-                        async s =>
+                var aggregatorUpdates = aggregatorSubscriptions
+                    .Values
+                    .Select(subscription =>
+                    {
+                        try
                         {
-                            var cursors = await GetCursorProjections(s.Id);
+                            return Aggregate((dynamic) subscription,
+                                             batch,
+                                             query.Cursor,
+                                             cursors);
+                        }
+                        catch (RuntimeBinderException exception)
+                        {
+                            throw new RuntimeBinderException(
+                                string.Format("Unable to call Aggregate, possibly due to {0} having non-public types for its generic parameters",
+                                              subscription), exception);
+                        }
+                    })
+                    .Cast<Task>();
 
-                            var cursor = cursors.Values.Minimum();
-                            var streamQuery = s.CreateQuery(cursor);
-
-                            var batch = await streamQuery.NextBatch();
-
-                            if (batch.Count > 0)
-                            {
-                                var aggregatorUpdates = aggregatorSubscriptions
-                                    .Values
-                                    .Select(subscription =>
-                                    {
-                                        try
-                                        {
-                                            return Aggregate(s.Id,
-                                                             (dynamic) subscription,
-                                                             batch,
-                                                             streamQuery.Cursor,
-                                                             cursors);
-                                        }
-                                        catch (RuntimeBinderException exception)
-                                        {
-                                            throw new RuntimeBinderException(
-                                                string.Format("Unable to call Aggregate, possibly due to {0} having non-public types for its generic parameters",
-                                                              subscription), exception);
-                                        }
-                                    })
-                                    .Cast<Task>();
-
-                                await Task.WhenAll(aggregatorUpdates);
-                            }
-                        });
-
-                await Task.WhenAll(batches);
+                await Task.WhenAll(aggregatorUpdates);
             }
-
-            await StoreCursor();
 
             isRunning = 0;
 
-            return Cursor;
+            return query.Cursor;
         }
 
         private async Task<IDictionary<Type, ICursor>> GetCursorProjections(string streamId)
@@ -135,7 +106,6 @@ namespace Alluvial
         }
 
         private async Task Aggregate<TProjection>(
-            string streamId,
             AggregatorSubscription<TProjection, TData> subscription,
             IStreamBatch<TData> batch,
             ICursor queryCursor,
@@ -146,7 +116,7 @@ namespace Alluvial
 
             if (!projectionCursors.TryGetValue(typeof (TProjection), out projectionCursor))
             {
-                projection = await subscription.ProjectionStore.Get(streamId);
+                projection = await subscription.ProjectionStore.Get(stream.Id);
             }
             else
             {
@@ -168,20 +138,7 @@ namespace Alluvial
                 projectionCursor.AdvanceTo(queryCursor.Position);
             }
 
-            await subscription.ProjectionStore.Put(streamId, projection);
-        }
-
-        private async Task EnsureCursorIsInitialized()
-        {
-            if (Cursor == null)
-            {
-                Cursor = await getCursor(stream.Id);
-            }
-        }
-
-        private async Task StoreCursor()
-        {
-            await storeCursor(stream.Id, Cursor);
+            await subscription.ProjectionStore.Put(stream.Id, projection);
         }
     }
 }
