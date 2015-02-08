@@ -11,7 +11,15 @@ namespace Alluvial.Tests
             TimeSpan? pollInterval = null,
             TimeSpan? timeout = null)
         {
-            timeout = timeout ?? TimeSpan.FromSeconds(10);
+            if (Debugger.IsAttached)
+            {
+                timeout = timeout ?? TimeSpan.FromMinutes(5);
+            }
+            else
+            {
+                timeout = timeout ?? TimeSpan.FromSeconds(10);
+            }
+
             pollInterval = pollInterval ?? TimeSpan.FromMilliseconds(100);
 
             var tcs = new TaskCompletionSource<bool>();

@@ -26,7 +26,7 @@ namespace Alluvial
             }
 
             this.stream = stream;
-            this.batchCount = batchCount ?? int.MaxValue;
+            this.batchCount = batchCount;
         }
 
         public IDisposable SubscribeAggregator<TProjection>(
@@ -53,7 +53,7 @@ namespace Alluvial
             if (Interlocked.CompareExchange(ref isRunning, 1, 0) != 0)
             {
                 // FIX: (RunSingleBatch): what would be a better behavior here?
-                return Cursor.New();
+                return stream.NewCursor();
             }
 
             var cursors = await GetCursorProjections(stream.Id);
@@ -112,18 +112,17 @@ namespace Alluvial
             IDictionary<Type, ICursor> projectionCursors)
         {
             ICursor projectionCursor;
-            TProjection projection = default(TProjection);
+            TProjection projection;
 
             if (!projectionCursors.TryGetValue(typeof (TProjection), out projectionCursor))
             {
                 projection = await subscription.ProjectionStore.Get(stream.Id);
+                projectionCursor = projection as ICursor;
             }
             else
             {
                 projection = (TProjection) projectionCursor;
             }
-
-            projectionCursor = projection as ICursor;
 
             if (projectionCursor != null)
             {

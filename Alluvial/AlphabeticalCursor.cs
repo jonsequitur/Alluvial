@@ -4,7 +4,7 @@ using System.Diagnostics;
 namespace Alluvial
 {
     [DebuggerStepThrough]
-    [DebuggerDisplay("Position: {Position}")]
+    [DebuggerDisplay("Position: \"{Position}\"")]
     internal class AlphabeticalCursor : ICursor
     {
         private string position;

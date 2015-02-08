@@ -6,6 +6,7 @@ using System.Linq;
 namespace Alluvial
 {
     [DebuggerStepThrough]
+    [DebuggerDisplay("{Count} items starting at {StartsAtCursorPosition}")]
     internal class StreamBatch<TData> : IStreamBatch<TData>
     {
         private readonly TData[] results;

@@ -31,6 +31,11 @@ namespace Alluvial
         {
             get
             {
+                if (!IsInitialized)
+                {
+                    return Cursor.StartOfStream;
+                }
+
                 return innerCursor.Position;
             }
         }

@@ -53,7 +53,7 @@
     <Compile Include="CursorWrapper.cs" />
     <Compile Include="ProjectionStore.cs" />
     <Compile Include="SingleStreamCatchup{T}.cs" />
-    <Compile Include="StreamCatchup{T}.cs" />
+    <Compile Include="StreamOfStreamsCatchup{T}.cs" />
     <Compile Include="PipeAsync{TProjection,TData}.cs" />
     <Compile Include="StreamSource.cs" />
     <Compile Include="StreamCatchup.cs" />
@@ -78,7 +78,7 @@
     <Compile Include="SingleInstanceProjectionCache{TKey,TProjection}.cs" />
     <Compile Include="StreamQuery.cs" />
     <Compile Include="StreamBatch.cs" />
-    <Compile Include="StreamQueryBatch{T}.cs" />
+    <Compile Include="StreamBatch{T}.cs" />
     <Compile Include="StreamQuery{T}.cs" />
     <Compile Include="AlphabeticalCursor.cs" />
     <Compile Include="TaskExtensions.cs" />

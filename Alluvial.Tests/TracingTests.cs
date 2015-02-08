@@ -30,7 +30,7 @@ namespace Alluvial.Tests
                 return p;
             }).Trace();
 
-            await aggregagator.Aggregate(1, StreamBatch.Create(new[] { "hi", "there" }, Cursor.New()));
+            await aggregagator.Aggregate(1, StreamBatch.Create(new[] { "hi", "there" }, Cursor.Create(0)));
 
             traceListener.Messages
                          .Should()
@@ -42,7 +42,7 @@ namespace Alluvial.Tests
         {
             var stream = Stream.Create(q => Enumerable.Range(1, 100)
                                                       .Skip(q.Cursor.As<int>())
-                                                      .Take(q.BatchCount ?? int.MaxValue))
+                                                      .Take(q.BatchCount ?? 100000))
                                .Trace();
 
             var iterator = stream.CreateQuery(Cursor.Create(15), 10);

@@ -75,6 +75,8 @@
     <Compile Include="CursorTests.cs" />
     <Compile Include="PipelineTests.cs" />
     <Compile Include="StreamImplementations\IMapProjection.cs" />
+    <Compile Include="StreamCatchupTests.cs" />
+    <Compile Include="StreamImplementations\NEventStore\NEventStoreExtensions.cs" />
     <Compile Include="StreamOfStreamsCatchupTests.cs" />
     <Compile Include="BankDomain\FundsWithdrawn.cs" />
     <Compile Include="StreamImplementations\NEventStore\NEventStoreStream.cs" />

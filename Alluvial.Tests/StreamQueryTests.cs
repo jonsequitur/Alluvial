@@ -58,7 +58,7 @@ namespace Alluvial.Tests
 
             var stream = values.AsStream();
 
-            var query = stream.CreateQuery(Cursor.New(), 5);
+            var query = stream.CreateQuery(stream.NewCursor(), 5);
 
             var batch = await query.NextBatch();
             batch.Should().BeEquivalentTo(new[] { 1, 2, 3, 4, 5 });
@@ -74,7 +74,7 @@ namespace Alluvial.Tests
 
             var stream = values.AsStream();
 
-            var query = stream.CreateQuery(Cursor.New(), 25);
+            var query = stream.CreateQuery(stream.NewCursor(), 25);
 
             var batch = await query.NextBatch();
             batch.Should().BeEquivalentTo(values);
@@ -111,10 +111,19 @@ namespace Alluvial.Tests
         }
 
         [Test]
+        public async Task Batch_cursors_reflect_the_cursor_position_at_the_start_of_the_batch_when_starting_with_a_new_cursor()
+        {
+            var stream = Enumerable.Range(1, 25).AsStream();
+
+            var batch = await stream.CreateQuery(stream.NewCursor(), 10).NextBatch();
+
+            ((int) batch.StartsAtCursorPosition).Should().Be(0);
+        }
+
+        [Test]
         public async Task Batch_cursors_reflect_the_cursor_position_at_the_start_of_the_batch()
         {
-            var stream = Stream.Create<int>(async query =>
-                                                Enumerable.Range(query.Cursor.Position, query.BatchCount.Value));
+            var stream = Enumerable.Range(1, 100).AsStream();
 
             var batch = await stream.CreateQuery(Cursor.Create(15), 10)
                                     .NextBatch();
@@ -129,12 +138,13 @@ namespace Alluvial.Tests
             var times = Enumerable.Range(1, 24).Select(i => startTime.AddHours(i));
 
             var stream = Stream.Create<DateTimeOffset>(query: async q =>
-                                                                  times.OrderBy(time => time)
-                                                                       .Where(time => time > q.Cursor.As<DateTimeOffset>())
-                                                                       .Take(q.BatchCount ?? int.MaxValue),
-                                                           advanceCursor: (q, batch) => q.Cursor.AdvanceTo(batch.Last()));
+                                                           times.OrderBy(time => time)
+                                                                .Where(time => time > q.Cursor.As<DateTimeOffset>())
+                                                                .Take(q.BatchCount ?? 100000),
+                                                       advanceCursor: (q, batch) => q.Cursor.AdvanceTo(batch.Last()),
+                                                       newCursor: () => Cursor.Create(default(DateTimeOffset)));
 
-            var query = stream.CreateQuery(Cursor.New(), 12);
+            var query = stream.CreateQuery(stream.NewCursor(), 12);
 
             var batch1 = await query.NextBatch();
             ((DateTimeOffset) batch1.StartsAtCursorPosition)

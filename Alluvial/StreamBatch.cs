@@ -9,6 +9,8 @@ namespace Alluvial
     /// </summary>
     public static class StreamBatch
     {
+        internal const int MaxBatchCount = 1000000;
+
         /// <summary>
         /// Creates a stream query batch from an enumerable sequence.
         /// </summary>
@@ -49,7 +51,7 @@ namespace Alluvial
             }
 
             return new StreamBatch<TData>(Enumerable.Empty<TData>().ToArray(),
-                                               cursor.Position);
+                                          cursor.Position);
         }
 
         /// <summary>

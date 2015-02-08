@@ -17,7 +17,7 @@ namespace Alluvial
                 configure(configuration);
             }
 
-            return new StreamCatchup<TData>(
+            return new StreamOfStreamsCatchup<TData>(
                 source, 
                 cursor, 
                 batchCount,

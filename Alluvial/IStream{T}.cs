@@ -18,5 +18,7 @@ namespace Alluvial
         /// </summary>
         /// <param name="query">The query to apply to the stream.</param>
         Task<IStreamBatch<TData>> Fetch(IStreamQuery query);
+
+        ICursor NewCursor();
     }
 }

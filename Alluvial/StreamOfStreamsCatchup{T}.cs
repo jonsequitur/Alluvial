@@ -8,7 +8,7 @@ using Microsoft.CSharp.RuntimeBinder;
 
 namespace Alluvial
 {
-    internal class StreamCatchup<TData> : IStreamCatchup<TData>
+    internal class StreamOfStreamsCatchup<TData> : IStreamCatchup<TData>
     {
         private int isRunning;
         private readonly IStream<IStream<TData>> stream;
@@ -18,7 +18,7 @@ namespace Alluvial
 
         private readonly ConcurrentDictionary<Type, IAggregatorSubscription> aggregatorSubscriptions = new ConcurrentDictionary<Type, IAggregatorSubscription>();
 
-        public StreamCatchup(
+        public StreamOfStreamsCatchup(
             IStream<IStream<TData>> stream,
             ICursor cursor = null,
             int? batchCount = null,
@@ -142,7 +142,7 @@ namespace Alluvial
             IDictionary<Type, ICursor> projectionCursors)
         {
             ICursor projectionCursor;
-            TProjection projection = default(TProjection);
+            TProjection projection;
 
             if (!projectionCursors.TryGetValue(typeof (TProjection), out projectionCursor))
             {

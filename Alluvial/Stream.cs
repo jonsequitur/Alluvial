@@ -19,51 +19,55 @@ namespace Alluvial
         {
             return Create(Guid.NewGuid().ToString(),
                           query => source.SkipWhile(x => query.Cursor.HasReached(x))
-                                         .Take(query.BatchCount ?? int.MaxValue));
+                                         .Take(query.BatchCount ?? StreamBatch.MaxBatchCount),
+                          newCursor: () => Cursor.Create(0));
         }
 
         public static IStream<TData> Create<TData>(
             Func<IStreamQuery, Task<IEnumerable<TData>>> query,
-            Action<IStreamQuery, IStreamBatch<TData>> advanceCursor = null)
+            Action<IStreamQuery, IStreamBatch<TData>> advanceCursor = null,
+            Func<ICursor> newCursor = null)
         {
-            return Create(Guid.NewGuid().ToString(), query, advanceCursor);
+            return Create(Guid.NewGuid().ToString(), query, advanceCursor, newCursor);
         }
 
         public static IStream<TData> Create<TData>(
             string id,
             Func<IStreamQuery, Task<IEnumerable<TData>>> query,
-            Action<IStreamQuery, IStreamBatch<TData>> advanceCursor = null)
+            Action<IStreamQuery, IStreamBatch<TData>> advanceCursor = null,
+            Func<ICursor> newCursor = null)
         {
             return new AnonymousStream<TData>(
                 id,
-                async q => StreamBatch.Create(await query(q), q.Cursor),
-                advanceCursor);
+                async q =>
+                {
+                    var cursor = q.Cursor.Clone();
+                    var data = await query(q);
+                    return data as IStreamBatch<TData> ?? StreamBatch.Create(data, cursor);
+                },
+                advanceCursor,
+                newCursor);
         }
 
         public static IStream<TData> Create<TData>(
             Func<IStreamQuery, IEnumerable<TData>> query,
-            Action<IStreamQuery, IStreamBatch<TData>> advanceCursor = null)
+            Action<IStreamQuery, IStreamBatch<TData>> advanceCursor = null,
+            Func<ICursor> newCursor = null)
         {
-            return Create(Guid.NewGuid().ToString(), query, advanceCursor);
+            return Create(Guid.NewGuid().ToString(), query, advanceCursor, newCursor);
         }
 
         public static IStream<TData> Create<TData>(
             string id,
             Func<IStreamQuery, IEnumerable<TData>> query,
-            Action<IStreamQuery, IStreamBatch<TData>> advanceCursor = null)
+            Action<IStreamQuery, IStreamBatch<TData>> advanceCursor = null,
+            Func<ICursor> newCursor = null)
         {
             return new AnonymousStream<TData>(
                 id,
                 async q => StreamBatch.Create(query(q), q.Cursor),
-                advanceCursor);
-        }
-
-        /// <summary>
-        /// Creates a new cursor over a stream.
-        /// </summary>
-        public static ICursor CreateCursor<TData>(this IStream<TData> stream)
-        {
-            return Cursor.New();
+                advanceCursor,
+                newCursor);
         }
 
         /// <summary>
@@ -81,14 +85,20 @@ namespace Alluvial
                     var sourceBatch = await sourceStream.Fetch(
                         sourceStream.CreateQuery(q.Cursor, q.BatchCount));
 
-                    var mappedBatch = map(sourceBatch);
+                    IEnumerable<TTo> mappedItems = map(sourceBatch);
 
-                    return StreamBatch.Create(mappedBatch, q.Cursor);
+                    ICursor mappedCursor = Cursor.Create(sourceBatch.StartsAtCursorPosition);
+
+                    IStreamBatch<TTo> mappedBatch = StreamBatch.Create(mappedItems,
+                                                                       mappedCursor);
+
+                    return mappedBatch;
                 },
                 advanceCursor: async (query, batch) =>
                 {
                     // don't advance the cursor in the map operation, since sourceStream.Fetch will already have done it
-                });
+                },
+                newCursor: sourceStream.NewCursor);
         }
 
         public static IStream<IStream<TDownstream>> Requery<TUpstream, TDownstream>(
@@ -121,7 +131,7 @@ namespace Alluvial
             // QUESTION: (ProjectWith) better name? this can also be used for side effects, where TProjection is used to track the state of the work
 
             var cursor = (projection as ICursor) ??
-                         Cursor.New();
+                         stream.NewCursor();
 
             var query = stream.CreateQuery(cursor);
 
@@ -146,12 +156,12 @@ namespace Alluvial
                                             stream.Id,
                                             (object) q.Cursor.Position)));
 
-            onResults = onResults ?? 
-                ((q, streamBatch) => trace.WriteLine(
-                    string.Format("Fetched: stream {0} batch of {1}, now @ cursor position {2}",
-                                  stream.Id,
-                                  streamBatch.Count,
-                                  (object) q.Cursor.Position)));
+            onResults = onResults ??
+                        ((q, streamBatch) => trace.WriteLine(
+                            string.Format("Fetched: stream {0} batch of {1}, now @ cursor position {2}",
+                                          stream.Id,
+                                          streamBatch.Count,
+                                          (object) q.Cursor.Position)));
 
             return Create<TData>(
                 id: stream.Id,
@@ -167,7 +177,8 @@ namespace Alluvial
                 },
                 advanceCursor: (q, b) =>
                 {
-                });
+                },
+                newCursor: stream.NewCursor);
         }
     }
-} 
+}

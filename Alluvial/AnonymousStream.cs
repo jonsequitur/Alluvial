@@ -8,11 +8,13 @@ namespace Alluvial
     {
         private readonly Action<IStreamQuery, IStreamBatch<TData>> advanceCursor;
         private readonly Func<IStreamQuery, Task<IStreamBatch<TData>>> fetch;
+        private readonly Func<ICursor> newCursor;
 
         public AnonymousStream(
             string id,
             Func<IStreamQuery, Task<IStreamBatch<TData>>> fetch,
-            Action<IStreamQuery, IStreamBatch<TData>> advanceCursor = null)
+            Action<IStreamQuery, IStreamBatch<TData>> advanceCursor = null,
+            Func<ICursor> newCursor = null)
         {
             if (id == null)
             {
@@ -37,6 +39,7 @@ namespace Alluvial
                                      }
                                  });
 
+            this.newCursor = newCursor ?? Cursor.New;
             this.fetch = fetch;
             Id = id;
         }
@@ -50,6 +53,11 @@ namespace Alluvial
             advanceCursor(query, batch);
 
             return batch;
+        }
+
+        public ICursor NewCursor()
+        {
+            return newCursor();
         }
     }
 }
