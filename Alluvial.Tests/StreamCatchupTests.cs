@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.ComponentModel;
 using FluentAssertions;
 using System.Linq;
 using System.Threading;
@@ -162,17 +163,8 @@ namespace Alluvial.Tests
                                        .Subscribe(new BalanceProjector(), projectionStore);
 
             using (catchup.Poll(TimeSpan.FromMilliseconds(10)))
+            using (Background.Loop(_ => WriteEvents(howMany: 2), .1))
             {
-                // write more events
-                Task.Run(async () =>
-                {
-                    for (int i = 0; i < 999; i++)
-                    {
-                        WriteEvents(2);
-                        await Task.Delay(1);
-                    }
-                });
-
                 await Wait.Until(() =>
                 {
                     var sum = projectionStore.Sum(b => b.Balance);
