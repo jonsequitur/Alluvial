@@ -78,7 +78,7 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
-    <Compile Include="%28Infrastructure%29\Background.cs" />
+    <Compile Include="Infrastructure\Background.cs" />
     <Compile Include="BankDomain\AccountHistoryProjection.cs" />
     <Compile Include="BankDomain\BalanceProjection.cs" />
     <Compile Include="BankDomain\BalanceProjector.cs" />
@@ -101,7 +101,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StreamQueryTests.cs" />
     <Compile Include="TracingTests.cs" />
-    <Compile Include="%28Infrastructure%29\Wait.cs" />
+    <Compile Include="Infrastructure\Wait.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config">
