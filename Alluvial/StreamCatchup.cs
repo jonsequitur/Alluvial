@@ -17,20 +17,37 @@ namespace Alluvial
                 configure(configuration);
             }
 
-            return new StreamCatchup<TData>(
+            return new StreamOfStreamsCatchup<TData>(
                 source, 
                 cursor, 
                 batchCount,
                 configuration.GetCursor,
                 configuration.StoreCursor);
         }
+        
+        public static IStreamCatchup<TData> Create<TData>(
+            IStream<TData> source,
+            ICursor cursor = null,
+            int? batchCount = null,
+            Action<CatchupConfiguration> configure = null)
+        {
+            var configuration = new CatchupConfiguration();
+            if (configure!=null)
+            {
+                configure(configuration);
+            }
+
+            return new SingleStreamCatchup<TData>(
+                source, 
+                batchCount);
+        }
 
         /// <summary>
         /// Runs the catchup query until it reaches an empty batch, then stops.
         /// </summary>
-        public static async Task<IStreamIterator<IStream<TData>>> RunUntilCaughtUp<TData>(this IStreamCatchup<TData> catchup)
+        public static async Task<ICursor> RunUntilCaughtUp<TData>(this IStreamCatchup<TData> catchup)
         {
-            IStreamIterator<IStream<TData>> query;
+            ICursor cursor;
             var counter = new Progress<TData>();
 
             using (catchup.Subscribe<Progress<TData>, TData>(async (_, batch) => counter.Count(batch)))
@@ -38,12 +55,12 @@ namespace Alluvial
                 int countBefore;
                 do
                 {
-                    countBefore = counter.AggregatedCount; 
-                    query = await catchup.RunSingleBatch();
+                    countBefore = counter.AggregatedCount;
+                    cursor = await catchup.RunSingleBatch();
                 } while (countBefore != counter.AggregatedCount);
             }
 
-            return query;
+            return cursor;
         }
 
         public static IDisposable Poll<TData>(

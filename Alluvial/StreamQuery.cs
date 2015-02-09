@@ -18,7 +18,7 @@ namespace Alluvial
             int? batchCount = null)
         {
             return new StreamQuery<TData>(stream,
-                                          cursor ?? Cursor.New())
+                                          cursor ?? stream.NewCursor())
             {
                 BatchCount = batchCount
             };

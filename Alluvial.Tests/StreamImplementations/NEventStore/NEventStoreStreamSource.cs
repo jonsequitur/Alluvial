@@ -26,16 +26,7 @@ namespace Alluvial.Tests
 
         private IStream<IDomainEvent> OpenStream(string streamId, string startAfter = null)
         {
-            return new NEventStoreStream(store, streamId)
-                .Map(es => es.Select(e =>
-                {
-                    var de = e.Body as IDomainEvent;
-                    if (de != null)
-                    {
-                        de.StreamRevision = (int) e.Headers["StreamRevision"];
-                    }
-                    return e.Body;
-                }).OfType<IDomainEvent>());
+            return new NEventStoreStream(store, streamId).DomainEvents();
         }
 
         public IStream<IStream<IDomainEvent>> UpdatedStreams()
@@ -52,7 +43,7 @@ namespace Alluvial.Tests
                                      CheckpointToken = c.Max(e => e.CheckpointToken),
                                      StreamRevision = c.Max(e => e.StreamRevision)
                                  })
-                                 .Take(q.BatchCount ?? int.MaxValue),
+                                 .Take(q.BatchCount ?? 100000),
                 advanceCursor: (query, batch) =>
                 {
                     var last = batch.LastOrDefault();

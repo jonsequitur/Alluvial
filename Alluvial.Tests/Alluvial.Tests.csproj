@@ -53,6 +53,18 @@
       <HintPath>..\packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Reactive.Core">
+      <HintPath>..\packages\Rx-Core.2.2.5\lib\net45\System.Reactive.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.Interfaces">
+      <HintPath>..\packages\Rx-Interfaces.2.2.5\lib\net45\System.Reactive.Interfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.Linq">
+      <HintPath>..\packages\Rx-Linq.2.2.5\lib\net45\System.Reactive.Linq.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.PlatformServices">
+      <HintPath>..\packages\Rx-PlatformServices.2.2.5\lib\net45\System.Reactive.PlatformServices.dll</HintPath>
+    </Reference>
     <Reference Include="System.Transactions" />
     <Reference Include="System.XML" />
     <Reference Include="System.Xml.Linq" />
@@ -66,6 +78,7 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
+    <Compile Include="Infrastructure\Background.cs" />
     <Compile Include="BankDomain\AccountHistoryProjection.cs" />
     <Compile Include="BankDomain\BalanceProjection.cs" />
     <Compile Include="BankDomain\BalanceProjector.cs" />
@@ -76,6 +89,8 @@
     <Compile Include="PipelineTests.cs" />
     <Compile Include="StreamImplementations\IMapProjection.cs" />
     <Compile Include="StreamCatchupTests.cs" />
+    <Compile Include="StreamImplementations\NEventStore\NEventStoreExtensions.cs" />
+    <Compile Include="StreamOfStreamsCatchupTests.cs" />
     <Compile Include="BankDomain\FundsWithdrawn.cs" />
     <Compile Include="StreamImplementations\NEventStore\NEventStoreStream.cs" />
     <Compile Include="StreamImplementations\NEventStore\NEventStoreStreamSource.cs" />
@@ -86,7 +101,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StreamQueryTests.cs" />
     <Compile Include="TracingTests.cs" />
-    <Compile Include="Wait.cs" />
+    <Compile Include="Infrastructure\Wait.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config">

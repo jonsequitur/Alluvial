@@ -37,7 +37,12 @@ namespace Alluvial.Tests
         {
             int lastFetchedRevision = (int) query.Cursor.Position;
 
-            var maxRevisionToFetch = lastFetchedRevision + query.BatchCount ?? int.MaxValue;
+            int maxRevisionToFetch;
+
+            checked
+            {
+                maxRevisionToFetch = lastFetchedRevision + query.BatchCount ?? 100000;
+            }
 
             var maxExistingRevision = store.Advanced
                                            .GetFrom("default",
@@ -54,7 +59,7 @@ namespace Alluvial.Tests
 
             var events = new List<EventMessage>();
 
-            for (var i = lastFetchedRevision + 1; i < maxRevisionToFetch; i++)
+            for (var i = lastFetchedRevision + 1; i <= maxRevisionToFetch; i++)
             {
                 try
                 {
@@ -70,7 +75,7 @@ namespace Alluvial.Tests
                         events.AddRange(stream.CommittedEvents
                                               .Select(e =>
                                               {
-                                                  e.Headers["StreamRevision"] = stream.StreamRevision;
+                                                  e.SetStreamRevision(stream.StreamRevision);
                                                   return e;
                                               }));
                     }
@@ -83,14 +88,25 @@ namespace Alluvial.Tests
 
             var batch = StreamBatch.Create(events, query.Cursor);
 
-            query.Cursor.AdvanceTo(maxExistingRevision);
+            if (batch.Count > 0)
+            {
+                query.Cursor.AdvanceTo(batch.Max(i => i.StreamRevision()));
+            }
 
             return batch;
+        }
+
+        public ICursor NewCursor()
+        {
+            return Cursor.Create(0);
         }
 
         public void Dispose()
         {
             store.Dispose();
         }
+    
     }
+
+    
 }

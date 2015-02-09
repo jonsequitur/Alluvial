@@ -7,7 +7,7 @@ namespace Alluvial
     /// An persistent query over a set of streams of data, which updates one or more stream aggregators. 
     /// </summary>
     /// <typeparam name="TData">The type of the data that the catchup queries.</typeparam>
-    public interface IStreamCatchup<TData>
+    public interface IStreamCatchup<out TData>
     {
         /// <summary>
         /// Subscribes an aggregator to the catchup.
@@ -23,6 +23,6 @@ namespace Alluvial
         /// Consumes a single batch from the source stream and updates the subscribed aggregators.
         /// </summary>
         /// <returns>The catchup's persistent query.</returns>
-        Task<IStreamIterator<IStream<TData>>> RunSingleBatch();
+        Task<ICursor> RunSingleBatch();
     }
 }

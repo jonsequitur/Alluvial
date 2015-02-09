@@ -11,6 +11,8 @@ namespace Alluvial
     [DebuggerStepThrough]
     public static class Cursor
     {
+        private static readonly StartingPosition startOfStream = new StartingPosition();
+
         static Cursor()
         {
             By<int>.Create = () => new SequentialCursor<int>();
@@ -18,6 +20,17 @@ namespace Alluvial
             By<DateTime>.Create = () => new ChronologicalCursor();
             By<DateTimeOffset>.Create = () => new ChronologicalCursor();
             By<string>.Create = () => new AlphabeticalCursor();
+        }
+
+        /// <summary>
+        /// Gets an immutable object that represents the start of any stream.
+        /// </summary>
+        public static object StartOfStream
+        {
+            get
+            {
+                return startOfStream;
+            }
         }
 
         /// <summary>
@@ -36,7 +49,10 @@ namespace Alluvial
 
         internal static class By<T>
         {
-            public static Func<ICursor> Create = () => { throw new InvalidOperationException(string.Format("No ICursor class is mapped for {0}", typeof (T))); };
+            public static Func<ICursor> Create = () =>
+            {
+                throw new InvalidOperationException(string.Format("No ICursor class is mapped for {0}", typeof (T)));
+            };
         }
 
         /// <summary>
@@ -46,7 +62,7 @@ namespace Alluvial
         {
             return new SequentialCursor<int>(startAt, ascending);
         }
-        
+
         /// <summary>
         /// Creates a sequential cursor.
         /// </summary>
@@ -71,10 +87,15 @@ namespace Alluvial
             return new AlphabeticalCursor(startAt, ascending);
         }
 
+        internal static ICursor Create(StartingPosition startAt, bool ascending = true)
+        {
+            return new CursorWrapper();
+        }
+
         /// <summary>
         /// Creates a new cursor.
         /// </summary>
-        public static ICursor New()
+        internal static ICursor New()
         {
             return new CursorWrapper();
         }
@@ -89,12 +110,13 @@ namespace Alluvial
 
         internal static ICursor Minimum(this IEnumerable<ICursor> cursors)
         {
-            return cursors
+            var firstOrDefault = cursors
                 .Where(c => c != null)
                 .OrderBy(c => (object) c.Position)
                 .Select(c => c.Clone())
-                .FirstOrDefault() ??
-                   New();
+                .FirstOrDefault();
+
+            return firstOrDefault ?? New();
         }
 
         internal static ICursor Clone(this ICursor cursor)
@@ -113,6 +135,10 @@ namespace Alluvial
             return ascending
                 ? comparison >= 0
                 : comparison <= 0;
+        }
+
+        internal struct StartingPosition
+        {
         }
     }
 }

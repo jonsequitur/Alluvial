@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 namespace Alluvial
 {
     [DebuggerStepThrough]
+    [DebuggerDisplay("Take {BatchCountDescription} after {Cursor.Position}")]
     internal class StreamQuery<TData> : IStreamIterator<TData>
     {
         private readonly IStream<TData> stream;
@@ -36,7 +37,22 @@ namespace Alluvial
 
         public async Task<IStreamBatch<TData>> NextBatch()
         {
-            return await stream.Fetch(this);
+            var streamBatch = await stream.Fetch(this);
+
+            return streamBatch;
+        }
+
+        private string BatchCountDescription
+        {
+            get
+            {
+                if (BatchCount == null)
+                {
+                    return "all";
+                }
+
+                return BatchCount.Value.ToString();
+            }
         }
     }
 }
