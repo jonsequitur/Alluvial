@@ -84,22 +84,20 @@ namespace Alluvial
             });
         }
 
-        public static IStreamCatchup<TData> Subscribe<TProjection, TData>(
+        public static IDisposable Subscribe<TProjection, TData>(
             this IStreamCatchup<TData> catchup,
             IStreamAggregator<TProjection, TData> aggregator,
             IProjectionStore<string, TProjection> projectionStore = null)
         {
-            catchup.SubscribeAggregator(aggregator, projectionStore);
-            return catchup;
+            return catchup.SubscribeAggregator(aggregator, projectionStore);
         }
 
-        public static IStreamCatchup<TData> Subscribe<TProjection, TData>(
+        public static IDisposable Subscribe<TProjection, TData>(
             this IStreamCatchup<TData> catchup,
              Action<TProjection, IStreamBatch<TData>> aggregate,
             IProjectionStore<string, TProjection> projectionStore = null)
         {
-            catchup.SubscribeAggregator(Aggregator.Create(aggregate), projectionStore);
-            return catchup;
+            return catchup.SubscribeAggregator(Aggregator.Create(aggregate), projectionStore);
         }
 
         public static IDisposable Subscribe<TProjection, TData>(
