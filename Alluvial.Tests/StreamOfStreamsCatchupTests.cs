@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using FluentAssertions;
 using System.Linq;
 using System.Threading;
@@ -189,9 +190,10 @@ namespace Alluvial.Tests
         public async Task When_projections_are_cursors_then_catchup_does_not_replay_previously_seen_events()
         {
             var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
-
+            var eventsAggregated = new List<IDomainEvent>();
             var catchup = StreamCatchup.Create(streamSource.UpdatedStreams(), batchCount: 1000)
-                                       .Subscribe(new BalanceProjector(), projectionStore);
+                                       .Subscribe(new BalanceProjector()
+                                                      .Trace((p, es) => eventsAggregated.AddRange(es)), projectionStore);
 
             await catchup.RunUntilCaughtUp();
 
@@ -209,6 +211,7 @@ namespace Alluvial.Tests
 
             balanceProjection.Balance.Should().Be(101);
             balanceProjection.CursorPosition.Should().Be(2);
+            eventsAggregated.Count.Should().Be(1001);
         }
 
         [Test]
