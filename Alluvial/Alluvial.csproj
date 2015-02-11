@@ -43,6 +43,8 @@
     <Compile Include="AggregateAsync{TProjection,TData}.cs" />
     <Compile Include="Aggregate{TProjection,TData}.cs" />
     <Compile Include="AnonymousProjectionStore{TKey,TProjection}.cs" />
+    <Compile Include="DistributorCatchup{T}.cs" />
+    <Compile Include="HandleProjection{T}.cs" />
     <Compile Include="IAggregatorSubscription.cs" />
     <Compile Include="AggregatorSubscription{TProjection,TData}.cs" />
     <Compile Include="AnonymousStream.cs" />
@@ -52,8 +54,7 @@
     <Compile Include="Cursor.cs" />
     <Compile Include="CursorWrapper.cs" />
     <Compile Include="ProjectionStore.cs" />
-    <Compile Include="SingleStreamCatchup{T}.cs" />
-    <Compile Include="StreamOfStreamsCatchup{T}.cs" />
+    <Compile Include="StreamCatchupBase{T}.cs" />
     <Compile Include="PipeAsync{TProjection,TData}.cs" />
     <Compile Include="StreamSource.cs" />
     <Compile Include="StreamCatchup.cs" />

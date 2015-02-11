@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using FluentAssertions;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Alluvial.Tests.BankDomain;
@@ -100,10 +99,7 @@ namespace Alluvial.Tests
                                       await next(projection, batch);
                                   }), projectionStore);
 
-            catchup.RunSingleBatch();
-            catchup.RunSingleBatch();
-
-            await Task.Delay(1000);
+            await Task.WhenAll(catchup.RunSingleBatch(), catchup.RunSingleBatch());
 
             projectionStore.Count()
                            .Should()

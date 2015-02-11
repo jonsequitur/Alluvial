@@ -42,5 +42,19 @@ namespace Alluvial.Tests
                     await store.Put(key, projection);
                 });
         }
+
+        internal static FetchAndSaveProjection<TProjection> AsHandler<TProjection>(this IProjectionStore<string, TProjection> store)
+        {
+            store = store ?? new SingleInstanceProjectionCache<string, TProjection>();
+
+            return async (key, update) =>
+            {
+                var projection = await store.Get(key);
+
+                projection = await update(projection);
+
+                await store.Put(key, projection);
+            };
+        }
     }
 }
