@@ -60,7 +60,6 @@
     <Compile Include="StreamCatchup.cs" />
     <Compile Include="Stream.cs" />
     <Compile Include="Disposable.cs" />
-    <Compile Include="CatchupConfiguration.cs" />
     <Compile Include="ICursor.cs" />
     <Compile Include="IStream{T}.cs" />
     <Compile Include="IStreamCatchup{T}.cs" />

@@ -10,26 +10,36 @@ namespace Alluvial
 
         public DistributorCatchup(
             IStreamCatchup<IStream<TData>> upstreamCatchup,
-            ICursor cursor)
+            ICursor cursor,
+            FetchAndSaveProjection<ICursor> manageCursor = null)
         {
             if (upstreamCatchup == null)
             {
                 throw new ArgumentNullException("upstreamCatchup");
             }
+            if (cursor == null)
+            {
+                throw new ArgumentNullException("cursor");
+            }
             this.upstreamCatchup = upstreamCatchup;
 
-            upstreamCatchup.Subscribe<ICursor, IStream<TData>>(
-                async (_, streams) =>
+            Cursor = cursor;
+
+            upstreamCatchup.Subscribe(
+                async (c, streams) =>
                 {
                     await Task.WhenAll(streams.Select(RunSingleBatch));
 
-                    return cursor;
+                    return c;
                 },
-                async (streamId, update) =>
+                manageCursor ??
+                (async (streamId, update) =>
                 {
-                    await update(cursor);
-                });
+                    await update(null, Cursor);
+                }));
         }
+
+        public ICursor Cursor { get; private set; }
 
         public override async Task<ICursor> RunSingleBatch()
         {

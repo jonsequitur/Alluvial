@@ -235,9 +235,7 @@ namespace Alluvial.Tests
                 {
                     queriedEvents.Add(e);
                 }
-            }),
-                                               stream.NewCursor(),
-                                               batchCount: 1);
+            }), batchCount: 1);
             catchup.Subscribe(new BalanceProjector());
 
             WriteEvents();

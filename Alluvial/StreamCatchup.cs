@@ -6,35 +6,24 @@ namespace Alluvial
 {
     public static class StreamCatchup
     {
-        public static IStreamCatchup<TData> Create<TData>(
+        public static IStreamCatchup<TData> Distribute<TData>(
             IStream<IStream<TData>> stream,
-            ICursor cursor = null,
+            ICursor cursor = null, 
             int? batchCount = null,
-            Action<CatchupConfiguration> configure = null)
+            FetchAndSaveProjection<ICursor> manageCursor = null)
         {
-            var configuration = new CatchupConfiguration();
-            if (configure != null)
-            {
-                configure(configuration);
-            }
-
             var upstreamCatchup = new SingleStreamCatchup<IStream<TData>>(stream, batchCount);
 
-            return new DistributorCatchup<TData>(upstreamCatchup, cursor ?? stream.NewCursor());
+            return new DistributorCatchup<TData>(
+                upstreamCatchup,
+                cursor ?? stream.NewCursor(),
+                manageCursor);
         }
 
         public static IStreamCatchup<TData> Create<TData>(
             IStream<TData> stream,
-            ICursor cursor = null,
-            int? batchCount = null,
-            Action<CatchupConfiguration> configure = null)
+            int? batchCount = null)
         {
-            var configuration = new CatchupConfiguration();
-            if (configure != null)
-            {
-                configure(configuration);
-            }
-
             return new SingleStreamCatchup<TData>(
                 stream,
                 batchCount);
@@ -48,7 +37,7 @@ namespace Alluvial
             ICursor cursor;
             var counter = new Progress<TData>();
 
-            using (catchup.Subscribe(async (_, batch) => counter.Count(batch), IgnoreCursor<Progress<TData>>(counter)))
+            using (catchup.Subscribe(async (_, batch) => counter.Count(batch), IgnoreCursor(counter)))
             {
                 int countBefore;
                 do
@@ -122,22 +111,6 @@ namespace Alluvial
             FetchAndSaveProjection<TProjection> manageProjection)
         {
             return catchup.SubscribeAggregator(aggregator, manageProjection);
-        }
-
-        public static CatchupConfiguration StoreCursor(
-            this CatchupConfiguration configuration,
-            StoreCursor put)
-        {
-            configuration.StoreCursor = put;
-            return configuration;
-        }
-
-        public static CatchupConfiguration GetCursor(
-            this CatchupConfiguration configuration,
-            GetCursor get)
-        {
-            configuration.GetCursor = get;
-            return configuration;
         }
 
         internal class Progress<TData>
