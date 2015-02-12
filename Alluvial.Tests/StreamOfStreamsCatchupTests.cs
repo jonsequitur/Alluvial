@@ -72,8 +72,8 @@ namespace Alluvial.Tests
         {
             var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
 
-            var catchup = StreamCatchup.Create(streamSource.UpdatedStreams());
-            catchup.Subscribe(new BalanceProjector(), projectionStore);
+            var catchup = StreamCatchup.Create(streamSource.UpdatedStreams().Trace());
+            catchup.Subscribe(new BalanceProjector().Trace(), projectionStore);
             await catchup.RunSingleBatch();
 
             projectionStore.Sum(b => b.Balance)

@@ -8,7 +8,9 @@ namespace Alluvial
     {
         private readonly IStreamCatchup<IStream<TData>> upstreamCatchup;
 
-        public DistributorCatchup(IStreamCatchup<IStream<TData>> upstreamCatchup, ICursor cursor)
+        public DistributorCatchup(
+            IStreamCatchup<IStream<TData>> upstreamCatchup,
+            ICursor cursor)
         {
             if (upstreamCatchup == null)
             {
@@ -16,16 +18,17 @@ namespace Alluvial
             }
             this.upstreamCatchup = upstreamCatchup;
 
-            upstreamCatchup.Subscribe<ICursor, IStream<TData>>(async (_, streams) =>
-            {
-                await Task.WhenAll(streams.Select(RunSingleBatch));
+            upstreamCatchup.Subscribe<ICursor, IStream<TData>>(
+                async (_, streams) =>
+                {
+                    await Task.WhenAll(streams.Select(RunSingleBatch));
 
-                return cursor;
-            }, 
-            async (streamId, update) =>
-            {
-                await update(cursor);
-            });
+                    return cursor;
+                },
+                async (streamId, update) =>
+                {
+                    await update(cursor);
+                });
         }
 
         public override async Task<ICursor> RunSingleBatch()
