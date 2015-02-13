@@ -1,5 +1,4 @@
 using System;
-using System.Threading.Tasks;
 
 namespace Alluvial
 {
@@ -8,6 +7,5 @@ namespace Alluvial
         bool IsCursor { get; }
         Type ProjectionType { get; }
         Type StreamDataType { get; }
-        Task<object> GetProjection(string streamId);
     }
 }

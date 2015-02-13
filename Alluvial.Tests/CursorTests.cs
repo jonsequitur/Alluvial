@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Alluvial.Tests.BankDomain;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -9,6 +8,18 @@ namespace Alluvial.Tests
     [TestFixture]
     public class CursorTests
     {
+        [Test]
+        public async Task A_new_cursor_has_a_position_that_is_less_than_any_int_value()
+        {
+            (Cursor.StartOfStream < int.MinValue).Should().BeTrue();
+        }
+
+        [Test]
+        public async Task A_new_cursor_casts_to_int_as_MinValue_when_CompareTo_is_called()
+        {
+            int.MinValue.CompareTo(Cursor.StartOfStream).Should().Be(0);
+        }
+
         [Test]
         public async Task DateTimeOffset_cursor_HasReached_with_ascending_sort()
         {

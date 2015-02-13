@@ -25,7 +25,7 @@ namespace Alluvial
         /// <summary>
         /// Gets an immutable object that represents the start of any stream.
         /// </summary>
-        public static object StartOfStream
+        public static StartingPosition StartOfStream
         {
             get
             {
@@ -110,7 +110,17 @@ namespace Alluvial
 
         internal static ICursor Minimum(this IEnumerable<ICursor> cursors)
         {
-            var firstOrDefault = cursors
+            var cursorArray = cursors.Where(c => !(c is IgnoredCursor))
+                                     .ToArray();
+
+            var startingPosition = cursorArray.FirstOrDefault(c => c.Position is StartingPosition);
+
+            if (startingPosition != null)
+            {
+                return startingPosition.Clone();
+            }
+
+            var firstOrDefault = cursorArray
                 .Where(c => c != null)
                 .OrderBy(c => (object) c.Position)
                 .Select(c => c.Clone())
@@ -137,8 +147,60 @@ namespace Alluvial
                 : comparison <= 0;
         }
 
-        internal struct StartingPosition
+        public struct StartingPosition : IComparable<object>
         {
+            public static bool operator >(StartingPosition start, object value)
+            {
+                return false;
+            }
+
+            public static bool operator <(StartingPosition start, object value)
+            {
+                return true;
+            }
+        
+            public int CompareTo(object other)
+            {
+                return -1;
+            }
+
+            public static implicit operator int(StartingPosition start)
+            {
+                return int.MinValue;
+            }
+        }
+
+        public static ICursor Ignored()
+        {
+            return new IgnoredCursor();
+        }
+    }
+
+    internal class IgnoredCursor : ICursor
+    {
+        public dynamic Position
+        {
+            get
+            {
+                return Cursor.StartOfStream;
+            }
+        }
+
+        public bool Ascending
+        {
+            get
+            {
+                return true;
+            }
+        }
+
+        public void AdvanceTo(dynamic position)
+        {
+        }
+
+        public bool HasReached(dynamic point)
+        {
+            return false;
         }
     }
 }

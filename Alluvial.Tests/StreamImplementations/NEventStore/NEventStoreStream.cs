@@ -105,8 +105,5 @@ namespace Alluvial.Tests
         {
             store.Dispose();
         }
-    
     }
-
-    
 }

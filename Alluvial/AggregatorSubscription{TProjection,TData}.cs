@@ -1,5 +1,4 @@
 using System;
-using System.Threading.Tasks;
 
 namespace Alluvial
 {
@@ -7,21 +6,25 @@ namespace Alluvial
     {
         public AggregatorSubscription(
             IStreamAggregator<TProjection, TData> aggregator,
-            IProjectionStore<string, TProjection> projectionStore = null)
+            FetchAndSaveProjection<TProjection> fetchAndSaveProjection = null)
         {
             if (aggregator == null)
             {
                 throw new ArgumentNullException("aggregator");
             }
-            ProjectionStore = projectionStore ??
-                              new SingleInstanceProjectionCache<string, TProjection>();
+
+            FetchAndSaveProjection = fetchAndSaveProjection ??
+                               (async (key, update) =>
+                               {
+                                   await update(Activator.CreateInstance<TProjection>());
+                               });
             Aggregator = aggregator;
             IsCursor = typeof (ICursor).IsAssignableFrom(typeof (TProjection));
         }
 
         public IStreamAggregator<TProjection, TData> Aggregator { get; private set; }
 
-        public IProjectionStore<string, TProjection> ProjectionStore { get; private set; }
+        public FetchAndSaveProjection<TProjection> FetchAndSaveProjection { get; private set; }
 
         public bool IsCursor { get; protected set; }
 
@@ -39,11 +42,6 @@ namespace Alluvial
             {
                 return typeof (TData);
             }
-        }
-
-        public async Task<object> GetProjection(string streamId)
-        {
-            return await ProjectionStore.Get(streamId);
         }
     }
 }

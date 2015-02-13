@@ -119,7 +119,8 @@ namespace Alluvial
                 advanceCursor: (query, batch) =>
                 {
                     // we're passing the cursor through to the upstream query, so we don't want downstream queries to overwrite it
-                });
+                },
+                newCursor: upstream.NewCursor);
         }
 
         public static async Task<TProjection> Aggregate<TProjection, TData>(

@@ -51,7 +51,8 @@ namespace Alluvial.Tests
                     {
                         query.Cursor.AdvanceTo(last.CheckpointToken);
                     }
-                })
+                },
+                newCursor: () => Cursor.Create(""))
                          .Requery(update => OpenStream(update.StreamId,
                                                        startAfter: update.CheckpointToken));
         }
