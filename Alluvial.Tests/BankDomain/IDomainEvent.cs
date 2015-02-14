@@ -2,7 +2,7 @@
 {
     public interface IDomainEvent
     {
-        string AggregateId { get; }
+        string AggregateId { get; set; }
         int StreamRevision { get; set; }
     }
 }

@@ -122,7 +122,27 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task Catchup_upstream_cursor_can_be_specified()
+        public async Task Catchup_starting_cursor_can_be_specified()
+        {
+            var catchup = StreamCatchup.Distribute(streamSource.UpdatedStreams(), batchCount: 500);
+            catchup.Subscribe(new BalanceProjector(), new InMemoryProjectionStore<BalanceProjection>());
+
+            var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
+            var updatedStreams = streamSource.UpdatedStreams();
+            var cursor = updatedStreams.NewCursor();
+            cursor.AdvanceTo("500");
+            catchup = StreamCatchup.Distribute(updatedStreams, cursor);
+            catchup.Subscribe(new BalanceProjector(), projectionStore);
+
+            await catchup.RunSingleBatch();
+
+            projectionStore.Count()
+                           .Should()
+                           .Be(500);
+        }
+
+        [Test]
+        public async Task Stream_traversal_can_continue_from_upstream_cursor_that_was_returned_by_RunSingleBatch()
         {
             var catchup = StreamCatchup.Distribute(streamSource.UpdatedStreams(), batchCount: 500);
             catchup.Subscribe(new BalanceProjector(), new InMemoryProjectionStore<BalanceProjection>());

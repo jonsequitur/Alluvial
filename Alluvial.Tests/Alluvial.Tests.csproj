@@ -78,6 +78,8 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
+    <Compile Include="BankDomain\AccountClosed.cs" />
+    <Compile Include="BankDomain\AccountOpened.cs" />
     <Compile Include="Infrastructure\Background.cs" />
     <Compile Include="BankDomain\AccountHistoryProjection.cs" />
     <Compile Include="BankDomain\BalanceProjection.cs" />
@@ -87,6 +89,7 @@
     <Compile Include="BankDomain\ProjectionBase.cs" />
     <Compile Include="CursorTests.cs" />
     <Compile Include="PipelineTests.cs" />
+    <Compile Include="ReduceTests.cs" />
     <Compile Include="StreamImplementations\IMapProjection.cs" />
     <Compile Include="StreamCatchupTests.cs" />
     <Compile Include="StreamImplementations\NEventStore\NEventStoreExtensions.cs" />

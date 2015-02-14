@@ -219,7 +219,7 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task AsDataStream_can_use_non_default_ordering()
+        public async Task AsStream_can_use_non_default_ordering()
         {
             var alphabetStrings = Enumerable.Range(97, 26).Select(i => new string(Convert.ToChar(i), 1)).Reverse().ToArray();
             var alphabetStream = alphabetStrings.AsStream();

@@ -17,7 +17,7 @@ namespace Alluvial
         public static IStream<TData> AsStream<TData>(
             this IEnumerable<TData> source)
         {
-            return Create(Guid.NewGuid().ToString(),
+            return Create(string.Format("{0}({1})", typeof (TData), source.GetHashCode()),
                           query => source.SkipWhile(x => query.Cursor.HasReached(x))
                                          .Take(query.BatchCount ?? StreamBatch.MaxBatchCount),
                           newCursor: () => Cursor.Create(0));
@@ -28,7 +28,10 @@ namespace Alluvial
             Action<IStreamQuery, IStreamBatch<TData>> advanceCursor = null,
             Func<ICursor> newCursor = null)
         {
-            return Create(Guid.NewGuid().ToString(), query, advanceCursor, newCursor);
+            return Create(string.Format("{0}({1})", typeof (TData), query.GetHashCode()),
+                          query,
+                          advanceCursor,
+                          newCursor);
         }
 
         public static IStream<TData> Create<TData>(
@@ -54,7 +57,7 @@ namespace Alluvial
             Action<IStreamQuery, IStreamBatch<TData>> advanceCursor = null,
             Func<ICursor> newCursor = null)
         {
-            return Create(Guid.NewGuid().ToString(), query, advanceCursor, newCursor);
+            return Create(string.Format("{0}({1})", typeof (TData), query.GetHashCode()), query, advanceCursor, newCursor);
         }
 
         public static IStream<TData> Create<TData>(
