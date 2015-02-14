@@ -37,9 +37,7 @@ namespace Alluvial
 
         public async Task<IStreamBatch<TData>> NextBatch()
         {
-            var streamBatch = await stream.Fetch(this);
-
-            return streamBatch;
+            return await stream.Fetch(this);
         }
 
         private string BatchCountDescription

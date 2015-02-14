@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using trace = System.Diagnostics.Trace;
 
 namespace Alluvial
-{
+{ 
     /// <summary>
     /// Methods for working with streams.
     /// </summary>
@@ -82,7 +82,7 @@ namespace Alluvial
             string id = null)
         {
             return Create<TTo>(
-                id: id ?? sourceStream.Id,
+                id: id ?? sourceStream.Id + "->Map",
                 query: async q =>
                 {
                     var sourceBatch = await sourceStream.Fetch(
@@ -109,7 +109,7 @@ namespace Alluvial
             Func<TUpstream, IStream<TDownstream>> queryDownstream)
         {
             return Create(
-                id: upstream.Id + ".Requery",
+                id: upstream.Id + "->Requery",
                 query: async upstreamQuery =>
                 {
                     var cursor = upstreamQuery.Cursor;

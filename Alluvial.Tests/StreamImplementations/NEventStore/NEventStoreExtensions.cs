@@ -17,7 +17,8 @@ namespace Alluvial.Tests
                     de.StreamRevision = StreamRevision(e);
                 }
                 return e.Body;
-            }).OfType<IDomainEvent>());
+            }).OfType<IDomainEvent>(), 
+            id: stream.Id);
         }
 
         public static int StreamRevision(this EventMessage e)

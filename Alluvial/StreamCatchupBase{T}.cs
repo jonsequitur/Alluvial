@@ -54,13 +54,20 @@ namespace Alluvial
                 var query = stream.CreateQuery(cursor, batchCount);
                 upstreamCursor = query.Cursor;
 
-                var batch = await query.NextBatch();
-
-                tcs.SetResult(new AggregationBatch
+                try
                 {
-                    UpstreamCursor = upstreamCursor,
-                    Batch = batch
-                });
+                    var batch = await query.NextBatch();
+
+                    tcs.SetResult(new AggregationBatch
+                    {
+                        UpstreamCursor = upstreamCursor,
+                        Batch = batch
+                    });
+                }
+                catch (Exception exception)
+                {
+                    tcs.SetException(exception);
+                }
             };
 
             Func<ICursor, Task<AggregationBatch>> awaitData = c =>

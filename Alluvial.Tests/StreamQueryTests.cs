@@ -32,26 +32,6 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task Defining_a_key_query()
-        {
-            var sequences =
-                Enumerable.Range(0, 100)
-                          .ToDictionary(i => Guid.NewGuid(),
-                                        i => Enumerable.Range(1, i)
-                                                       .Select(j => j.ToString())
-                                                       .ToArray());
-
-            var keyStream = Stream.Create<Guid>(q => sequences.Keys);
-
-            var allKeys = await keyStream.CreateQuery(Cursor.Create(0), 1000).NextBatch();
-
-            allKeys.Distinct()
-                   .Count()
-                   .Should()
-                   .Be(100);
-        }
-
-        [Test]
         public async Task When_a_query_does_not_reach_the_end_of_the_result_set_then_the_query_cursor_is_set_to_the_last_queried_position()
         {
             var values = Enumerable.Range(1, 20);

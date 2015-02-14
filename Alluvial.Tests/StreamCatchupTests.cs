@@ -317,7 +317,7 @@ namespace Alluvial.Tests
             var projectionStore = ProjectionStore.Create<string, BalanceProjection>(
                 get: async key =>
                 {
-                    if (streamId == key)
+                    if (key.Contains(streamId))
                     {
                         Console.WriteLine("Get");
                         Interlocked.Increment(ref getCount);
@@ -375,6 +375,31 @@ namespace Alluvial.Tests
             await catchup.RunSingleBatch();
 
             finalProjection.Balance.Should().Be(100m);
+        }
+
+        [Test]
+        public async Task When_advancing_the_cursor_throws_then_an_exception_is_thrown()
+        {
+            var values = Enumerable.Range(1, 20);
+            var stream = Stream.Create(
+                query: q => values.Skip(q.Cursor.As<int>())
+                                  .Take(q.BatchCount ?? 1000),
+                advanceCursor: (q, b) =>
+                {
+                    throw new Exception("oops!");
+                });
+
+            var catchup = StreamCatchup.Create(stream);
+
+            catchup.Subscribe<int, int>(async (sum, vs) => sum + vs.Sum());
+
+            Action runSingleBatch = () => catchup.RunSingleBatch().Wait();
+
+            runSingleBatch.ShouldThrow<Exception>()
+                          .And
+                          .Message
+                          .Should()
+                          .Contain("oops!");
         }
     }
 }

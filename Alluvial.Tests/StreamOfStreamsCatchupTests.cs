@@ -430,7 +430,7 @@ namespace Alluvial.Tests
                 CursorPosition = 2
             });
             var catchup = StreamCatchup.Distribute(streamSource.UpdatedStreams()
-                                                           .Map(ss => ss.Select(s => s.Trace(onResults: (q, b) =>
+                .Map(ss => ss.Select(s => s.Trace(onResults: (q, b) =>
                                                            {
                                                                foreach (var e in b)
                                                                {
@@ -484,7 +484,7 @@ namespace Alluvial.Tests
             var projectionStore = ProjectionStore.Create<string, BalanceProjection>(
                 get: async key =>
                 {
-                    if (streamId == key)
+                    if (key.Contains(streamId))
                     {
                         Console.WriteLine("Get");
                         Interlocked.Increment(ref getCount);
