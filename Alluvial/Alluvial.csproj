@@ -53,6 +53,7 @@
     <Compile Include="ChronologicalCursor.cs" />
     <Compile Include="Cursor.cs" />
     <Compile Include="CursorWrapper.cs" />
+    <Compile Include="NoCursor.cs" />
     <Compile Include="ProjectionStore.cs" />
     <Compile Include="StreamCatchupBase{T}.cs" />
     <Compile Include="PipeAsync{TProjection,TData}.cs" />

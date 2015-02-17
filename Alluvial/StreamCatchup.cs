@@ -37,7 +37,7 @@ namespace Alluvial
             ICursor cursor;
             var counter = new Progress<TData>();
 
-            using (catchup.Subscribe(async (_, batch) => counter.Count(batch), IgnoreCursor(counter)))
+            using (catchup.Subscribe(async (_, batch) => counter.Count(batch), NoCursor(counter)))
             {
                 int countBefore;
                 do
@@ -50,11 +50,11 @@ namespace Alluvial
             return cursor;
         }
 
-        private static FetchAndSaveProjection<TProjection> IgnoreCursor<TProjection>(TProjection projection)
+        private static FetchAndSaveProjection<TProjection> NoCursor<TProjection>(TProjection projection)
         {
             return async (streamId, aggregate) =>
             {
-                await aggregate(projection, Cursor.Ignored());
+                await aggregate(projection, Cursor.None());
             };
         }
 

@@ -110,7 +110,7 @@ namespace Alluvial
 
         internal static ICursor Minimum(this IEnumerable<ICursor> cursors)
         {
-            var cursorArray = cursors.Where(c => !(c is IgnoredCursor))
+            var cursorArray = cursors.Where(c => !(c is NoCursor))
                                      .ToArray();
 
             var startingPosition = cursorArray.FirstOrDefault(c => c.Position is StartingPosition);
@@ -147,7 +147,16 @@ namespace Alluvial
                 : comparison <= 0;
         }
 
-        public struct StartingPosition : IComparable<object>
+        public static ICursor None()
+        {
+            return new NoCursor();
+        }
+
+        public struct StartingPosition :
+            IComparable<DateTime>,
+            IComparable<DateTimeOffset>,
+            IComparable<int>,
+            IComparable<long>
         {
             public static bool operator >(StartingPosition start, object value)
             {
@@ -158,49 +167,66 @@ namespace Alluvial
             {
                 return true;
             }
-        
-            public int CompareTo(object other)
+
+            public static bool operator >(StartingPosition start, DateTime value)
             {
-                return -1;
+                return false;
+            }
+
+            public static bool operator <(StartingPosition start, DateTime value)
+            {
+                return true;
+            }
+
+            public static bool operator >(StartingPosition start, DateTimeOffset value)
+            {
+                return false;
+            }
+
+            public static bool operator <(StartingPosition start, DateTimeOffset value)
+            {
+                return true;
             }
 
             public static implicit operator int(StartingPosition start)
             {
                 return int.MinValue;
             }
-        }
 
-        public static ICursor Ignored()
-        {
-            return new IgnoredCursor();
-        }
-    }
-
-    internal class IgnoredCursor : ICursor
-    {
-        public dynamic Position
-        {
-            get
+            public static implicit operator long(StartingPosition start)
             {
-                return Cursor.StartOfStream;
+                return long.MinValue;
             }
-        }
 
-        public bool Ascending
-        {
-            get
+            public static implicit operator DateTime(StartingPosition start)
             {
-                return true;
+                return DateTime.MinValue;
             }
-        }
 
-        public void AdvanceTo(dynamic position)
-        {
-        }
+            public static implicit operator DateTimeOffset(StartingPosition start)
+            {
+                return DateTimeOffset.MinValue;
+            }
 
-        public bool HasReached(dynamic point)
-        {
-            return false;
+            public int CompareTo(DateTime other)
+            {
+                return -1;
+            }
+
+            public int CompareTo(DateTimeOffset other)
+            {
+                return -1;
+            }
+
+            public int CompareTo(int other)
+            {
+                return -1;
+            }
+
+            public int CompareTo(long other)
+            {
+                return -1;
+            }
         }
     }
 }

@@ -102,7 +102,7 @@ namespace Alluvial
         private static void TraceDefault<TProjection, TData>(TProjection projection, IStreamBatch<TData> batch)
         {
             System.Diagnostics.Trace.WriteLine(
-                string.Format("Projection {0} / batch of {1} starts @ {2}",
+                string.Format("Aggregate: {0} / batch of {1} starts @ {2}",
                               projection,
                               batch.Count,
                               (string) batch.StartsAtCursorPosition.ToString()));

@@ -34,7 +34,7 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .Contain("Projection 1 / batch of 2 starts @ 0");
+                         .Contain("Aggregate: 1 / batch of 2 starts @ 0");
         }
 
         [Test]

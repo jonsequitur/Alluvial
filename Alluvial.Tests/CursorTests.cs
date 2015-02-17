@@ -21,6 +21,50 @@ namespace Alluvial.Tests
         }
 
         [Test]
+        public async Task A_new_cursor_has_a_position_that_is_less_than_any_long_value()
+        {
+            (Cursor.StartOfStream < long.MinValue).Should().BeTrue();
+        }
+
+        [Test]
+        public async Task A_new_cursor_casts_to_long_as_MinValue_when_CompareTo_is_called()
+        {
+            long.MinValue.CompareTo(Cursor.StartOfStream).Should().Be(0);
+        }
+
+        [Test]
+        public async Task A_new_cursor_has_a_position_that_is_less_than_any_DateTime_value()
+        {
+            (Cursor.StartOfStream < DateTime.MinValue).Should().BeTrue();
+        }
+
+        [Test]
+        public async Task A_new_cursor_casts_to_DateTime_as_MinValue_when_CompareTo_is_called()
+        {
+            DateTime.MinValue.CompareTo(Cursor.StartOfStream).Should().Be(0);
+        }
+
+        [Test]
+        public async Task A_new_cursor_has_a_position_that_is_less_than_any_DateTimeOffset_value()
+        {
+            (Cursor.StartOfStream < DateTimeOffset.MinValue).Should().BeTrue();
+        }
+
+        [Test]
+        public async Task A_new_cursor_casts_to_DateTimeOffset_as_MinValue_when_CompareTo_is_called()
+        {
+            DateTimeOffset.MinValue.CompareTo(Cursor.StartOfStream).Should().Be(0);
+        }
+
+        [Test]
+        public async Task A_new_cursor_has_a_position_that_is_less_than_any_String_value()
+        {
+            (Cursor.StartOfStream < (string)null).Should().BeTrue();
+            (Cursor.StartOfStream < "").Should().BeTrue();
+            (Cursor.StartOfStream < "a").Should().BeTrue();
+        }
+
+        [Test]
         public async Task DateTimeOffset_cursor_HasReached_with_ascending_sort()
         {
             var startAt = DateTimeOffset.Parse("2014-12-30 01:58:48 PM");
