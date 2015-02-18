@@ -21,6 +21,12 @@ namespace Alluvial.Tests
             Trace.Listeners.Add(traceListener);
         }
 
+        [TearDown]
+        public void TearDown()
+        {
+            Trace.Listeners.Remove(traceListener);
+        }
+
         [Test]
         public async Task By_default_Aggregator_Trace_writes_projections_and_batches_to_trace_output()
         {

@@ -35,16 +35,16 @@ namespace Alluvial
         public static async Task<ICursor> RunUntilCaughtUp<TData>(this IStreamCatchup<TData> catchup)
         {
             ICursor cursor;
-            var counter = new Progress<TData>();
+            var counter = new Counter<TData>();
 
             using (catchup.Subscribe(async (_, batch) => counter.Count(batch), NoCursor(counter)))
             {
                 int countBefore;
                 do
                 {
-                    countBefore = counter.AggregatedCount;
+                    countBefore = counter.TotalCount;
                     cursor = await catchup.RunSingleBatch();
-                } while (countBefore != counter.AggregatedCount);
+                } while (countBefore != counter.TotalCount);
             }
 
             return cursor;
@@ -113,15 +113,15 @@ namespace Alluvial
             return catchup.SubscribeAggregator(aggregator, manageProjection);
         }
 
-        internal class Progress<TData>
+        internal class Counter<TData>
         {
-            public Progress<TData> Count(IStreamBatch<TData> batch)
+            public Counter<TData> Count(IStreamBatch<TData> batch)
             {
-                AggregatedCount += batch.Count;
+                TotalCount += batch.Count;
                 return this;
             }
 
-            public int AggregatedCount { get; private set; }
+            public int TotalCount { get; private set; }
         }
     }
 }

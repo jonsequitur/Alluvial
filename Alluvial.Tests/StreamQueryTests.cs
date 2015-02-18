@@ -97,7 +97,7 @@ namespace Alluvial.Tests
 
             var batch = await stream.CreateQuery(stream.NewCursor(), 10).NextBatch();
 
-            ((int) batch.StartsAtCursorPosition).Should().Be(0);
+            ((object) batch.StartsAtCursorPosition).Should().Be(Cursor.StartOfStream);
         }
 
         [Test]

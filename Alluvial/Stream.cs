@@ -20,6 +20,18 @@ namespace Alluvial
             return Create(string.Format("{0}({1})", typeof (TData), source.GetHashCode()),
                           query => source.SkipWhile(x => query.Cursor.HasReached(x))
                                          .Take(query.BatchCount ?? StreamBatch.MaxBatchCount),
+                          newCursor: Cursor.New);
+        }
+        
+        /// <summary>
+        /// Creates a stream based on an enumerable sequence, whose cursor is an integer.
+        /// </summary>
+        public static IStream<TData> AsSequentialStream<TData>(
+            this IEnumerable<TData> source)
+        {
+            return Create(string.Format("{0}({1})", typeof (TData), source.GetHashCode()),
+                          query => source.Skip(query.Cursor.As<int>())
+                                         .Take(query.BatchCount ?? StreamBatch.MaxBatchCount),
                           newCursor: () => Cursor.Create(0));
         }
 
@@ -132,8 +144,6 @@ namespace Alluvial
             TProjection projection = null)
             where TProjection : class
         {
-            // QUESTION: (ProjectWith) better name? this can also be used for side effects, where TProjection is used to track the state of the work
-
             var cursor = (projection as ICursor) ??
                          stream.NewCursor();
 
