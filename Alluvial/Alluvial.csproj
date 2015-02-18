@@ -42,7 +42,6 @@
   <ItemGroup>
     <Compile Include="AggregateAsync{TProjection,TData}.cs" />
     <Compile Include="Aggregate{TProjection,TData}.cs" />
-    <Compile Include="AnonymousObservable{T}.cs" />
     <Compile Include="AnonymousProjectionStore{TKey,TProjection}.cs" />
     <Compile Include="DistributorCatchup{T}.cs" />
     <Compile Include="HandleProjection{T}.cs" />
@@ -55,7 +54,6 @@
     <Compile Include="Cursor.cs" />
     <Compile Include="CursorWrapper.cs" />
     <Compile Include="NoCursor.cs" />
-    <Compile Include="Observable.cs" />
     <Compile Include="ProjectionStore.cs" />
     <Compile Include="SingleStreamCatchup{T}.cs" />
     <Compile Include="StreamCatchupBase{T}.cs" />
