@@ -9,27 +9,6 @@ namespace Alluvial
     /// </summary>
     public static class Aggregator
     {
-        public static IStreamAggregator<TProjection, TData> Catch<TProjection, TData>(
-            this IStreamAggregator<TProjection, TData> aggregator,
-            Func<TProjection, IStreamBatch<TData>, Exception, bool> continueIf)
-        {
-            return aggregator.Pipeline(async (projection, batch, next) =>
-            {
-                try
-                {
-                    return await next(projection, batch);
-                }
-                catch (Exception exception)
-                {
-                    if (continueIf(projection, batch, exception))
-                    {
-                        return projection;
-                    }
-                    throw;
-                }
-            });
-        }
-
         public static IStreamAggregator<TProjection, TData> Create<TProjection, TData>(
             AggregateAsync<TProjection, TData> aggregate)
         {
@@ -44,6 +23,7 @@ namespace Alluvial
 
         public static IStreamAggregator<TProjection, TData> Create<TProjection, TData>(
             Func<TProjection, IStreamBatch<TData>, Task> aggregate)
+            where TProjection : class
         {
             return new AnonymousStreamAggregator<TProjection, TData>(
                 async (projection, batch) =>
@@ -55,6 +35,7 @@ namespace Alluvial
 
         public static IStreamAggregator<TProjection, TData> Create<TProjection, TData>(
             Action<TProjection, IStreamBatch<TData>> aggregate)
+            where TProjection : class
         {
             return new AnonymousStreamAggregator<TProjection, TData>(
                 (projection, batch) =>
@@ -67,23 +48,21 @@ namespace Alluvial
         public static IStreamAggregator<TProjection, TData> Pipeline<TProjection, TData>(
             this IStreamAggregator<TProjection, TData> aggregator,
             Func<TProjection, IStreamBatch<TData>, AggregateAsync<TProjection, TData>, Task> initial)
+            where TProjection : class
         {
-            return Create<TProjection, TData>(async (projection, batch) =>
-            {
-                await initial(projection,
-                              batch,
-                              aggregator.Aggregate);
-            });
+            return Create<TProjection, TData>((projection, batch) => initial(projection,
+                                                                             batch,
+                                                                             aggregator.Aggregate));
         }
 
         public static IStreamAggregator<TProjection, TData> Pipeline<TProjection, TData>(
             this IStreamAggregator<TProjection, TData> aggregator,
             PipeAsync<TProjection, TData> initial)
         {
-            return Create<TProjection, TData>(async (projection, batch) =>
-                                                  await initial(projection,
-                                                                batch,
-                                                                aggregator.Aggregate));
+            return Create<TProjection, TData>((projection, batch) =>
+                                                  initial(projection,
+                                                          batch,
+                                                          aggregator.Aggregate));
         }
 
         public static IStreamAggregator<TProjection, TData> Trace<TProjection, TData>(

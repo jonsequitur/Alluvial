@@ -43,7 +43,7 @@ namespace Alluvial.Tests
                 });
         }
 
-        internal static FetchAndSaveProjection<TProjection> AsHandler<TProjection>(this IProjectionStore<string, TProjection> store)
+        public static FetchAndSaveProjection<TProjection> AsHandler<TProjection>(this IProjectionStore<string, TProjection> store)
         {
             store = store ?? new SingleInstanceProjectionCache<string, TProjection>();
 

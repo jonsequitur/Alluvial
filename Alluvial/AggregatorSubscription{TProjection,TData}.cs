@@ -14,10 +14,10 @@ namespace Alluvial
             }
 
             FetchAndSaveProjection = fetchAndSaveProjection ??
-                               (async (key, update) =>
-                               {
-                                   await update(Activator.CreateInstance<TProjection>());
-                               });
+                                     (async (streamId, aggregate) =>
+                                     {
+                                         await aggregate(Activator.CreateInstance<TProjection>());
+                                     });
             Aggregator = aggregator;
             IsCursor = typeof (ICursor).IsAssignableFrom(typeof (TProjection));
         }

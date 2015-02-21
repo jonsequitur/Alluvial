@@ -199,27 +199,30 @@ namespace Alluvial.Tests
                           .Should()
                           .Contain("oops");
         }
-    
-        private void Throw()
-        {
-            throw new Exception("oops");
-        }
 
         [Test]
-        public async Task Catch_allows_aggregator_exceptions_to_be_prevented_from_stopping_catchup()
+        public async Task OnError_allows_aggregator_exceptions_to_be_prevented_from_stopping_catchup()
         {
             var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
+            var count = 0;
 
             var projector = new BalanceProjector()
                 .Pipeline(async (projection, batch, next) =>
                 {
-                    Throw();
+                    Interlocked.Increment(ref count);
+                    Console.WriteLine(count);
+                    if (count < 50)
+                    {
+                        Throw();
+                    }
                     await next(projection, batch);
-                })
-                .Catch(continueIf: (projection, batch, next) => true);
+                });
 
             var catchup = StreamCatchup.Create(stream, batchCount: 50);
-            catchup.Subscribe(projector, projectionStore);
+
+            catchup.Subscribe(projector, projectionStore.AsHandler(), onError: e => e.Continue());
+
+            TaskScheduler.UnobservedTaskException += (sender, args) => Console.WriteLine("UNOBSERVED: " + args.Exception);
 
             await catchup.RunSingleBatch();
 
@@ -400,6 +403,11 @@ namespace Alluvial.Tests
                           .Message
                           .Should()
                           .Contain("oops!");
+        }
+
+        private void Throw()
+        {
+            throw new Exception("oops");
         }
     }
 }

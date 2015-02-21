@@ -17,9 +17,9 @@ namespace Alluvial
             this.aggregate = aggregate;
         }
 
-        public async Task<TProjection> Aggregate(TProjection projection, IStreamBatch<TData> events)
+        public Task<TProjection> Aggregate(TProjection projection, IStreamBatch<TData> events)
         {
-            return await aggregate(projection, events);
+            return aggregate(projection, events);
         }
     }
 }

@@ -93,12 +93,12 @@ namespace Alluvial
             return upstreamCursor;
         }
 
-        private async Task Aggregate<TProjection>(
+        private static Task Aggregate<TProjection>(
             IStream<TData> stream,
             AggregatorSubscription<TProjection, TData> subscription,
             Func<ICursor, Task<AggregationBatch>> getData)
         {
-            await subscription.FetchAndSaveProjection(
+            return subscription.FetchAndSaveProjection(
                 stream.Id,
                 async (projection, cursor) =>
                 {
@@ -112,7 +112,6 @@ namespace Alluvial
                     if (projectionCursor != null &&
                         !(projectionCursor.Position is Cursor.StartingPosition))
                     {
-                        // TODO: (Aggregate) optimize: this is unnecessary if we know we know this was a brand new projection
                         data = data.Prune(projectionCursor);
                     }
 
