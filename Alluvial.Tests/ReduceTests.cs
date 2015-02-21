@@ -36,7 +36,7 @@ namespace Alluvial.Tests
             var updatedStreams = streamSource.UpdatedStreams()
                 .Trace()
                 .Map(ss => ss.Select(s => s.Trace()));
-            var indexCatchup = StreamCatchup.Distribute(updatedStreams, batchCount: 1);
+            var indexCatchup = StreamCatchup.Distribute(updatedStreams, updatedStreams.NewCursor(), batchCount: 1);
             var index = new List<AccountOpened>();
 
             // subscribe a catchup to the updates stream to build up an index

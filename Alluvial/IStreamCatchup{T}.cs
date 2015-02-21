@@ -4,9 +4,9 @@ using System.Threading.Tasks;
 namespace Alluvial
 {
     /// <summary>
-    /// An persistent query over a set of streams of data, which updates one or more stream aggregators. 
+    /// An persistent query over a stream of data, which updates one or more stream aggregators. 
     /// </summary>
-    /// <typeparam name="TData">The type of the data that the catchup queries.</typeparam>
+    /// <typeparam name="TData">The type of the data that the catchup pushes to the aggregators.</typeparam>
     public interface IStreamCatchup<out TData>
     {
         /// <summary>

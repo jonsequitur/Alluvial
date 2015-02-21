@@ -76,25 +76,6 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task Catch_can_be_used_to_continue_on_exceptions()
-        {
-            var aggregator = Aggregator
-                .Create<BalanceProjection, IDomainEvent>((projection, events) =>
-                {
-                    Task.Run(() =>
-                    {
-                        throw new Exception("DRAT!");
-                    });
-                })
-                .Catch((projection, events, exception) => true);
-
-            var balanceProjection = new BalanceProjection();
-            var returnedProjection = await aggregator.Aggregate(balanceProjection, null);
-
-            balanceProjection.Should().BeSameAs(returnedProjection);
-        }
-
-        [Test]
         public async Task Pipeline_can_be_used_to_time_an_operation()
         {
             var time = new TimeSpan();

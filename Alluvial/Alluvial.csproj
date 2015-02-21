@@ -42,6 +42,7 @@
   <ItemGroup>
     <Compile Include="AggregateAsync{TProjection,TData}.cs" />
     <Compile Include="Aggregate{TProjection,TData}.cs" />
+    <Compile Include="AggregatorSubscription.cs" />
     <Compile Include="AnonymousProjectionStore{TKey,TProjection}.cs" />
     <Compile Include="DistributorCatchup{T}.cs" />
     <Compile Include="HandleProjection{T}.cs" />
@@ -58,6 +59,7 @@
     <Compile Include="SingleStreamCatchup{T}.cs" />
     <Compile Include="StreamCatchupBase{T}.cs" />
     <Compile Include="PipeAsync{TProjection,TData}.cs" />
+    <Compile Include="StreamCatchupError.cs" />
     <Compile Include="StreamSource.cs" />
     <Compile Include="StreamCatchup.cs" />
     <Compile Include="Stream.cs" />
