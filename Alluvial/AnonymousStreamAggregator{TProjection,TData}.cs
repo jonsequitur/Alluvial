@@ -3,7 +3,8 @@ using System.Threading.Tasks;
 
 namespace Alluvial
 {
-    internal class AnonymousStreamAggregator<TProjection, TData> : IStreamAggregator<TProjection, TData>
+    internal class AnonymousStreamAggregator<TProjection, TData> :
+        IStreamAggregator<TProjection, TData>
     {
         private readonly AggregateAsync<TProjection, TData> aggregate;
 

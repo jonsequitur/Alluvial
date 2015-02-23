@@ -24,12 +24,12 @@ namespace Alluvial.Tests
             return OpenStream(streamId);
         }
 
-        private IStream<IDomainEvent> OpenStream(string streamId, string startAfter = null)
+        private IStream<IDomainEvent> OpenStream(string streamId)
         {
             return new NEventStoreStream(store, streamId).DomainEvents();
         }
 
-        public IStream<IStream<IDomainEvent>> UpdatedStreams()
+        public IStream<IStream<IDomainEvent>> EventsByAggregate()
         {
             return Stream.Create(
                 id: "NEventStoreStreamSource.UpdatedStreams",
@@ -53,8 +53,20 @@ namespace Alluvial.Tests
                     }
                 },
                 newCursor: () => Cursor.Create(""))
-                         .Requery(update => OpenStream(update.StreamId,
-                                                       startAfter: update.CheckpointToken));
+                         .Requery(update =>
+                         {
+                             var stream = OpenStream(update.StreamId);
+
+                             stream = stream.Map(
+                                 id: stream.Id,
+                                 map: es => es.Select(e =>
+                                 {
+                                     e.CheckpointToken = update.CheckpointToken;
+                                     return e;
+                                 }));
+
+                             return stream;
+                         });
         }
     }
 }

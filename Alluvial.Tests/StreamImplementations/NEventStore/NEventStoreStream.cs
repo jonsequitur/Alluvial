@@ -35,7 +35,7 @@ namespace Alluvial.Tests
 
         public async Task<IStreamBatch<EventMessage>> Fetch(IStreamQuery query)
         {
-            int lastFetchedRevision = (int) query.Cursor.Position;
+            var lastFetchedRevision = Math.Max(query.Cursor.As<int>(), 0);
 
             int maxRevisionToFetch;
 
@@ -59,30 +59,33 @@ namespace Alluvial.Tests
 
             var events = new List<EventMessage>();
 
-            for (var i = lastFetchedRevision + 1; i <= maxRevisionToFetch; i++)
+            checked
             {
-                try
+                for (var i = lastFetchedRevision + 1; i <= maxRevisionToFetch; i++)
                 {
-                    using (var stream = store.OpenStream(streamId,
-                                                         minRevision: i,
-                                                         maxRevision: i))
+                    try
                     {
-                        if (stream.CommittedEvents.Count == 0)
+                        using (var stream = store.OpenStream(streamId,
+                                                             minRevision: i,
+                                                             maxRevision: i))
                         {
-                            break;
-                        }
+                            if (stream.CommittedEvents.Count == 0)
+                            {
+                                break;
+                            }
 
-                        events.AddRange(stream.CommittedEvents
-                                              .Select(e =>
-                                              {
-                                                  e.SetStreamRevision(stream.StreamRevision);
-                                                  return e;
-                                              }));
+                            events.AddRange(stream.CommittedEvents
+                                                  .Select(e =>
+                                                  {
+                                                      e.SetStreamRevision(stream.StreamRevision);
+                                                      return e;
+                                                  }));
+                        }
                     }
-                }
-                catch (StreamNotFoundException)
-                {
-                    break;
+                    catch (StreamNotFoundException)
+                    {
+                        break;
+                    }
                 }
             }
 

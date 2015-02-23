@@ -27,4 +27,11 @@ namespace Alluvial
         /// </summary>
         bool HasReached(dynamic point);
     }
+
+    public interface ICursor<in T>
+    {
+        bool HasCursorReached(T point);
+
+        void AdvanceCursorTo(T point);
+    }
 }

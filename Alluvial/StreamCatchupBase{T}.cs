@@ -11,7 +11,7 @@ namespace Alluvial
         private int isRunning;
 
         protected int? batchCount;
-        
+
         private readonly ConcurrentDictionary<Type, IAggregatorSubscription> aggregatorSubscriptions = new ConcurrentDictionary<Type, IAggregatorSubscription>();
 
         public IDisposable SubscribeAggregator<TProjection>(
@@ -45,12 +45,12 @@ namespace Alluvial
 
             ICursor upstreamCursor = null;
 
-            var downstreamCursors = new ConcurrentBag<ICursor>();
+            var projections = new ConcurrentBag<object>();
             var tcs = new TaskCompletionSource<AggregationBatch>();
 
             Action runQuery = async () =>
             {
-                var cursor = downstreamCursors.Minimum();
+                var cursor = projections.OfType<ICursor>().Minimum();
                 var query = stream.CreateQuery(cursor, batchCount);
                 upstreamCursor = query.Cursor;
 
@@ -70,11 +70,11 @@ namespace Alluvial
                 }
             };
 
-            Func<ICursor, Task<AggregationBatch>> awaitData = c =>
+            Func<object, Task<AggregationBatch>> awaitData = c =>
             {
-                downstreamCursors.Add(c);
+                projections.Add(c);
 
-                if (downstreamCursors.Count >= aggregatorSubscriptions.Count)
+                if (projections.Count >= aggregatorSubscriptions.Count)
                 {
                     runQuery();
                 }
@@ -96,28 +96,28 @@ namespace Alluvial
         private static Task Aggregate<TProjection>(
             IStream<TData> stream,
             AggregatorSubscription<TProjection, TData> subscription,
-            Func<ICursor, Task<AggregationBatch>> getData)
+            Func<object, Task<AggregationBatch>> getData)
         {
             return subscription.FetchAndSaveProjection(
                 stream.Id,
-                async (projection, cursor) =>
+                async projection =>
                 {
-                    var projectionCursor = projection as ICursor;
-                    cursor = cursor ?? projectionCursor ?? stream.NewCursor();
-
-                    var aggregationBatch = await getData(cursor);
+                    var aggregationBatch = await getData(projection);
 
                     var data = aggregationBatch.Batch;
 
-                    if (projectionCursor != null &&
-                        !(projectionCursor.Position is Cursor.StartingPosition))
+                    var cursor = projection as ICursor;
+                    if (cursor != null && !(cursor.Position is Cursor.StartingPosition))
                     {
-                        data = data.Prune(projectionCursor);
+                       // FIX data = data.Prune(cursor);
                     }
 
                     projection = await subscription.Aggregator.Aggregate(projection, data);
 
-                    cursor.AdvanceTo(aggregationBatch.UpstreamCursor.Position);
+                    if (cursor != null)
+                    {
+                        cursor.AdvanceTo(aggregationBatch.UpstreamCursor.Position);
+                    }
 
                     return projection;
                 });

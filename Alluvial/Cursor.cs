@@ -8,7 +8,6 @@ namespace Alluvial
     /// <summary>
     /// Methods for working with cursors.
     /// </summary>
-    [DebuggerStepThrough]
     public static class Cursor
     {
         private static readonly StartingPosition startOfStream = new StartingPosition();
@@ -110,10 +109,10 @@ namespace Alluvial
 
         internal static ICursor Minimum(this IEnumerable<ICursor> cursors)
         {
-            var cursorArray = cursors.Where(c => !(c is NoCursor))
-                                     .ToArray();
+            var cursorArray = cursors.ToArray();
 
-            var startingPosition = cursorArray.FirstOrDefault(c => c.Position is StartingPosition);
+            var startingPosition = cursorArray.FirstOrDefault(c => c.Position == null ||
+                                                                   c.Position is StartingPosition);
 
             if (startingPosition != null)
             {
@@ -121,7 +120,7 @@ namespace Alluvial
             }
 
             var firstOrDefault = cursorArray
-                .Where(c => c != null)
+                .Where(c => c != null && c.Position != null)
                 .OrderBy(c => (object) c.Position)
                 .Select(c => c.Clone())
                 .FirstOrDefault();
@@ -145,11 +144,6 @@ namespace Alluvial
             return ascending
                 ? comparison >= 0
                 : comparison <= 0;
-        }
-
-        public static ICursor None()
-        {
-            return new NoCursor();
         }
 
         public struct StartingPosition :

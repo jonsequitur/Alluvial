@@ -5,12 +5,24 @@ using System.Threading.Tasks;
 using trace = System.Diagnostics.Trace;
 
 namespace Alluvial
-{ 
+{
     /// <summary>
     /// Methods for working with streams.
     /// </summary>
     public static class Stream
     {
+        public static IStream<TData> Cursor<TData>(
+            this IStream<TData> stream,
+            Action<IStreamQuery, IStreamBatch<TData>> advanceCursor,
+            Func<ICursor> newCursor)
+        {
+            return new AnonymousStream<TData>(
+                id: stream.Id,
+                fetch: q => stream.Fetch(stream.CreateQuery(q.Cursor, q.BatchCount)),
+                advanceCursor: advanceCursor,
+                newCursor: newCursor);
+        }
+
         /// <summary>
         /// Creates a stream based on an enumerable sequence.
         /// </summary>
@@ -20,9 +32,9 @@ namespace Alluvial
             return Create(string.Format("{0}({1})", typeof (TData), source.GetHashCode()),
                           query => source.SkipWhile(x => query.Cursor.HasReached(x))
                                          .Take(query.BatchCount ?? StreamBatch.MaxBatchCount),
-                          newCursor: Cursor.New);
+                          newCursor: Alluvial.Cursor.New);
         }
-        
+
         /// <summary>
         /// Creates a stream based on an enumerable sequence, whose cursor is an integer.
         /// </summary>
@@ -32,7 +44,7 @@ namespace Alluvial
             return Create(string.Format("{0}({1})", typeof (TData), source.GetHashCode()),
                           query => source.Skip(query.Cursor.As<int>())
                                          .Take(query.BatchCount ?? StreamBatch.MaxBatchCount),
-                          newCursor: () => Cursor.Create(0));
+                          newCursor: () => Alluvial.Cursor.Create(0));
         }
 
         public static IStream<TData> Create<TData>(
@@ -102,7 +114,7 @@ namespace Alluvial
 
                     IEnumerable<TTo> mappedItems = map(sourceBatch);
 
-                    ICursor mappedCursor = Cursor.Create(sourceBatch.StartsAtCursorPosition);
+                    ICursor mappedCursor = Alluvial.Cursor.Create(sourceBatch.StartsAtCursorPosition);
 
                     IStreamBatch<TTo> mappedBatch = StreamBatch.Create(mappedItems,
                                                                        mappedCursor);
@@ -189,9 +201,7 @@ namespace Alluvial
 
                     return streamBatch;
                 },
-                advanceCursor: (q, b) =>
-                {
-                },
+                advanceCursor: (q, b) => { },
                 newCursor: stream.NewCursor);
         }
     }

@@ -2,7 +2,7 @@ using System;
 
 namespace Alluvial
 {
-    internal class AggregatorSubscription<TProjection, TData> : IAggregatorSubscription
+    internal class AggregatorSubscription<TProjection, TData> : IAggregatorSubscription 
     {
         public AggregatorSubscription(
             IStreamAggregator<TProjection, TData> aggregator,

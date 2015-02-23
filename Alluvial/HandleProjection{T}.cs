@@ -10,7 +10,5 @@ namespace Alluvial
         string streamId,
         CallAggregatorPipeline<TProjection> aggregate);
 
-    public delegate Task<TProjection> CallAggregatorPipeline<TProjection>(
-        TProjection projection,
-        ICursor cursor = null);
+    public delegate Task<TProjection> CallAggregatorPipeline<TProjection>(TProjection projection);
 }

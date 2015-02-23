@@ -6,7 +6,6 @@ namespace Alluvial
     {
         public Exception Exception { get; internal set; }
         public TProjection Projection { get; internal set; }
-        public ICursor Cursor { get; internal set; }
         
         internal bool ShouldContinue { get; private set; }
 

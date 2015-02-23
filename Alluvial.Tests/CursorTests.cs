@@ -59,7 +59,7 @@ namespace Alluvial.Tests
         [Test]
         public async Task A_new_cursor_has_a_position_that_is_less_than_any_String_value()
         {
-            (Cursor.StartOfStream < (string)null).Should().BeTrue();
+            (Cursor.StartOfStream < (string) null).Should().BeTrue();
             (Cursor.StartOfStream < "").Should().BeTrue();
             (Cursor.StartOfStream < "a").Should().BeTrue();
         }

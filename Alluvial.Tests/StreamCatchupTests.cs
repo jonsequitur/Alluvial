@@ -394,7 +394,11 @@ namespace Alluvial.Tests
 
             var catchup = StreamCatchup.Create(stream);
 
-            catchup.Subscribe<int, int>(async (sum, vs) => sum + vs.Sum());
+            catchup.Subscribe<Projection<int, int>, int>(async (sum, batch) =>
+            {
+                sum.Value += batch.Count;
+                return sum;
+            });
 
             Action runSingleBatch = () => catchup.RunSingleBatch().Wait();
 

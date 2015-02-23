@@ -14,17 +14,17 @@ namespace Alluvial
 
                 try
                 {
-                    await fetchAndSaveProjection(id, async (projection, cursor) =>
+                    await fetchAndSaveProjection(id, async (projection) =>
                     {
                         TProjection resultingProjection = default(TProjection);
 
                         try
                         {
-                            resultingProjection = await aggregate(projection, cursor);
+                            resultingProjection = await aggregate(projection);
                         }
                         catch (Exception exception)
                         {
-                            var error = CheckErrorHandler(onError, exception, projection, cursor);
+                            var error = CheckErrorHandler(onError, exception, projection);
 
                             if (!error.ShouldContinue)
                             {
@@ -55,14 +55,12 @@ namespace Alluvial
         private static StreamCatchupError<TProjection> CheckErrorHandler<TProjection>(
             this HandleAggregatorError<TProjection> onError,
             Exception exception,
-            TProjection projection = default(TProjection),
-            ICursor cursor = null)
+            TProjection projection = default(TProjection))
         {
             var error = new StreamCatchupError<TProjection>
             {
                 Exception = exception,
-                Projection = projection,
-                Cursor = cursor
+                Projection = projection
             };
 
             onError(error);

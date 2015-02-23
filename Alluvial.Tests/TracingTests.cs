@@ -30,17 +30,20 @@ namespace Alluvial.Tests
         [Test]
         public async Task By_default_Aggregator_Trace_writes_projections_and_batches_to_trace_output()
         {
-            var aggregagator = Aggregator.Create<int, string>((p, es) =>
+            var aggregagator = Aggregator.Create<Projection<int, int>, string>((p, es) =>
             {
-                p += es.Count;
+                p.Value += es.Count;
                 return p;
             }).Trace();
 
-            await aggregagator.Aggregate(1, StreamBatch.Create(new[] { "hi", "there" }, Cursor.Create(0)));
+            await aggregagator.Aggregate(new Projection<int, int>
+            {
+                Value = 1
+            }, StreamBatch.Create(new[] { "hi", "there" }, Cursor.Create(0)));
 
             traceListener.Messages
                          .Should()
-                         .Contain("Aggregate: 1 / batch of 2 starts @ 0");
+                         .Contain("Aggregate: Projection`2: 1 / batch of 2 starts @ 0");
         }
 
         [Test]
