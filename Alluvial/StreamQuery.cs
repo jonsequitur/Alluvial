@@ -12,13 +12,14 @@ namespace Alluvial
         /// <summary>
         /// Creates a query over the specified stream.
         /// </summary>
-        public static IStreamIterator<TData> CreateQuery<TData>(
-            this IStream<TData> stream,
-            ICursor cursor = null,
+        public static IStreamIterator<TData, TCursorPosition> CreateQuery<TData, TCursorPosition>(
+            this IStream<TData, TCursorPosition> stream,
+            ICursor<TCursorPosition> cursor = null,
             int? batchCount = null)
         {
-            return new StreamQuery<TData>(stream,
-                                          cursor ?? stream.NewCursor())
+            return new StreamQuery<TData, TCursorPosition>(
+                stream,
+                cursor ?? stream.NewCursor())
             {
                 BatchCount = batchCount
             };

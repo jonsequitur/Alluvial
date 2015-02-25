@@ -113,7 +113,8 @@ namespace Alluvial.Tests
             batch.Count()
                  .Should()
                  .Be(5);
-            query.Cursor.As<int>()
+            query.Cursor
+                 .Position
                  .Should()
                  .Be(9);
         }

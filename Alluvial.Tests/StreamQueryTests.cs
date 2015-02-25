@@ -12,10 +12,10 @@ namespace Alluvial.Tests
         [Test]
         public async Task A_stream_can_be_queried_from_the_beginning()
         {
-            var stream = Stream.Create<int>(async query =>
+            var stream = Stream.Create<int, int>(async query =>
                                                 Enumerable.Range(query.Cursor.Position, query.BatchCount.Value));
 
-            var value = stream.CreateQuery(Cursor.Create(0), 1).NextBatch().Result.Single();
+            var value = stream.CreateQuery(Cursor.New(0), 1).NextBatch().Result.Single();
 
             value.Should().Be(0);
         }
@@ -23,10 +23,10 @@ namespace Alluvial.Tests
         [Test]
         public async Task Stream_items_can_be_batched_and_cursored()
         {
-            var stream = Stream.Create<int>(async query =>
+            var stream = Stream.Create<int, int>(async query =>
                                                 Enumerable.Range(query.Cursor.Position, query.BatchCount.Value));
 
-            var batch = stream.CreateQuery(Cursor.Create(5), 3).NextBatch().Result;
+            var batch = stream.CreateQuery(Cursor.New(5), 3).NextBatch().Result;
 
             batch.Should().BeEquivalentTo(5, 6, 7);
         }
@@ -42,9 +42,9 @@ namespace Alluvial.Tests
 
             var batch = await query.NextBatch();
             batch.Should().BeEquivalentTo(new[] { 1, 2, 3, 4, 5 });
-            ((int) query.Cursor.Position)
-                .Should()
-                .Be(5);
+            query.Cursor.Position
+                 .Should()
+                 .Be(5);
         }
 
         [Test]
@@ -58,7 +58,7 @@ namespace Alluvial.Tests
 
             var batch = await query.NextBatch();
             batch.Should().BeEquivalentTo(values);
-            ((int) query.Cursor.Position).Should().Be(20);
+            query.Cursor.Position.Should().Be(20);
         }
 
         [Test]
@@ -68,13 +68,13 @@ namespace Alluvial.Tests
 
             var stream = values.AsStream();
 
-            var query = stream.CreateQuery(Cursor.Create(10), 25);
+            var query = stream.CreateQuery(Cursor.New(10), 25);
 
             var batch = await query.NextBatch();
             batch.Should().BeEquivalentTo(new[] { 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 });
-            ((int) query.Cursor.Position)
-                .Should()
-                .Be(20);
+            query.Cursor.Position
+                 .Should()
+                 .Be(20);
         }
 
         [Test]
@@ -82,7 +82,7 @@ namespace Alluvial.Tests
         {
             var stream = Enumerable.Range(1, 25).AsStream();
 
-            var query = stream.CreateQuery(Cursor.Create(5), 5);
+            var query = stream.CreateQuery(Cursor.New(5), 5);
             var firstBatch = await query.NextBatch();
             var secondBatch = await query.NextBatch();
 
@@ -97,7 +97,7 @@ namespace Alluvial.Tests
 
             var batch = await stream.CreateQuery(stream.NewCursor(), 10).NextBatch();
 
-            ((object) batch.StartsAtCursorPosition).Should().Be(Cursor.StartOfStream);
+            ((int) batch.StartsAtCursorPosition).Should().Be(0);
         }
 
         [Test]
@@ -105,7 +105,7 @@ namespace Alluvial.Tests
         {
             var stream = Enumerable.Range(1, 100).AsStream();
 
-            var batch = await stream.CreateQuery(Cursor.Create(15), 10)
+            var batch = await stream.CreateQuery(Cursor.New(15), 10)
                                     .NextBatch();
 
             ((int) batch.StartsAtCursorPosition).Should().Be(15);
@@ -117,12 +117,12 @@ namespace Alluvial.Tests
             var startTime = DateTimeOffset.Parse("2014-12-29 00:00 +00:00");
             var times = Enumerable.Range(1, 24).Select(i => startTime.AddHours(i));
 
-            var stream = Stream.Create<DateTimeOffset>(query: async q =>
-                                                           times.OrderBy(time => time)
-                                                                .Where(time => time > q.Cursor.As<DateTimeOffset>())
-                                                                .Take(q.BatchCount ?? 100000),
-                                                       advanceCursor: (q, batch) => q.Cursor.AdvanceTo(batch.Last()),
-                                                       newCursor: () => Cursor.Create(default(DateTimeOffset)));
+            var stream = Stream.Create(query: async q =>
+                                           times.OrderBy(time => time)
+                                                .Where(time => time > q.Cursor.Position)
+                                                .Take(q.BatchCount ?? 100000),
+                                       advanceCursor: (q, batch) => q.Cursor.AdvanceTo(batch.Last()),
+                                       newCursor: () => Cursor.New<DateTimeOffset>());
 
             var query = stream.CreateQuery(stream.NewCursor(), 12);
 
@@ -154,12 +154,12 @@ namespace Alluvial.Tests
                                             .ToArray();
             var alphabetStream = alphabetStrings.AsStream();
 
-            var query = alphabetStream.CreateQuery(Cursor.Create(""), 13);
+            var query = alphabetStream.CreateQuery(Cursor.New<string>(), 13);
 
             var batch1 = await query.NextBatch();
             ((string) batch1.StartsAtCursorPosition)
                 .Should()
-                .Be("");
+                .Be(null);
             var batch2 = await query.NextBatch();
             ((string) batch2.StartsAtCursorPosition)
                 .Should()
@@ -183,40 +183,19 @@ namespace Alluvial.Tests
             var alphabetStrings = Enumerable.Range(97, 26).Select(i => new string(Convert.ToChar(i), 1)).ToArray();
             var alphabetStream = alphabetStrings.AsStream();
 
-            var query = alphabetStream.CreateQuery(Cursor.Create("j"), 5);
+            var query = alphabetStream.CreateQuery(Cursor.New("j"), 5);
 
             var batch1 = await query.NextBatch();
 
             ((string) batch1.StartsAtCursorPosition).Should().Be("j");
 
             query.Cursor
-                 .As<string>()
+                 .Position
                  .Should()
                  .Be("o");
 
             batch1.Should()
-                  .BeEquivalentTo(new[] { "k", "l", "m", "n", "o" });
-        }
-
-        [Test]
-        public async Task AsStream_can_use_non_default_ordering()
-        {
-            var alphabetStrings = Enumerable.Range(97, 26).Select(i => new string(Convert.ToChar(i), 1)).Reverse().ToArray();
-            var alphabetStream = alphabetStrings.AsStream();
-
-            var query = alphabetStream.CreateQuery(Cursor.Create("o", ascending: false), 5);
-
-            var batch1 = await query.NextBatch();
-
-            ((string) batch1.StartsAtCursorPosition).Should().Be("o");
-
-            query.Cursor
-                 .As<string>()
-                 .Should()
-                 .Be("j");
-
-            batch1.Should()
-                  .BeEquivalentTo(new[] { "n", "m", "l", "k", "j" });
+                  .BeEquivalentTo("k", "l", "m", "n", "o");
         }
     }
 }

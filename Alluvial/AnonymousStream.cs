@@ -4,17 +4,17 @@ using System.Threading.Tasks;
 
 namespace Alluvial
 {
-    internal class AnonymousStream<TData> : IStream<TData>
+    internal class AnonymousStream<TData, TCursor> : IStream<TData, TCursor>
     {
-        private readonly Action<IStreamQuery, IStreamBatch<TData>> advanceCursor;
-        private readonly Func<IStreamQuery, Task<IStreamBatch<TData>>> fetch;
-        private readonly Func<ICursor> newCursor;
+        private readonly Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor;
+        private readonly Func<IStreamQuery<TCursor>, Task<IStreamBatch<TData>>> fetch;
+        private readonly Func<ICursor<TCursor>> newCursor;
 
         public AnonymousStream(
             string id,
-            Func<IStreamQuery, Task<IStreamBatch<TData>>> fetch,
-            Action<IStreamQuery, IStreamBatch<TData>> advanceCursor = null,
-            Func<ICursor> newCursor = null)
+            Func<IStreamQuery<TCursor>, Task<IStreamBatch<TData>>> fetch,
+            Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor,
+            Func<ICursor<TCursor>> newCursor = null)
         {
             if (id == null)
             {
@@ -28,25 +28,18 @@ namespace Alluvial
             this.advanceCursor = advanceCursor ??
                                  ((query, batch) =>
                                  {
-                                     var incrementalCursor = query.Cursor as IIncrementableCursor;
-                                     if (incrementalCursor != null)
-                                     {
-                                         incrementalCursor.AdvanceBy(batch.Count);
-                                     }
-                                     else
-                                     {
-                                         query.Cursor.AdvanceTo(batch.Last());
-                                     }
+
+
                                  });
 
-            this.newCursor = newCursor ?? Cursor.New;
+            this.newCursor = newCursor ?? (() => Cursor.New<TCursor>());
             this.fetch = fetch;
             Id = id;
         }
 
         public string Id { get; private set; }
 
-        public async Task<IStreamBatch<TData>> Fetch(IStreamQuery query)
+        public async Task<IStreamBatch<TData>> Fetch(IStreamQuery<TCursor> query)
         {
             var batch = await fetch(query);
 
@@ -55,7 +48,7 @@ namespace Alluvial
             return batch;
         }
 
-        public ICursor NewCursor()
+        public ICursor<TCursor> NewCursor()
         {
             return newCursor();
         }

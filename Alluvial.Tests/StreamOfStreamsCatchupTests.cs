@@ -189,7 +189,7 @@ namespace Alluvial.Tests
 
             var cursor = await catchup.RunUntilCaughtUp();
 
-            cursor.As<string>()
+            cursor.Position
                   .Should()
                   .Be("1001");
 
@@ -315,7 +315,7 @@ namespace Alluvial.Tests
         [Test]
         public async Task Catchup_cursor_storage_can_be_specified_using_catchup_configuration()
         {
-            ICursor storedCursor = null;
+            ICursor<string> storedCursor = null;
 
             var catchup = StreamCatchup.Distribute(streamSource.EventsByAggregate(),
                                                    batchCount: 10,
@@ -329,14 +329,14 @@ namespace Alluvial.Tests
 
             var cursor = await catchup.RunSingleBatch();
 
-            cursor.As<string>().Should().Be("10");
-            storedCursor.As<string>().Should().Be("10");
+            cursor.Position.Should().Be("10");
+            storedCursor.Position.Should().Be("10");
         }
 
         [Test]
         public async Task Catchup_cursor_retrieval_can_be_specified_using_catchup_configuration()
         {
-            ICursor storedCursor = Cursor.Create("3");
+            ICursor<string> storedCursor = Cursor.New("3");
 
             var catchup = StreamCatchup.Distribute(streamSource.EventsByAggregate(),
                                                    batchCount: 1,
@@ -348,8 +348,8 @@ namespace Alluvial.Tests
 
             var cursor = await catchup.RunSingleBatch();
 
-            storedCursor.As<string>().Should().Be("4");
-            cursor.As<string>().Should().Be("4");
+            storedCursor.Position.Should().Be("4");
+            cursor.Position.Should().Be("4");
         }
 
         [Test]
@@ -366,7 +366,7 @@ namespace Alluvial.Tests
                                                                        queriedEvents.Add(e);
                                                                    }
                                                                }))),
-                                                   Cursor.Create("1000"),
+                                                   Cursor.New("1000"),
                                                    batchCount: 1);
             catchup.Subscribe(new BalanceProjector());
 
@@ -406,7 +406,7 @@ namespace Alluvial.Tests
                                                                        queriedEvents.Add(e);
                                                                    }
                                                                }))),
-                                                   Cursor.Create("1000"),
+                                                   Cursor.New("1000"),
                                                    batchCount: 1);
             catchup.Subscribe(new BalanceProjector(), balanceProjections);
 

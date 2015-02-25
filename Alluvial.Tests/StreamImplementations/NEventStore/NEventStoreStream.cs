@@ -6,7 +6,7 @@ using NEventStore;
 
 namespace Alluvial.Tests
 {
-    public class NEventStoreStream : IStream<EventMessage>, IDisposable
+    public class NEventStoreStream : IStream<EventMessage, int>, IDisposable
     {
         private readonly IStoreEvents store;
         private readonly string streamId;
@@ -33,9 +33,9 @@ namespace Alluvial.Tests
             }
         }
 
-        public async Task<IStreamBatch<EventMessage>> Fetch(IStreamQuery query)
+        public async Task<IStreamBatch<EventMessage>> Fetch(IStreamQuery<int> query)
         {
-            var lastFetchedRevision = Math.Max(query.Cursor.As<int>(), 0);
+            var lastFetchedRevision = Math.Max(query.Cursor.Position, 0);
 
             int maxRevisionToFetch;
 
@@ -54,7 +54,7 @@ namespace Alluvial.Tests
 
             if (maxExistingRevision <= lastFetchedRevision)
             {
-                return StreamBatch.Empty<EventMessage>(query.Cursor);
+                return query.Cursor.EmptyBatch<EventMessage, int>();
             }
 
             var events = new List<EventMessage>();
@@ -99,9 +99,9 @@ namespace Alluvial.Tests
             return batch;
         }
 
-        public ICursor NewCursor()
+        public ICursor<int> NewCursor()
         {
-            return Cursor.Create(0);
+            return Cursor.New<int>();
         }
 
         public void Dispose()

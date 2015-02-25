@@ -19,9 +19,9 @@ namespace Alluvial
         /// <param name="cursor">The cursor that marks the location of the beginning of the batch within the source stream.</param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException">source</exception>
-        public static IStreamBatch<TData> Create<TData>(
+        public static IStreamBatch<TData> Create<TData, TCursor>(
             IEnumerable<TData> source,
-            ICursor cursor)
+            ICursor<TCursor> cursor)
         {
             if (source == null)
             {
@@ -43,7 +43,7 @@ namespace Alluvial
         /// <typeparam name="TData">The type of the data in the source stream.</typeparam>
         /// <param name="cursor">The cursor that marks the location of the beginning of the batch within the source stream.</param>
         /// <exception cref="ArgumentNullException">cursor</exception>
-        public static IStreamBatch<TData> Empty<TData>(ICursor cursor)
+        public static IStreamBatch<TData> EmptyBatch<TData, TCursor>(this ICursor<TCursor> cursor)
         {
             if (cursor == null)
             {
@@ -62,7 +62,7 @@ namespace Alluvial
         /// <param name="cursor">The cursor.</param>
         public static IStreamBatch<TData> Prune<TData>(
             this IStreamBatch<TData> batch,
-            ICursor cursor)
+            ICursor<TData> cursor)
         {
             return Create(batch.Where(x => !cursor.HasReached(x)), cursor);
         }

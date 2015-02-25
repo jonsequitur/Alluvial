@@ -11,60 +11,56 @@ namespace Alluvial
     /// </summary>
     public static class Stream
     {
-        public static IStream<TData> Cursor<TData>(
-            this IStream<TData> stream,
-            Action<IStreamQuery, IStreamBatch<TData>> advanceCursor,
-            Func<ICursor> newCursor)
-        {
-            return new AnonymousStream<TData>(
-                id: stream.Id,
-                fetch: q => stream.Fetch(stream.CreateQuery(q.Cursor, q.BatchCount)),
-                advanceCursor: advanceCursor,
-                newCursor: newCursor);
-        }
-
         /// <summary>
         /// Creates a stream based on an enumerable sequence.
         /// </summary>
-        public static IStream<TData> AsStream<TData>(
+        public static IStream<TData, TData> AsStream<TData>(
             this IEnumerable<TData> source)
         {
             return Create(string.Format("{0}({1})", typeof (TData), source.GetHashCode()),
                           query => source.SkipWhile(x => query.Cursor.HasReached(x))
                                          .Take(query.BatchCount ?? StreamBatch.MaxBatchCount),
-                          newCursor: Alluvial.Cursor.New);
+                          advanceCursor: (q, b) =>
+                          {
+                              var last = b.LastOrDefault();
+                              if (last != null)
+                              {
+                                  q.Cursor.AdvanceTo(last);
+                              }
+                          },
+                          newCursor: () => Cursor.New<TData>());
         }
 
         /// <summary>
         /// Creates a stream based on an enumerable sequence, whose cursor is an integer.
         /// </summary>
-        public static IStream<TData> AsSequentialStream<TData>(
+        public static IStream<TData, int> AsSequentialStream<TData>(
             this IEnumerable<TData> source)
         {
             return Create(string.Format("{0}({1})", typeof (TData), source.GetHashCode()),
-                          query => source.Skip(query.Cursor.As<int>())
+                          query => source.Skip(query.Cursor.Position)
                                          .Take(query.BatchCount ?? StreamBatch.MaxBatchCount),
-                          newCursor: () => Alluvial.Cursor.Create(0));
+                          newCursor: () => Cursor.New<int>());
         }
 
-        public static IStream<TData> Create<TData>(
-            Func<IStreamQuery, Task<IEnumerable<TData>>> query,
-            Action<IStreamQuery, IStreamBatch<TData>> advanceCursor = null,
-            Func<ICursor> newCursor = null)
+        public static IStream<TData, TCursorPosition> Create<TData, TCursorPosition>(
+            Func<IStreamQuery<TCursorPosition>, Task<IEnumerable<TData>>> query,
+            Action<IStreamQuery<TCursorPosition>, IStreamBatch<TData>> advanceCursor = null,
+            Func<ICursor<TCursorPosition>> newCursor = null)
         {
-            return Create(string.Format("{0}({1})", typeof (TData), query.GetHashCode()),
-                          query,
-                          advanceCursor,
-                          newCursor);
+            return Create(string.Format("{0}({1} by {2})", typeof (TData).Name, typeof(TCursorPosition).Name, query.GetHashCode()), 
+                query, 
+                advanceCursor, 
+                newCursor);
         }
 
-        public static IStream<TData> Create<TData>(
+        public static IStream<TData, TCursorPosition> Create<TData, TCursorPosition>(
             string id,
-            Func<IStreamQuery, Task<IEnumerable<TData>>> query,
-            Action<IStreamQuery, IStreamBatch<TData>> advanceCursor = null,
-            Func<ICursor> newCursor = null)
+            Func<IStreamQuery<TCursorPosition>, Task<IEnumerable<TData>>> query,
+            Action<IStreamQuery<TCursorPosition>, IStreamBatch<TData>> advanceCursor = null,
+            Func<ICursor<TCursorPosition>> newCursor = null)
         {
-            return new AnonymousStream<TData>(
+            return new AnonymousStream<TData, TCursorPosition>(
                 id,
                 async q =>
                 {
@@ -76,21 +72,44 @@ namespace Alluvial
                 newCursor);
         }
 
-        public static IStream<TData> Create<TData>(
-            Func<IStreamQuery, IEnumerable<TData>> query,
-            Action<IStreamQuery, IStreamBatch<TData>> advanceCursor = null,
-            Func<ICursor> newCursor = null)
+        public static IStream<TData, TCursorPosition> Create<TData, TCursorPosition>(
+            Func<IStreamQuery<TCursorPosition>, IEnumerable<TData>> query,
+            Action<IStreamQuery<TCursorPosition>, IStreamBatch<TData>> advanceCursor,
+            Func<ICursor<TCursorPosition>> newCursor = null)
         {
-            return Create(string.Format("{0}({1})", typeof (TData), query.GetHashCode()), query, advanceCursor, newCursor);
+            return Create(
+                string.Format("{0}({1})", typeof (TData), query.GetHashCode()),
+                query,
+                advanceCursor,
+                newCursor);
         }
 
-        public static IStream<TData> Create<TData>(
-            string id,
-            Func<IStreamQuery, IEnumerable<TData>> query,
-            Action<IStreamQuery, IStreamBatch<TData>> advanceCursor = null,
-            Func<ICursor> newCursor = null)
+        public static IStream<TData, TData> Create<TData>(
+            Func<IStreamQuery<TData>, IEnumerable<TData>> query,
+            Action<IStreamQuery<TData>, IStreamBatch<TData>> advanceCursor = null,
+            Func<ICursor<TData>> newCursor = null)
         {
-            return new AnonymousStream<TData>(
+            return Create(
+                string.Format("{0}({1})", typeof (TData), query.GetHashCode()),
+                query,
+                advanceCursor ?? ((q, batch) =>
+                {
+                    var last = batch.LastOrDefault();
+                    if (last != null)
+                    {
+                        q.Cursor.AdvanceTo(last);
+                    }
+                }),
+                newCursor);
+        }
+
+        internal static IStream<TData, TCursorPosition> Create<TData, TCursorPosition>(
+            string id,
+            Func<IStreamQuery<TCursorPosition>, IEnumerable<TData>> query,
+            Action<IStreamQuery<TCursorPosition>, IStreamBatch<TData>> advanceCursor = null,
+            Func<ICursor<TCursorPosition>> newCursor = null)
+        {
+            return new AnonymousStream<TData, TCursorPosition>(
                 id,
                 async q => StreamBatch.Create(query(q), q.Cursor),
                 advanceCursor,
@@ -100,48 +119,50 @@ namespace Alluvial
         /// <summary>
         /// Maps data from a stream into a new form.
         /// </summary>
-        public static IStream<TTo> Map<TFrom, TTo>(
-            this IStream<TFrom> sourceStream,
+        public static IStream<TTo, TCursorPosition> Map<TFrom, TTo, TCursorPosition>(
+            this IStream<TFrom, TCursorPosition> sourceStream,
             Func<IEnumerable<TFrom>, IEnumerable<TTo>> map,
             string id = null)
         {
-            return Create<TTo>(
+            return Create<TTo, TCursorPosition>(
                 id: id ?? sourceStream.Id + "->Map",
                 query: async q =>
                 {
-                    var sourceBatch = await sourceStream.Fetch(
-                        sourceStream.CreateQuery(q.Cursor, q.BatchCount));
+                    var query = sourceStream.CreateQuery(q.Cursor, q.BatchCount);
+
+                    var sourceBatch = await sourceStream.Fetch(query);
 
                     IEnumerable<TTo> mappedItems = map(sourceBatch);
 
-                    ICursor mappedCursor = Alluvial.Cursor.Create(sourceBatch.StartsAtCursorPosition);
+                    var mappedCursor = Cursor.New<TCursorPosition>(sourceBatch.StartsAtCursorPosition);
 
                     IStreamBatch<TTo> mappedBatch = StreamBatch.Create(mappedItems,
                                                                        mappedCursor);
 
                     return mappedBatch;
                 },
-                advanceCursor: async (query, batch) =>
+                advanceCursor: (query, batch) =>
                 {
                     // don't advance the cursor in the map operation, since sourceStream.Fetch will already have done it
                 },
                 newCursor: sourceStream.NewCursor);
         }
 
-        public static IStream<IStream<TDownstream>> Requery<TUpstream, TDownstream>(
-            this IStream<TUpstream> upstream,
-            Func<TUpstream, IStream<TDownstream>> queryDownstream)
+        public static IStream<IStream<TDownstream, TDownstreamCursor>, TUpstreamCursor> Requery<TUpstream, TDownstream, TDownstreamCursor, TUpstreamCursor>(
+            this IStream<TUpstream, TUpstreamCursor> upstream,
+            Func<TUpstream, IStream<TDownstream, TDownstreamCursor>> queryDownstream)
         {
             return Create(
                 id: upstream.Id + "->Requery",
                 query: async upstreamQuery =>
                 {
-                    var cursor = upstreamQuery.Cursor;
-
                     var upstreamBatch = await upstream.Fetch(
-                        upstream.CreateQuery(cursor, upstreamQuery.BatchCount));
+                        upstream.CreateQuery(upstreamQuery.Cursor,
+                                             upstreamQuery.BatchCount));
 
-                    return upstreamBatch.Select(queryDownstream);
+                    var streams = upstreamBatch.Select(queryDownstream);
+
+                    return streams;
                 },
                 advanceCursor: (query, batch) =>
                 {
@@ -150,13 +171,13 @@ namespace Alluvial
                 newCursor: upstream.NewCursor);
         }
 
-        public static async Task<TProjection> Aggregate<TProjection, TData>(
-            this IStream<TData> stream,
+        public static async Task<TProjection> Aggregate<TProjection, TData, TCursorPosition>(
+            this IStream<TData, TCursorPosition> stream,
             IStreamAggregator<TProjection, TData> aggregator,
             TProjection projection = null)
             where TProjection : class
         {
-            var cursor = (projection as ICursor) ??
+            var cursor = (projection as ICursor<TCursorPosition>) ??
                          stream.NewCursor();
 
             var query = stream.CreateQuery(cursor);
@@ -171,10 +192,10 @@ namespace Alluvial
             return projection;
         }
 
-        public static IStream<TData> Trace<TData>(
-            this IStream<TData> stream,
-            Action<IStreamQuery> onSendQuery = null,
-            Action<IStreamQuery, IStreamBatch<TData>> onResults = null)
+        public static IStream<TData, TCursorPosition> Trace<TData, TCursorPosition>(
+            this IStream<TData, TCursorPosition> stream,
+            Action<IStreamQuery<TCursorPosition>> onSendQuery = null,
+            Action<IStreamQuery<TCursorPosition>, IStreamBatch<TData>> onResults = null)
         {
             onSendQuery = onSendQuery ??
                           (q => trace.WriteLine(
@@ -189,7 +210,7 @@ namespace Alluvial
                                           streamBatch.Count,
                                           (object) q.Cursor.Position)));
 
-            return Create<TData>(
+            return Create<TData, TCursorPosition>(
                 id: stream.Id,
                 query: async q =>
                 {

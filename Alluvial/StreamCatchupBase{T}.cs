@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Alluvial
 {
-    internal abstract class StreamCatchupBase<TData> : IStreamCatchup<TData>
+    internal abstract class StreamCatchupBase<TData, TCursorPosition> : IStreamCatchup<TData, TCursorPosition>
     {
         private int isRunning;
 
@@ -33,34 +34,34 @@ namespace Alluvial
             });
         }
 
-        public abstract Task<ICursor> RunSingleBatch();
+        public abstract Task<ICursor<TCursorPosition>> RunSingleBatch();
 
-        protected async Task<ICursor> RunSingleBatch(IStream<TData> stream)
+        protected async Task<ICursor<TCursorPosition>> RunSingleBatch<TCursor>(IStream<TData, TCursor> stream)
         {
             if (Interlocked.CompareExchange(ref isRunning, 1, 0) != 0)
             {
-                // FIX: (RunSingleBatch): what would be a better behavior here?
-                return stream.NewCursor();
+                // FIX: (RunSingleBatch): what would be a better behavior here? awaiting the running batch without triggering a new run might be best.
+                return new Cursor<TCursorPosition>();
             }
 
-            ICursor upstreamCursor = null;
+            ICursor<TCursorPosition> upstreamCursor = null;
 
             var projections = new ConcurrentBag<object>();
-            var tcs = new TaskCompletionSource<AggregationBatch>();
+            var tcs = new TaskCompletionSource<AggregationBatch<TCursor>>();
 
             Action runQuery = async () =>
             {
-                var cursor = projections.OfType<ICursor>().Minimum();
+                var cursor = projections.OfType<ICursor<TCursor>>().Minimum();
+                upstreamCursor = cursor as ICursor<TCursorPosition>;
                 var query = stream.CreateQuery(cursor, batchCount);
-                upstreamCursor = query.Cursor;
 
                 try
                 {
                     var batch = await query.NextBatch();
 
-                    tcs.SetResult(new AggregationBatch
+                    tcs.SetResult(new AggregationBatch<TCursor>
                     {
-                        UpstreamCursor = upstreamCursor,
+                        Cursor = query.Cursor,
                         Batch = batch
                     });
                 }
@@ -70,7 +71,7 @@ namespace Alluvial
                 }
             };
 
-            Func<object, Task<AggregationBatch>> awaitData = c =>
+            Func<object, Task<AggregationBatch<TCursor>>> awaitData = c =>
             {
                 projections.Add(c);
 
@@ -93,10 +94,10 @@ namespace Alluvial
             return upstreamCursor;
         }
 
-        private static Task Aggregate<TProjection>(
-            IStream<TData> stream,
+        private static Task Aggregate<TProjection, TCursor>(
+            IStream<TData, TCursor> stream,
             AggregatorSubscription<TProjection, TData> subscription,
-            Func<object, Task<AggregationBatch>> getData)
+            Func<object, Task<AggregationBatch<TCursor>>> getData)
         {
             return subscription.FetchAndSaveProjection(
                 stream.Id,
@@ -106,26 +107,21 @@ namespace Alluvial
 
                     var data = aggregationBatch.Batch;
 
-                    var cursor = projection as ICursor;
-                    if (cursor != null && !(cursor.Position is Cursor.StartingPosition))
-                    {
-                       // FIX data = data.Prune(cursor);
-                    }
-
                     projection = await subscription.Aggregator.Aggregate(projection, data);
 
+                    var cursor = projection as ICursor<TCursor>;
                     if (cursor != null)
                     {
-                        cursor.AdvanceTo(aggregationBatch.UpstreamCursor.Position);
+                        cursor.AdvanceTo(aggregationBatch.Cursor.Position);
                     }
 
                     return projection;
                 });
         }
 
-        protected struct AggregationBatch
+        protected struct AggregationBatch<TCursor>
         {
-            public ICursor UpstreamCursor;
+            public ICursor<TCursor> Cursor;
             public IStreamBatch<TData> Batch;
         }
     }

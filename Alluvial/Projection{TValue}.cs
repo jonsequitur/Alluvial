@@ -2,10 +2,15 @@ using System.Diagnostics;
 
 namespace Alluvial
 {
-    [DebuggerDisplay("Projection: {ToString()}")]
+    [DebuggerDisplay("Projection: {ProjectionName}")]
     public class Projection<TValue>
     {
-        private static readonly string typeName = string.Format("Projection<{0}>", typeof (TValue).Name);
+        private static readonly string projectionName;
+
+        static Projection()
+        {
+            projectionName = string.Format("Projection<{0}>", typeof (TValue).Name);
+        }
 
         public TValue Value { get; set; }
 
@@ -23,14 +28,14 @@ namespace Alluvial
                 valueString = "null";
             }
 
-            return string.Format(TypeName + ": " + valueString);
+            return string.Format(ProjectionName + ": " + valueString);
         }
 
-        protected virtual string TypeName
+        protected virtual string ProjectionName
         {
             get
             {
-                return typeName;
+                return projectionName;
             }
         }
     }

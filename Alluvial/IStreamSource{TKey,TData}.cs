@@ -5,11 +5,11 @@ namespace Alluvial
     /// </summary>
     /// <typeparam name="TKey">The type of the stream id by which streams are accessed.</typeparam>
     /// <typeparam name="TData">The type of the data returned by the streams.</typeparam>
-    public interface IStreamSource<in TKey, TData>
+    public interface IStreamSource<in TKey, TData, TCursorPosition>
     {
         /// <summary>
         /// Opens a stream having the specified key.
         /// </summary>
-        IStream<TData> Open(TKey key);
+        IStream<TData, TCursorPosition> Open(TKey key);
     }
 }

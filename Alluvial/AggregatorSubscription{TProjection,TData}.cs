@@ -19,14 +19,11 @@ namespace Alluvial
                                          await aggregate(Activator.CreateInstance<TProjection>());
                                      });
             Aggregator = aggregator;
-            IsCursor = typeof (ICursor).IsAssignableFrom(typeof (TProjection));
         }
 
         public IStreamAggregator<TProjection, TData> Aggregator { get; private set; }
 
         public FetchAndSaveProjection<TProjection> FetchAndSaveProjection { get; private set; }
-
-        public bool IsCursor { get; protected set; }
 
         public Type ProjectionType
         {

@@ -3,12 +3,12 @@ using System.Threading.Tasks;
 
 namespace Alluvial
 {
-    internal class SingleStreamCatchup<TData> : StreamCatchupBase<TData>
+    internal class SingleStreamCatchup<TData, TCursor> : StreamCatchupBase<TData, TCursor>
     {
-        private readonly IStream<TData> stream;
+        private readonly IStream<TData, TCursor> stream;
 
         public SingleStreamCatchup(
-            IStream<TData> stream,
+            IStream<TData, TCursor> stream,
             int? batchCount = null)
         {
             if (stream == null)
@@ -20,7 +20,7 @@ namespace Alluvial
             this.batchCount = batchCount;
         }
 
-        public override async Task<ICursor> RunSingleBatch()
+        public override async Task<ICursor<TCursor>> RunSingleBatch()
         {
             return await RunSingleBatch(stream);
         }

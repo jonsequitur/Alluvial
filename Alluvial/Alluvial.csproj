@@ -44,6 +44,7 @@
     <Compile Include="Aggregate{TProjection,TData}.cs" />
     <Compile Include="AggregatorSubscription.cs" />
     <Compile Include="AnonymousProjectionStore{TKey,TProjection}.cs" />
+    <Compile Include="Cursor{TPosition}.cs" />
     <Compile Include="DistributorCatchup{T}.cs" />
     <Compile Include="HandleProjection{T}.cs" />
     <Compile Include="IAggregatorSubscription.cs" />
@@ -51,11 +52,9 @@
     <Compile Include="AnonymousStream.cs" />
     <Compile Include="AnonymousStreamSource{TKey,TData}.cs" />
     <Compile Include="AnonymousDisposable.cs" />
-    <Compile Include="ChronologicalCursor.cs" />
     <Compile Include="Cursor.cs" />
-    <Compile Include="CursorWrapper.cs" />
     <Compile Include="ProjectionStore.cs" />
-    <Compile Include="Projection{TValue,TCursorPosition}.cs" />
+    <Compile Include="Projection{TValue,TCursor}.cs" />
     <Compile Include="Projection{TValue}.cs" />
     <Compile Include="Projection.cs" />
     <Compile Include="SingleStreamCatchup{T}.cs" />
@@ -71,7 +70,6 @@
     <Compile Include="IStreamCatchup{T}.cs" />
     <Compile Include="IStreamIterator{T}.cs" />
     <Compile Include="IStreamSource{TKey,TData}.cs" />
-    <Compile Include="IIncrementableCursor.cs" />
     <Compile Include="IProjectionStore{TKey,TProjection}.cs" />
     <Compile Include="IStreamQuery.cs" />
     <Compile Include="IStreamBatch{T}.cs" />
@@ -80,13 +78,11 @@
     <Compile Include="IStreamAggregator{TProjection,TData}.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReadOnlyCursor.cs" />
-    <Compile Include="SequentialCursor.cs" />
     <Compile Include="SingleInstanceProjectionCache{TKey,TProjection}.cs" />
     <Compile Include="StreamQuery.cs" />
     <Compile Include="StreamBatch.cs" />
     <Compile Include="StreamBatch{T}.cs" />
     <Compile Include="StreamQuery{T}.cs" />
-    <Compile Include="AlphabeticalCursor.cs" />
     <Compile Include="TaskExtensions.cs" />
   </ItemGroup>
   <ItemGroup>

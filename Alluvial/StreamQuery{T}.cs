@@ -6,12 +6,12 @@ namespace Alluvial
 {
     [DebuggerStepThrough]
     [DebuggerDisplay("Take {BatchCountDescription} after {Cursor.Position}")]
-    internal class StreamQuery<TData> : IStreamIterator<TData>
+    internal class StreamQuery<TData, TCursorPosition> : IStreamIterator<TData, TCursorPosition>
     {
-        private readonly IStream<TData> stream;
-        private readonly ICursor cursor;
+        private readonly IStream<TData, TCursorPosition> stream;
+        private readonly ICursor<TCursorPosition> cursor;
 
-        public StreamQuery(IStream<TData> stream, ICursor cursor)
+        public StreamQuery(IStream<TData, TCursorPosition> stream, ICursor<TCursorPosition> cursor)
         {
             if (stream == null)
             {
@@ -25,7 +25,7 @@ namespace Alluvial
             this.cursor = cursor;
         }
 
-        public ICursor Cursor
+        public ICursor<TCursorPosition> Cursor
         {
             get
             {
