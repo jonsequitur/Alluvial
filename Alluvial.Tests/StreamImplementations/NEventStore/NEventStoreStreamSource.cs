@@ -46,7 +46,7 @@ namespace Alluvial.Tests
         private IStream<NEventStoreStreamUpdate, string> StreamUpdates()
         {
             return Stream.Create(
-                id: "NEventStoreStreamSource.UpdatedStreams",
+                id: "NEventStoreStreamSource.StreamUpdates",
                 // get only changes since the last checkpoint
                 query: async q => store.Advanced
                                        .GetFrom(q.Cursor.Position)
