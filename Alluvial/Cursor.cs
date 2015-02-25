@@ -9,19 +9,6 @@ namespace Alluvial
     /// </summary>
     public static class Cursor
     {
-        private static readonly StartingPosition startOfStream = new StartingPosition();
-
-        /// <summary>
-        /// Gets an immutable object that represents the start of any stream.
-        /// </summary>
-        public static StartingPosition StartOfStream
-        {
-            get
-            {
-                return startOfStream;
-            }
-        }
-
         /// <summary>
         /// Creates a new cursor.
         /// </summary>
@@ -42,8 +29,7 @@ namespace Alluvial
         {
             var cursorArray = cursors.ToArray();
 
-            var startingPosition = cursorArray.FirstOrDefault(c => c.Position == null ||
-                                                                   c.Position is StartingPosition);
+            var startingPosition = cursorArray.FirstOrDefault(c => c.Position == null);
 
             if (startingPosition != null)
             {
@@ -75,83 +61,6 @@ namespace Alluvial
             return ascending
                 ? comparison >= 0
                 : comparison <= 0;
-        }
-
-        public struct StartingPosition :
-            IComparable<DateTime>,
-            IComparable<DateTimeOffset>,
-            IComparable<int>,
-            IComparable<long>
-        {
-            public static bool operator >(StartingPosition start, object value)
-            {
-                return false;
-            }
-
-            public static bool operator <(StartingPosition start, object value)
-            {
-                return true;
-            }
-
-            public static bool operator >(StartingPosition start, DateTime value)
-            {
-                return false;
-            }
-
-            public static bool operator <(StartingPosition start, DateTime value)
-            {
-                return true;
-            }
-
-            public static bool operator >(StartingPosition start, DateTimeOffset value)
-            {
-                return false;
-            }
-
-            public static bool operator <(StartingPosition start, DateTimeOffset value)
-            {
-                return true;
-            }
-
-            public static implicit operator int(StartingPosition start)
-            {
-                return int.MinValue;
-            }
-
-            public static implicit operator long(StartingPosition start)
-            {
-                return long.MinValue;
-            }
-
-            public static implicit operator DateTime(StartingPosition start)
-            {
-                return DateTime.MinValue;
-            }
-
-            public static implicit operator DateTimeOffset(StartingPosition start)
-            {
-                return DateTimeOffset.MinValue;
-            }
-
-            public int CompareTo(DateTime other)
-            {
-                return -1;
-            }
-
-            public int CompareTo(DateTimeOffset other)
-            {
-                return -1;
-            }
-
-            public int CompareTo(int other)
-            {
-                return -1;
-            }
-
-            public int CompareTo(long other)
-            {
-                return -1;
-            }
         }
     }
 }
