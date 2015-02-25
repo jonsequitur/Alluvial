@@ -22,11 +22,11 @@ namespace Alluvial.Tests
 
                     if (projection == null)
                     {
-                        trace.WriteLine("Get: no projection for stream " + key);
+                        trace.WriteLine("[Get] no projection for stream " + key);
                     }
                     else
                     {
-                        trace.WriteLine(string.Format("Get: projection {0} for stream {1}",
+                        trace.WriteLine(string.Format("[Get] {0} for stream {1}",
                                                       projection,
                                                       key));
                     }
@@ -35,7 +35,7 @@ namespace Alluvial.Tests
                 },
                 put: async (key, projection) =>
                 {
-                    trace.WriteLine(string.Format("Put: projection {0} for stream {1}",
+                    trace.WriteLine(string.Format("[Put] {0} for stream {1}",
                         projection, 
                         key));
 

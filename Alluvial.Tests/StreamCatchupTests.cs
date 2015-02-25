@@ -17,7 +17,7 @@ namespace Alluvial.Tests
     {
         private IStoreEvents store;
         private string streamId;
-        private IStream<IDomainEvent> stream;
+        private IStream<IDomainEvent, int> stream;
 
         [SetUp]
         public void SetUp()
@@ -142,7 +142,7 @@ namespace Alluvial.Tests
 
             var cursor = await catchup.RunUntilCaughtUp();
 
-            cursor.As<int>()
+            cursor.Position
                   .Should()
                   .Be(101);
 
@@ -384,8 +384,8 @@ namespace Alluvial.Tests
         public async Task When_advancing_the_cursor_throws_then_an_exception_is_thrown()
         {
             var values = Enumerable.Range(1, 20);
-            var stream = Stream.Create(
-                query: q => values.Skip(q.Cursor.As<int>())
+            var stream = Stream.Create<int, int>(
+                query: q => values.Skip(q.Cursor.Position)
                                   .Take(q.BatchCount ?? 1000),
                 advanceCursor: (q, b) =>
                 {
@@ -394,7 +394,11 @@ namespace Alluvial.Tests
 
             var catchup = StreamCatchup.Create(stream);
 
-            catchup.Subscribe<int, int>(async (sum, vs) => sum + vs.Sum());
+            catchup.Subscribe<Projection<int, int>, int, int>(async (sum, batch) =>
+            {
+                sum.Value += batch.Count;
+                return sum;
+            });
 
             Action runSingleBatch = () => catchup.RunSingleBatch().Wait();
 

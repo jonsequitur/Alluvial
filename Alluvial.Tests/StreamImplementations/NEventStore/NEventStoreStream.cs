@@ -6,7 +6,7 @@ using NEventStore;
 
 namespace Alluvial.Tests
 {
-    public class NEventStoreStream : IStream<EventMessage>, IDisposable
+    public class NEventStoreStream : IStream<EventMessage, int>, IDisposable
     {
         private readonly IStoreEvents store;
         private readonly string streamId;
@@ -33,9 +33,9 @@ namespace Alluvial.Tests
             }
         }
 
-        public async Task<IStreamBatch<EventMessage>> Fetch(IStreamQuery query)
+        public async Task<IStreamBatch<EventMessage>> Fetch(IStreamQuery<int> query)
         {
-            int lastFetchedRevision = (int) query.Cursor.Position;
+            var lastFetchedRevision = Math.Max(query.Cursor.Position, 0);
 
             int maxRevisionToFetch;
 
@@ -54,35 +54,38 @@ namespace Alluvial.Tests
 
             if (maxExistingRevision <= lastFetchedRevision)
             {
-                return StreamBatch.Empty<EventMessage>(query.Cursor);
+                return query.Cursor.EmptyBatch<EventMessage, int>();
             }
 
             var events = new List<EventMessage>();
 
-            for (var i = lastFetchedRevision + 1; i <= maxRevisionToFetch; i++)
+            checked
             {
-                try
+                for (var i = lastFetchedRevision + 1; i <= maxRevisionToFetch; i++)
                 {
-                    using (var stream = store.OpenStream(streamId,
-                                                         minRevision: i,
-                                                         maxRevision: i))
+                    try
                     {
-                        if (stream.CommittedEvents.Count == 0)
+                        using (var stream = store.OpenStream(streamId,
+                                                             minRevision: i,
+                                                             maxRevision: i))
                         {
-                            break;
-                        }
+                            if (stream.CommittedEvents.Count == 0)
+                            {
+                                break;
+                            }
 
-                        events.AddRange(stream.CommittedEvents
-                                              .Select(e =>
-                                              {
-                                                  e.SetStreamRevision(stream.StreamRevision);
-                                                  return e;
-                                              }));
+                            events.AddRange(stream.CommittedEvents
+                                                  .Select(e =>
+                                                  {
+                                                      e.SetStreamRevision(stream.StreamRevision);
+                                                      return e;
+                                                  }));
+                        }
                     }
-                }
-                catch (StreamNotFoundException)
-                {
-                    break;
+                    catch (StreamNotFoundException)
+                    {
+                        break;
+                    }
                 }
             }
 
@@ -96,9 +99,9 @@ namespace Alluvial.Tests
             return batch;
         }
 
-        public ICursor NewCursor()
+        public ICursor<int> NewCursor()
         {
-            return Cursor.Create(0);
+            return Cursor.New<int>();
         }
 
         public void Dispose()

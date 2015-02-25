@@ -38,7 +38,7 @@ namespace Alluvial.Tests
         public async Task When_an_aggregation_fails_then_the_projection_is_not_updated()
         {
             var projections = new InMemoryProjectionStore<BalanceProjection>();
-            var catchup = StreamCatchup.Distribute(streamSource.UpdatedStreams().Trace());
+            var catchup = StreamCatchup.Distribute(streamSource.EventsByAggregate().Trace());
 
             // subscribe a flaky projector
             catchup.Subscribe(new BalanceProjector()
@@ -65,7 +65,8 @@ namespace Alluvial.Tests
             var projections = new InMemoryProjectionStore<BalanceProjection>();
 
             // first catch up all the projections
-            var catchup = StreamCatchup.Distribute(streamSource.UpdatedStreams().Trace());
+            IStream<IStream<IDomainEvent, int>, string> stream = streamSource.EventsByAggregate().Trace();
+            var catchup = StreamCatchup.Distribute(stream);
             var initialSubscription = catchup.Subscribe(new BalanceProjector(), projections);
             await catchup.RunUntilCaughtUp();
             initialSubscription.Dispose();
@@ -115,15 +116,22 @@ namespace Alluvial.Tests
         [Test]
         public async Task When_advancing_the_cursor_in_a_single_stream_catchup_throws_then_the_exception_is_surfaced_to_OnError()
         {
-            var stream = Stream.Create(q => Enumerable.Range(1, 100).Skip(q.Cursor.As<int>()),
-                                            advanceCursor: (q, b) => { throw new Exception("oops"); });
+            var stream = Stream.Create<int, int>(q => Enumerable.Range(1, 100).Skip(q.Cursor.Position),
+                                                 advanceCursor: (q, b) =>
+                                                 {
+                                                     throw new Exception("oops");
+                                                 });
 
-            StreamCatchupError<int> error = null;
+            StreamCatchupError<Projection<int, int>> error = null;
 
             var catchup = StreamCatchup.Create(stream);
-            catchup.Subscribe<int, int>(async (sum, batch) => sum + batch.Sum(),
-                                        (streamId, use) => use(0, stream.NewCursor()),
-                                        onError: e => error = e);
+            catchup.Subscribe<Projection<int, int>, int, int>(async (sum, batch) =>
+            {
+                sum.Value += batch.Count;
+                return sum;
+            },
+                                                              (streamId, use) => use(new Projection<int, int>()),
+                                                              onError: e => error = e);
 
             await catchup.RunSingleBatch();
 
@@ -134,17 +142,17 @@ namespace Alluvial.Tests
         [Test]
         public async Task When_advancing_the_cursor_in_a_multi_stream_catchup_throws_then_the_exception_is_surfaced_to_OnError()
         {
-            var stream = Stream.Create(q => Enumerable.Range(1, 24).Skip(q.Cursor.As<int>()))
-                               .Requery(i => Stream.Create(q => Enumerable.Range(q.Cursor.As<int>(), 10)
-                                                                          .Select(ii => ii.ToString())));
+            var stream = Stream.Create<int>(q => Enumerable.Range(1, 24).Skip(q.Cursor.Position))
+                               .Requery<int, string, string, int>(i => Stream.Create<string, string>(async q => Enumerable.Range(1, 10)
+                                                                                                                          .Select(ii => ii.ToString())));
 
-            StreamCatchupError<string> error = null;
+            StreamCatchupError<Projection<string, int>> error = null;
 
             var catchup = StreamCatchup.Distribute(stream);
 
-            catchup.Subscribe<string, string>(async (sum, batch) => "",
-                                              (streamId, use) => use(null, null),
-                                              onError: e => error = e);
+            catchup.Subscribe<Projection<string, int>, string, int>(async (sum, batch) => new Projection<string, int>(),
+                                                                    (streamId, use) => use(null),
+                                                                    onError: e => error = e);
 
             await catchup.RunSingleBatch();
 

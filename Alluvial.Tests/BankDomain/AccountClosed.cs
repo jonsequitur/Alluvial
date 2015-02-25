@@ -4,5 +4,6 @@
     {
         public string AggregateId { get; set; }
         public int StreamRevision { get; set; }
+        public string CheckpointToken { get; set; }
     }
 }

@@ -6,35 +6,61 @@ namespace Alluvial
 {
     public static class StreamCatchup
     {
-        public static IStreamCatchup<TData> Distribute<TData>(
-            IStream<IStream<TData>> stream,
-            FetchAndSaveProjection<ICursor> manageCursor,
-            int? batchCount = null) 
+        public static IStreamCatchup<TData, TUpstreamCursor> Distribute<TData, TUpstreamCursor>(
+            IStream<IStream<TData, TUpstreamCursor>, TUpstreamCursor> stream,
+            FetchAndSaveProjection<ICursor<TUpstreamCursor>> manageCursor,
+            int? batchCount = null)
         {
-            var upstreamCatchup = new SingleStreamCatchup<IStream<TData>>(stream, batchCount);
+            var upstreamCatchup = new SingleStreamCatchup<IStream<TData, TUpstreamCursor>, TUpstreamCursor>(stream, batchCount);
 
-            return new DistributorCatchup<TData>(
+            return new DistributorCatchup<TData, TUpstreamCursor, TUpstreamCursor>(
                 upstreamCatchup,
                 manageCursor);
         }
 
-        public static IStreamCatchup<TData> Distribute<TData>(
-            IStream<IStream<TData>> stream,
-            ICursor cursor = null, 
+        public static IStreamCatchup<TData, TUpstreamCursor> Distribute<TData, TUpstreamCursor>(
+            IStream<IStream<TData, TUpstreamCursor>, TUpstreamCursor> stream,
+            ICursor<TUpstreamCursor> cursor = null,
             int? batchCount = null)
         {
-            var upstreamCatchup = new SingleStreamCatchup<IStream<TData>>(stream, batchCount);
+            var upstreamCatchup = new SingleStreamCatchup<IStream<TData, TUpstreamCursor>, TUpstreamCursor>(stream, batchCount);
 
-            return new DistributorCatchup<TData>(
+            return new DistributorCatchup<TData, TUpstreamCursor, TUpstreamCursor>(
+                upstreamCatchup,
+                cursor ?? stream.NewCursor());
+        }
+        
+
+        public static IStreamCatchup<TData, TUpstreamCursor> Distribute<TData, TUpstreamCursor, TDownstreamCursor>(
+            IStream<IStream<TData, TDownstreamCursor>, TUpstreamCursor> stream,
+            FetchAndSaveProjection<ICursor<TUpstreamCursor>> manageCursor,
+            int? batchCount = null)
+        {
+            var upstreamCatchup = new SingleStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor>(stream, batchCount);
+
+            return new DistributorCatchup<TData, TUpstreamCursor, TDownstreamCursor>(
+                upstreamCatchup,
+                manageCursor);
+        }
+
+        public static IStreamCatchup<TData, TUpstreamCursor> Distribute<TData, TUpstreamCursor, TDownstreamCursor>(
+            IStream<IStream<TData, TDownstreamCursor>, TUpstreamCursor> stream,
+            ICursor<TUpstreamCursor> cursor = null,
+            int? batchCount = null)
+        {
+            var upstreamCatchup = new SingleStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor>(stream, batchCount);
+
+            return new DistributorCatchup<TData, TUpstreamCursor, TDownstreamCursor>(
                 upstreamCatchup,
                 cursor ?? stream.NewCursor());
         }
 
-        public static IStreamCatchup<TData> Create<TData>(
-            IStream<TData> stream,
+
+        public static IStreamCatchup<TData, TCursor> Create<TData, TCursor>(
+            IStream<TData, TCursor> stream,
             int? batchCount = null)
         {
-            return new SingleStreamCatchup<TData>(
+            return new SingleStreamCatchup<TData, TCursor>(
                 stream,
                 batchCount);
         }
@@ -42,9 +68,9 @@ namespace Alluvial
         /// <summary>
         /// Runs the catchup query until it reaches an empty batch, then stops.
         /// </summary>
-        public static async Task<ICursor> RunUntilCaughtUp<TData>(this IStreamCatchup<TData> catchup)
+        public static async Task<ICursor<TCursor>> RunUntilCaughtUp<TData, TCursor>(this IStreamCatchup<TData, TCursor> catchup)
         {
-            ICursor cursor;
+            ICursor<TCursor> cursor;
             var counter = new Counter<TData>();
 
             using (catchup.Subscribe(async (_, batch) => counter.Count(batch), NoCursor(counter)))
@@ -52,9 +78,9 @@ namespace Alluvial
                 int countBefore;
                 do
                 {
-                    countBefore = counter.TotalCount;
+                    countBefore = counter.Value;
                     cursor = await catchup.RunSingleBatch();
-                } while (countBefore != counter.TotalCount);
+                } while (countBefore != counter.Value);
             }
 
             return cursor;
@@ -62,14 +88,11 @@ namespace Alluvial
 
         private static FetchAndSaveProjection<TProjection> NoCursor<TProjection>(TProjection projection)
         {
-            return async (streamId, aggregate) =>
-            {
-                await aggregate(projection, Cursor.None());
-            };
+            return async (streamId, aggregate) => { await aggregate(projection); };
         }
 
-        public static IDisposable Poll<TData>(
-            this IStreamCatchup<TData> catchup,
+        public static IDisposable Poll<TData, TCursor>(
+            this IStreamCatchup<TData, TCursor> catchup,
             TimeSpan pollInterval)
         {
             var canceled = false;
@@ -89,8 +112,8 @@ namespace Alluvial
             });
         }
 
-        public static IDisposable Subscribe<TProjection, TData>(
-            this IStreamCatchup<TData> catchup,
+        public static IDisposable Subscribe<TProjection, TData, TCursor>(
+            this IStreamCatchup<TData, TCursor> catchup,
             IStreamAggregator<TProjection, TData> aggregator,
             IProjectionStore<string, TProjection> projectionStore = null)
         {
@@ -98,8 +121,8 @@ namespace Alluvial
                                      projectionStore.AsHandler());
         }
 
-        public static IDisposable Subscribe<TProjection, TData>(
-            this IStreamCatchup<TData> catchup,
+        public static IDisposable Subscribe<TProjection, TData, TCursor>(
+            this IStreamCatchup<TData, TCursor> catchup,
             AggregateAsync<TProjection, TData> aggregate,
             IProjectionStore<string, TProjection> projectionStore = null)
         {
@@ -107,8 +130,8 @@ namespace Alluvial
                                      projectionStore.AsHandler());
         }
 
-        public static IDisposable Subscribe<TProjection, TData>(
-            this IStreamCatchup<TData> catchup,
+        public static IDisposable Subscribe<TProjection, TData, TCursor>(
+            this IStreamCatchup<TData, TCursor> catchup,
             AggregateAsync<TProjection, TData> aggregate,
             FetchAndSaveProjection<TProjection> manageProjection,
             HandleAggregatorError<TProjection> onError = null)
@@ -116,8 +139,8 @@ namespace Alluvial
             return catchup.Subscribe(Aggregator.Create(aggregate), manageProjection);
         }
 
-        public static IDisposable Subscribe<TProjection, TData>(
-            this IStreamCatchup<TData> catchup,
+        public static IDisposable Subscribe<TProjection, TData, TCursor>(
+            this IStreamCatchup<TData, TCursor> catchup,
             IStreamAggregator<TProjection, TData> aggregator,
             FetchAndSaveProjection<TProjection> manageProjection,
             HandleAggregatorError<TProjection> onError = null)
@@ -130,15 +153,14 @@ namespace Alluvial
             return catchup.SubscribeAggregator(aggregator, manageProjection);
         }
 
-        internal class Counter<TData>
+
+        internal class Counter<TCursor> : Projection<int>
         {
-            public Counter<TData> Count(IStreamBatch<TData> batch)
+            public Counter<TCursor> Count(IStreamBatch<TCursor> batch)
             {
-                TotalCount += batch.Count;
+                Value += batch.Count;
                 return this;
             }
-
-            public int TotalCount { get; private set; }
         }
     }
 

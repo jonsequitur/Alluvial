@@ -4,37 +4,19 @@ using System.Threading.Tasks;
 
 namespace Alluvial
 {
-    internal class DistributorCatchup<TData> : StreamCatchupBase<TData>
+    internal class DistributorCatchup<TData, TUpstreamCursor, TDownstreamCursor> : StreamCatchupBase<TData, TUpstreamCursor>
     {
-        private readonly IStreamCatchup<IStream<TData>> upstreamCatchup;
+        private readonly IStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor> upstreamCatchup;
 
         public DistributorCatchup(
-            IStreamCatchup<IStream<TData>> upstreamCatchup,
-            ICursor cursor)
+            IStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor> upstreamCatchup,
+            ICursor<TUpstreamCursor> cursor) : this(upstreamCatchup, (async (streamId, update) => await update(cursor)))
         {
-            if (upstreamCatchup == null)
-            {
-                throw new ArgumentNullException("upstreamCatchup");
-            }
-            if (cursor == null)
-            {
-                throw new ArgumentNullException("cursor");
-            }
-            this.upstreamCatchup = upstreamCatchup;
-
-            upstreamCatchup.Subscribe<ICursor, IStream<TData>>(
-                async (c, streams) =>
-                {
-                    await Task.WhenAll(streams.Select(RunSingleBatch));
-
-                    return c;
-                },
-                (async (streamId, update) => { await update(null, cursor); }));
         }
 
         public DistributorCatchup(
-            IStreamCatchup<IStream<TData>> upstreamCatchup,
-            FetchAndSaveProjection<ICursor> manageCursor)
+            IStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor> upstreamCatchup,
+            FetchAndSaveProjection<ICursor<TUpstreamCursor>> manageCursor)
         {
             if (upstreamCatchup == null)
             {
@@ -56,7 +38,7 @@ namespace Alluvial
                 manageCursor);
         }
 
-        public override async Task<ICursor> RunSingleBatch()
+        public override async Task<ICursor<TUpstreamCursor>> RunSingleBatch()
         {
             return await upstreamCatchup.RunSingleBatch();
         }

@@ -5,19 +5,14 @@ namespace Alluvial
 {
     [DebuggerStepThrough]
     [DebuggerDisplay("Position: {Position}")]
-    internal class ReadOnlyCursor : CursorWrapper
+    internal class ReadOnlyCursor<T> : Cursor<T>
     {
-        public ReadOnlyCursor(ICursor innerCursor)
+        public ReadOnlyCursor(ICursor<T> innerCursor)
         {
-            Wrap(innerCursor);
+            Position = innerCursor.Position;
         }
 
-        public override void AdvanceTo(dynamic position)
-        {
-            throw new InvalidOperationException("Cursor is read-only");
-        }
-
-        public override void AdvanceBy(dynamic amount)
+        public override void AdvanceTo(T position)
         {
             throw new InvalidOperationException("Cursor is read-only");
         }

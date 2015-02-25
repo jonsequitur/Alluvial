@@ -30,28 +30,31 @@ namespace Alluvial.Tests
         [Test]
         public async Task By_default_Aggregator_Trace_writes_projections_and_batches_to_trace_output()
         {
-            var aggregagator = Aggregator.Create<int, string>((p, es) =>
+            var aggregagator = Aggregator.Create<Projection<int, int>, string>((p, es) =>
             {
-                p += es.Count;
+                p.Value += es.Count;
                 return p;
             }).Trace();
 
-            await aggregagator.Aggregate(1, StreamBatch.Create(new[] { "hi", "there" }, Cursor.Create(0)));
+            await aggregagator.Aggregate(new Projection<int, int>
+            {
+                Value = 1
+            }, StreamBatch.Create(new[] { "hi", "there" }, Cursor.New(0)));
 
             traceListener.Messages
                          .Should()
-                         .Contain("Aggregate: 1 / batch of 2 starts @ 0");
+                         .Contain("Aggregate: Projection<Int32>: 1 / batch of 2 starts @ 0");
         }
 
         [Test]
         public async Task By_default_Stream_Trace_writes_events_that_are_read_from_the_stream_to_trace_output()
         {
-            var stream = Stream.Create(q => Enumerable.Range(1, 100)
-                                                      .Skip(q.Cursor.As<int>())
+            var stream = Stream.Create<int>(q => Enumerable.Range(1, 100)
+                                                      .Skip(q.Cursor.Position)
                                                       .Take(q.BatchCount ?? 100000))
                                .Trace();
 
-            var iterator = stream.CreateQuery(Cursor.Create(15), 10);
+            var iterator = stream.CreateQuery(Cursor.New(15), 10);
 
             await iterator.NextBatch();
 
@@ -72,7 +75,7 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .Contain("Put: projection Alluvial.Tests.BankDomain.BalanceProjection for stream the-stream-id");
+                         .Contain("[Put] Projection<IDomainEvent>: null for stream the-stream-id");
         }
 
         [Test]
@@ -85,7 +88,7 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .Contain("Get: projection Alluvial.Tests.BankDomain.BalanceProjection for stream the-stream-id");
+                         .Contain("[Get] Projection<IDomainEvent>: null for stream the-stream-id");
         }
 
         [Test]
@@ -101,7 +104,7 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .Contain("Get: no projection for stream the-stream-id");
+                         .Contain("[Get] no projection for stream the-stream-id");
         }
 
         private class TraceListener : System.Diagnostics.TraceListener
