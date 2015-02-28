@@ -13,7 +13,7 @@ namespace Alluvial.Tests
     {
         private string streamId;
         private IStoreEvents store;
-        private NEventStoreStream stream;
+        private IStream<EventMessage, int> stream;
 
         [SetUp]
         public void SetUp()
@@ -21,7 +21,7 @@ namespace Alluvial.Tests
             streamId = Guid.NewGuid().ToString();
             store = TestEventStore.Create();
             store.Populate(streamId);
-            stream = new NEventStoreStream(store, streamId);
+            stream =  NEventStoreStream.ByAggregate(store, streamId);
         }
 
         [Test]

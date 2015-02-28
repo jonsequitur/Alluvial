@@ -34,11 +34,11 @@ namespace Alluvial.Tests
                     : BankAccountType.Savings
             }, howMany: 100);
 
-            IStream<IStream<IDomainEvent, int>, string> updatedStreams = streamSource.EventsByAggregate()
+            IStream<IStream<IDomainEvent, int>, string> eventsByAggregate = streamSource.EventsByAggregate()
                                                                                      .Trace()
                                                                                      .Map(ss => ss.Select(s => s.Trace()));
 
-            var indexCatchup = StreamCatchup.Distribute(updatedStreams, batchCount: 1);
+            var indexCatchup = StreamCatchup.Distribute(eventsByAggregate, batchCount: 1);
             var index = new Projection<ConcurrentBag<AccountOpened>, string>
             {
                 Value = new ConcurrentBag<AccountOpened>()
@@ -82,6 +82,23 @@ namespace Alluvial.Tests
             {
                 await Wait.Until(() => numberOfSavingsAccounts.Value >= 50);
             }
+        }
+
+        [Ignore("Test not finished")]
+        [Test]
+        public async Task When_a_catchup_tracks_another_projection_then_it_does_not_get_ahead_of_it_relative_to_the_source_stream()
+        {
+
+
+
+
+
+
+            
+
+
+            // FIX (When_a_catchup_tracks_another_projection_then_it_does_not_get_ahead_of_it_relative_to_the_source_stream) write test
+            Assert.Fail("Test not written yet.");
         }
     }
 }

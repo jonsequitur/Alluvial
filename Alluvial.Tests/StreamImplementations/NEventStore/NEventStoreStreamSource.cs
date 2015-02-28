@@ -21,7 +21,7 @@ namespace Alluvial.Tests
 
         public IStream<IDomainEvent, int> Open(string streamId)
         {
-            return new NEventStoreStream(store, streamId).DomainEvents();
+            return NEventStoreStream.ByAggregate(store, streamId).DomainEvents();
         }
 
         public IStream<IStream<IDomainEvent, int>, string> EventsByAggregate()

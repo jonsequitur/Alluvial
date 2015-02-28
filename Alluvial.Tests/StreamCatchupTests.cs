@@ -29,7 +29,7 @@ namespace Alluvial.Tests
 
             store.WriteEvents(streamId);
 
-            stream = new NEventStoreStream(store, streamId).DomainEvents();
+            stream = NEventStoreStream.ByAggregate(store, streamId).DomainEvents();
         }
 
         [Test]
