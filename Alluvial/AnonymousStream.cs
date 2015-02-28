@@ -28,8 +28,6 @@ namespace Alluvial
             this.advanceCursor = advanceCursor ??
                                  ((query, batch) =>
                                  {
-
-
                                  });
 
             this.newCursor = newCursor ?? (() => Cursor.New<TCursor>());

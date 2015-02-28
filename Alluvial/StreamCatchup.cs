@@ -6,31 +6,6 @@ namespace Alluvial
 {
     public static class StreamCatchup
     {
-        public static IStreamCatchup<TData, TUpstreamCursor> Distribute<TData, TUpstreamCursor>(
-            IStream<IStream<TData, TUpstreamCursor>, TUpstreamCursor> stream,
-            FetchAndSaveProjection<ICursor<TUpstreamCursor>> manageCursor,
-            int? batchCount = null)
-        {
-            var upstreamCatchup = new SingleStreamCatchup<IStream<TData, TUpstreamCursor>, TUpstreamCursor>(stream, batchCount);
-
-            return new DistributorCatchup<TData, TUpstreamCursor, TUpstreamCursor>(
-                upstreamCatchup,
-                manageCursor);
-        }
-
-        public static IStreamCatchup<TData, TUpstreamCursor> Distribute<TData, TUpstreamCursor>(
-            IStream<IStream<TData, TUpstreamCursor>, TUpstreamCursor> stream,
-            ICursor<TUpstreamCursor> cursor = null,
-            int? batchCount = null)
-        {
-            var upstreamCatchup = new SingleStreamCatchup<IStream<TData, TUpstreamCursor>, TUpstreamCursor>(stream, batchCount);
-
-            return new DistributorCatchup<TData, TUpstreamCursor, TUpstreamCursor>(
-                upstreamCatchup,
-                cursor ?? stream.NewCursor());
-        }
-        
-
         public static IStreamCatchup<TData, TUpstreamCursor> Distribute<TData, TUpstreamCursor, TDownstreamCursor>(
             IStream<IStream<TData, TDownstreamCursor>, TUpstreamCursor> stream,
             FetchAndSaveProjection<ICursor<TUpstreamCursor>> manageCursor,
@@ -54,7 +29,6 @@ namespace Alluvial
                 upstreamCatchup,
                 cursor ?? stream.NewCursor());
         }
-
 
         public static IStreamCatchup<TData, TCursor> Create<TData, TCursor>(
             IStream<TData, TCursor> stream,
@@ -88,7 +62,7 @@ namespace Alluvial
 
         private static FetchAndSaveProjection<TProjection> NoCursor<TProjection>(TProjection projection)
         {
-            return async (streamId, aggregate) => { await aggregate(projection); };
+            return  (streamId, aggregate) => aggregate(projection);
         }
 
         public static IDisposable Poll<TData, TCursor>(

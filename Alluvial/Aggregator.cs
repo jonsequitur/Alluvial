@@ -109,10 +109,23 @@ namespace Alluvial
             });
         }
 
+        public static IStreamAggregator<TProjection, TData> Trace<TProjection, TData>(
+            this AggregateAsync<TProjection, TData> aggregate,
+            Action<TProjection, IStreamBatch<TData>> write = null)
+        {
+            write = write ?? TraceDefault;
+
+            return Create(aggregate).Pipeline((projection, batch, next) =>
+            {
+                write(projection, batch);
+                return next(projection, batch);
+            });
+        }
+
         private static void TraceDefault<TProjection, TData>(TProjection projection, IStreamBatch<TData> batch)
         {
             System.Diagnostics.Trace.WriteLine(
-                string.Format("Aggregate: {0} / batch of {1} starts @ {2}",
+                string.Format("[Aggregate] {0} / batch of {1} starts @ {2}",
                               projection,
                               batch.Count,
                               (string) batch.StartsAtCursorPosition.ToString()));

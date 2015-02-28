@@ -1,12 +1,15 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace Alluvial
 {
+    [DebuggerDisplay("{ToString()}")]
     internal class DistributorCatchup<TData, TUpstreamCursor, TDownstreamCursor> : StreamCatchupBase<TData, TUpstreamCursor>
     {
         private readonly IStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor> upstreamCatchup;
+        private static readonly string catchupTypeDescription = typeof(DistributorCatchup<TData, TUpstreamCursor, TDownstreamCursor>).ReadableName();
 
         public DistributorCatchup(
             IStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor> upstreamCatchup,
@@ -41,6 +44,15 @@ namespace Alluvial
         public override async Task<ICursor<TUpstreamCursor>> RunSingleBatch()
         {
             return await upstreamCatchup.RunSingleBatch();
+        }
+
+        public override string ToString()
+        {
+            return string.Format("{0}->{1}->{2}",
+                                 catchupTypeDescription,
+                                 upstreamCatchup,
+                                 string.Join(" + ",
+                                             aggregatorSubscriptions.Select(s => s.Value.ProjectionType.ReadableName())));
         }
     }
 }

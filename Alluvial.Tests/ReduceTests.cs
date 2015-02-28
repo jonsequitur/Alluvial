@@ -24,7 +24,6 @@ namespace Alluvial.Tests
             streamSource = new NEventStoreStreamSource(store);
         }
 
-        [Ignore("Test not finished")]
         [Test]
         public async Task A_stream_can_be_derived_from_an_index_projection_in_order_to_perform_a_reduce_operation()
         {
@@ -45,11 +44,9 @@ namespace Alluvial.Tests
                 Value = new ConcurrentBag<AccountOpened>()
             };
 
-            // FIX: (A_stream_can_be_derived_from_an_index_projection_in_order_to_perform_a_reduce_operation) the index needs to refer to the upstream cursor but is failing when the stream-specific cursor is used
-
             // subscribe a catchup to the updates stream to build up an index
-            indexCatchup.Subscribe<Projection<ConcurrentBag<AccountOpened>, string>, IDomainEvent, string>(
-                async (p, events) =>
+            indexCatchup.Subscribe(
+                Aggregator.Create<Projection<ConcurrentBag<AccountOpened>>, IDomainEvent>(async (p, events) =>
                 {
                     foreach (var e in events.OfType<AccountOpened>()
                                             .Where(e => e.AccountType == BankAccountType.Savings))
@@ -58,7 +55,7 @@ namespace Alluvial.Tests
                     }
 
                     return p;
-                },
+                }).Trace(),
                 async (streamId, aggregate) => await aggregate(index));
 
             // create a catchup over the index

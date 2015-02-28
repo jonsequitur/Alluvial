@@ -43,7 +43,7 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .Contain("Aggregate: Projection<Int32>: 1 / batch of 2 starts @ 0");
+                         .Contain("[Aggregate] Projection(Int32): 1 / batch of 2 starts @ 0");
         }
 
         [Test]
@@ -61,8 +61,8 @@ namespace Alluvial.Tests
             traceListener.Messages
                          .ShouldBeEquivalentTo(new[]
                          {
-                             string.Format("Query: stream {0} @ cursor position 15", stream.Id),
-                             string.Format("Fetched: stream {0} batch of 10, now @ cursor position 25", stream.Id)
+                             string.Format("[Query] stream {0} @ cursor position 15", stream.Id),
+                             string.Format("      [Fetched] stream {0} batch of 10, now @ cursor position 25", stream.Id)
                          });
         }
 
@@ -75,7 +75,7 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .Contain("[Put] Projection<IDomainEvent>: null for stream the-stream-id");
+                         .Contain("[Put] Projection(IDomainEvent): null for stream the-stream-id");
         }
 
         [Test]
@@ -88,7 +88,7 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .Contain("[Get] Projection<IDomainEvent>: null for stream the-stream-id");
+                         .Contain("[Get] Projection(IDomainEvent): null for stream the-stream-id");
         }
 
         [Test]

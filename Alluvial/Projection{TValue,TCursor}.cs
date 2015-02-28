@@ -8,12 +8,7 @@ namespace Alluvial
         Projection<TValue>,
         ICursor<TCursor>
     {
-        private static readonly string projectionName;
-
-        static Projection()
-        {
-            projectionName = string.Format("Projection<{0},{1}>", typeof (TValue).Name, typeof (TCursor).Name);
-        }
+        private static readonly string projectionName = typeof (Projection<TValue, TCursor>).ReadableName();
 
         public TCursor CursorPosition { get; set; }
 

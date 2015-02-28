@@ -5,12 +5,7 @@ namespace Alluvial
     [DebuggerDisplay("Projection: {ProjectionName}")]
     public class Projection<TValue>
     {
-        private static readonly string projectionName;
-
-        static Projection()
-        {
-            projectionName = string.Format("Projection<{0}>", typeof (TValue).Name);
-        }
+        private static readonly string projectionName = typeof (Projection<TValue>).ReadableName();
 
         public TValue Value { get; set; }
 

@@ -199,16 +199,19 @@ namespace Alluvial
         {
             onSendQuery = onSendQuery ??
                           (q => trace.WriteLine(
-                              string.Format("Query: stream {0} @ cursor position {1}",
+                              string.Format("[Query] stream {0} @ cursor position {1}",
                                             stream.Id,
                                             (object) q.Cursor.Position)));
 
             onResults = onResults ??
-                        ((q, streamBatch) => trace.WriteLine(
-                            string.Format("Fetched: stream {0} batch of {1}, now @ cursor position {2}",
-                                          stream.Id,
-                                          streamBatch.Count,
-                                          (object) q.Cursor.Position)));
+                        ((q, streamBatch) =>
+                        {
+                            trace.WriteLine(
+                                string.Format("      [Fetched] stream {0} batch of {1}, now @ cursor position {2}",
+                                              stream.Id,
+                                              streamBatch.Count,
+                                              q.Cursor.Position));
+                        });
 
             return Create<TData, TCursorPosition>(
                 id: stream.Id,
