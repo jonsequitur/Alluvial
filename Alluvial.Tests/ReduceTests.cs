@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Alluvial.Tests.BankDomain;
@@ -88,6 +87,13 @@ namespace Alluvial.Tests
         [Test]
         public async Task When_a_catchup_tracks_another_projection_then_it_does_not_get_ahead_of_it_relative_to_the_source_stream()
         {
+            IStream<EventMessage, string> upstream = NEventStoreStream.AllEvents(store);
+
+            store.WriteEvents(i => new AccountOpened(), 100);
+//
+//            var dependentStream = Stream.Create<int, string>(
+//                async q => upstream.Map<EventMessage, int, string>(
+//                    e => e.Count()).Fetch(q));
 
 
 

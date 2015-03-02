@@ -409,6 +409,30 @@ namespace Alluvial.Tests
                           .Contain("oops!");
         }
 
+        [Test]
+        public async Task When_the_disposable_returned_by_Poll_is_disposed_then_no_further_polling_happens()
+        {
+            var pollCount = 0;
+            var pollCountAtDispose = 0;
+            var stream = Enumerable.Range(1, 1000).AsSequentialStream().Trace();
+            var catchup = StreamCatchup.Create(stream, 1);
+            catchup.Subscribe<int, int, int>(async (p, b) =>
+            {
+                pollCount++;
+                return p + b.Count;
+            });
+
+            using (catchup.Poll(TimeSpan.FromMilliseconds(100)))
+            {
+                Thread.Sleep(300);
+                pollCountAtDispose = pollCount;
+            }
+
+            Thread.Sleep(300);
+
+            pollCount.Should().Be(pollCountAtDispose);
+        }
+
         private void Throw()
         {
             throw new Exception("oops");

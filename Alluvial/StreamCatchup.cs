@@ -75,7 +75,7 @@ namespace Alluvial
             {
                 while (!canceled)
                 {
-                    await catchup.RunUntilCaughtUp();
+                    await catchup.RunSingleBatch();
                     await Task.Delay(pollInterval);
                 }
             });
