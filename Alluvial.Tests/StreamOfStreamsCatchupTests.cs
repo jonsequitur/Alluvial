@@ -355,6 +355,7 @@ namespace Alluvial.Tests
         [Test]
         public async Task Catchup_can_query_downstream_streams_such_that_repeated_data_is_not_queried()
         {
+            var store = this.store;
             var streamId = Guid.NewGuid().ToString();
             var queriedEvents = new ConcurrentBag<IDomainEvent>();
 
@@ -389,6 +390,7 @@ namespace Alluvial.Tests
         [Test]
         public async Task When_multiple_projectors_are_subscribed_then_data_that_both_projections_have_seen_is_not_requeried()
         {
+            var store = this.store;
             var streamId = Guid.NewGuid().ToString();
             var queriedEvents = new ConcurrentBag<IDomainEvent>();
 
