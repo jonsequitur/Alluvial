@@ -36,8 +36,8 @@ namespace Alluvial.Tests
                 put: async (key, projection) =>
                 {
                     trace.WriteLine(string.Format("[Put] {0} for stream {1}",
-                        projection, 
-                        key));
+                                                  projection,
+                                                  key));
 
                     await store.Put(key, projection);
                 });
@@ -53,8 +53,32 @@ namespace Alluvial.Tests
 
                 projection = await update(projection);
 
-                await store.Put(key, projection);
+                if (Projection<TProjection>.WasUpdated(projection))
+                {
+                    await store.Put(key, projection);
+                }
             };
+        }
+
+        private static class Projection<T>
+        {
+            static Projection()
+            {
+                if (typeof (ITrackCursorPosition).IsAssignableFrom(typeof (T)))
+                {
+                    WasUpdated = t => ((ITrackCursorPosition) t).CursorWasAdvanced;
+                }
+                else if (typeof (T).IsClass)
+                {
+                    WasUpdated = t => t != null;
+                }
+                else
+                {
+                    WasUpdated = t => !t.Equals(default(T));
+                }
+            }
+
+            public static readonly Func<T, bool> WasUpdated;
         }
     }
 }

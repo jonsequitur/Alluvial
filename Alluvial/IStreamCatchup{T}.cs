@@ -16,7 +16,8 @@ namespace Alluvial
         /// <param name="aggregator">The aggregator.</param>
         /// <returns>An <see cref="IDisposable" /> that, when disposed, unsubscribed the aggregator from the catchup.</returns>
         IDisposable SubscribeAggregator<TProjection>(IStreamAggregator<TProjection, TData> aggregator,
-                                                     FetchAndSaveProjection<TProjection> fetchAndSaveProjection);
+                                                     FetchAndSaveProjection<TProjection> fetchAndSaveProjection,
+                                                     HandleAggregatorError<TProjection> onError);
 
         /// <summary>
         /// Consumes a single batch from the source stream and updates the subscribed aggregators.

@@ -201,32 +201,34 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task OnError_allows_aggregator_exceptions_to_be_prevented_from_stopping_catchup()
+        public async Task OnError_Continue_prevents_aggregator_exceptions_from_stopping_catchup()
         {
             var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
             var count = 0;
-
+        
             var projector = new BalanceProjector()
                 .Pipeline(async (projection, batch, next) =>
                 {
                     Interlocked.Increment(ref count);
                     Console.WriteLine(count);
-                    if (count < 50)
+                    if (count < 49)
                     {
                         Throw();
                     }
                     await next(projection, batch);
-                });
+                }).Trace();
 
-            var catchup = StreamCatchup.Create(stream, batchCount: 50);
+            var catchup = StreamCatchup.Create(stream.Trace(),
+                                               batchCount: 50);
 
-            catchup.Subscribe(projector, projectionStore.AsHandler(), onError: e => e.Continue());
+            catchup.Subscribe(projector, 
+                projectionStore.AsHandler(), 
+                onError: e => e.Continue());
 
-            TaskScheduler.UnobservedTaskException += (sender, args) => Console.WriteLine("UNOBSERVED: " + args.Exception);
-
-            await catchup.RunSingleBatch();
+            await catchup.RunUntilCaughtUp();
 
             projectionStore.Count().Should().Be(1);
+            projectionStore.Single().CursorPosition.Should().Be(1);
         }
 
         [Test]
@@ -389,7 +391,7 @@ namespace Alluvial.Tests
                                   .Take(q.BatchCount ?? 1000),
                 advanceCursor: (q, b) =>
                 {
-                    throw new Exception("oops!");
+                    Throw();
                 });
 
             var catchup = StreamCatchup.Create(stream);
@@ -435,7 +437,7 @@ namespace Alluvial.Tests
 
         private void Throw()
         {
-            throw new Exception("oops");
+            throw new Exception("oops!");
         }
     }
 }

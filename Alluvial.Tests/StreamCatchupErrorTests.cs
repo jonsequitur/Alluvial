@@ -8,7 +8,6 @@ using NUnit.Framework;
 
 namespace Alluvial.Tests
 {
-    [Ignore("Still a work in progress")]
     [TestFixture]
     public class StreamCatchupErrorTests
     {
@@ -44,7 +43,7 @@ namespace Alluvial.Tests
             catchup.Subscribe(new BalanceProjector()
                                   .Pipeline(async (projection, batch, next) =>
                                   {
-                                      bool shouldThrow = true; // declared outside to fool the compiler into inferring the correct .Pipeline overload
+                                      bool shouldThrow = true; // declared outside to nudge the compiler into inferring the correct .Pipeline overload
                                       if (shouldThrow)
                                       {
                                           throw new Exception("oops");
@@ -119,10 +118,10 @@ namespace Alluvial.Tests
             var stream = Stream.Create<int, int>(q => Enumerable.Range(1, 100).Skip(q.Cursor.Position),
                                                  advanceCursor: (q, b) =>
                                                  {
-                                                     throw new Exception("oops");
+                                                     throw new Exception("oops!");
                                                  });
 
-            StreamCatchupError<Projection<int, int>> error = null;
+            var error = default(StreamCatchupError<Projection<int, int>>);
 
             var catchup = StreamCatchup.Create(stream);
             catchup.Subscribe<Projection<int, int>, int, int>(async (sum, batch) =>
@@ -131,11 +130,15 @@ namespace Alluvial.Tests
                 return sum;
             },
                                                               (streamId, use) => use(new Projection<int, int>()),
-                                                              onError: e => error = e);
+                                                              onError: e =>
+                                                              {
+                                                                  error = e;
+                                                                  e.Continue();
+                                                              });
 
             await catchup.RunSingleBatch();
 
-            error.Should().BeNull();
+            error.Should().NotBeNull();
             error.Exception.Message.Should().Contain("oops");
         }
 
@@ -143,20 +146,29 @@ namespace Alluvial.Tests
         public async Task When_advancing_the_cursor_in_a_multi_stream_catchup_throws_then_the_exception_is_surfaced_to_OnError()
         {
             var stream = Stream.Create<int>(q => Enumerable.Range(1, 24).Skip(q.Cursor.Position))
-                               .Requery<int, string, string, int>(i => Stream.Create<string, string>(async q => Enumerable.Range(1, 10)
-                                                                                                                          .Select(ii => ii.ToString())));
+                               .Requery<int, string, string, int>(i => Stream.Create<string, string>(
+                                   query: async q => Enumerable.Range(1, 10)
+                                                               .Select(ii => ii.ToString()),
+                                   advanceCursor: (q, b) =>
+                                   {
+                                       throw new Exception("oops!");
+                                   }));
 
-            StreamCatchupError<Projection<string, int>> error = null;
+            var error = default(StreamCatchupError<Projection<string, int>>);
 
             var catchup = StreamCatchup.Distribute(stream);
 
             catchup.Subscribe<Projection<string, int>, string, int>(async (sum, batch) => new Projection<string, int>(),
                                                                     (streamId, use) => use(null),
-                                                                    onError: e => error = e);
+                                                                    onError: e =>
+                                                                    {
+                                                                        error = e;
+                                                                        e.Continue();
+                                                                    });
 
             await catchup.RunSingleBatch();
 
-            error.Should().BeNull();
+            error.Should().NotBeNull();
             error.Exception.Message.Should().Contain("oops");
         }
     }

@@ -2,7 +2,7 @@ using System.Diagnostics;
 
 namespace Alluvial
 {
-    [DebuggerDisplay("Projection: {ProjectionName}")]
+    [DebuggerDisplay("ToString()")]
     public class Projection<TValue>
     {
         private static readonly string projectionName = typeof (Projection<TValue>).ReadableName();
@@ -23,7 +23,7 @@ namespace Alluvial
                 valueString = "null";
             }
 
-            return string.Format(ProjectionName + ": " + valueString);
+            return string.Format("{0}: {1}", ProjectionName, valueString);
         }
 
         protected virtual string ProjectionName

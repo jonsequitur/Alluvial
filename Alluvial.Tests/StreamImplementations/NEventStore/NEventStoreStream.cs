@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Alluvial.Tests.BankDomain;
 using NEventStore;
 
 namespace Alluvial.Tests
@@ -16,6 +17,11 @@ namespace Alluvial.Tests
         public static IStream<EventMessage, string> AllEvents(IStoreEvents store)
         {
             return new NEventStoreAllEventsStream(store);
+        }
+
+        public static IStream<string, string> AggregateIds(IStoreEvents store)
+        {
+            return new NEventStoreAllEventsStream(store).Map(es => es.Select(e => ((IDomainEvent) e.Body).AggregateId).Distinct());
         }
 
         private class NEventStoreAggregateStream : IStream<EventMessage, int>
@@ -151,7 +157,7 @@ namespace Alluvial.Tests
 
                 foreach (var commit in commits)
                 {
-                    actualCount += events.Count;
+                    actualCount += commit.Events.Count;
 
                     if (actualCount > batchCount)
                     {

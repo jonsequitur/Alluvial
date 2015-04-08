@@ -2,15 +2,25 @@ using System;
 
 namespace Alluvial
 {
-    internal class AggregatorSubscription<TProjection, TData> : IAggregatorSubscription 
+    internal class AggregatorSubscription<TProjection, TData> : IAggregatorSubscription
     {
+        internal readonly HandleAggregatorError<TProjection> OnError;
+
         public AggregatorSubscription(
             IStreamAggregator<TProjection, TData> aggregator,
-            FetchAndSaveProjection<TProjection> fetchAndSaveProjection = null)
+            FetchAndSaveProjection<TProjection> fetchAndSaveProjection = null,
+            HandleAggregatorError<TProjection> onError = null)
         {
             if (aggregator == null)
             {
                 throw new ArgumentNullException("aggregator");
+            }
+            
+            OnError = onError ?? (error => { });
+
+            if (onError != null)
+            {
+                fetchAndSaveProjection = fetchAndSaveProjection.Catch(onError);
             }
 
             FetchAndSaveProjection = fetchAndSaveProjection ??

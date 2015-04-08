@@ -289,27 +289,32 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task OnError_allows_aggregator_exceptions_to_be_prevented_from_stopping_catchup()
+        public async Task OnError_Continue_prevents_aggregator_exceptions_from_stopping_catchup()
         {
+            var count = 0;
             var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
 
             var projector = new BalanceProjector()
                 .Pipeline(async (projection, batch, next) =>
                 {
-                    if (projectionStore.Count() == 30)
+                    Interlocked.Increment(ref count);
+                    if (count < 20)
                     {
                         throw new Exception("oops");
                     }
                     await next(projection, batch);
-                });
+                }).Trace();
 
-            var catchup = StreamCatchup.Distribute(streamSource.EventsByAggregate(), batchCount: 50);
+            var catchup = StreamCatchup.Distribute(streamSource.EventsByAggregate().Trace(),
+                                                   batchCount: 50);
 
-            catchup.Subscribe(projector, projectionStore.AsHandler(), onError: e => e.Continue());
+            catchup.Subscribe(projector,
+                              projectionStore.AsHandler(),
+                              onError: e => e.Continue());
 
             await catchup.RunSingleBatch();
 
-            projectionStore.Count().Should().Be(50);
+            projectionStore.Count().Should().Be(31);
         }
 
         [Test]

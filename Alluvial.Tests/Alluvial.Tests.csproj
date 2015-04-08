@@ -90,7 +90,7 @@
     <Compile Include="BankDomain\ProjectionBase.cs" />
     <Compile Include="CursorTests.cs" />
     <Compile Include="PipelineTests.cs" />
-    <Compile Include="ReduceTests.cs" />
+    <Compile Include="StreamCompositionTests.cs" />
     <Compile Include="StreamCatchupErrorTests.cs" />
     <Compile Include="StreamImplementations\IMapProjection.cs" />
     <Compile Include="StreamCatchupTests.cs" />

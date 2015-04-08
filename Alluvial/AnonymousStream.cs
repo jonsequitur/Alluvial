@@ -50,5 +50,10 @@ namespace Alluvial
         {
             return newCursor();
         }
+
+        public override string ToString()
+        {
+            return GetType().ReadableName();
+        }
     }
 }

@@ -110,7 +110,7 @@ namespace Alluvial
             FetchAndSaveProjection<TProjection> manageProjection,
             HandleAggregatorError<TProjection> onError = null)
         {
-            return catchup.Subscribe(Aggregator.Create(aggregate), manageProjection);
+            return catchup.Subscribe(Aggregator.Create(aggregate), manageProjection, onError);
         }
 
         public static IDisposable Subscribe<TProjection, TData, TCursor>(
@@ -119,14 +119,8 @@ namespace Alluvial
             FetchAndSaveProjection<TProjection> manageProjection,
             HandleAggregatorError<TProjection> onError = null)
         {
-            if (onError != null)
-            {
-                manageProjection = manageProjection.Catch(onError);
-            }
-
-            return catchup.SubscribeAggregator(aggregator, manageProjection);
+            return catchup.SubscribeAggregator(aggregator, manageProjection, onError);
         }
-
 
         internal class Counter<TCursor> : Projection<int>
         {
@@ -137,6 +131,4 @@ namespace Alluvial
             }
         }
     }
-
-    public delegate void HandleAggregatorError<TProjection>(StreamCatchupError<TProjection> error);
 }

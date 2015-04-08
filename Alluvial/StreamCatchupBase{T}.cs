@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,17 +10,19 @@ namespace Alluvial
     internal abstract class StreamCatchupBase<TData, TCursorPosition> : IStreamCatchup<TData, TCursorPosition>
     {
         private int isRunning;
-
         protected int? batchCount;
 
         protected readonly ConcurrentDictionary<Type, IAggregatorSubscription> aggregatorSubscriptions = new ConcurrentDictionary<Type, IAggregatorSubscription>();
 
         public IDisposable SubscribeAggregator<TProjection>(
             IStreamAggregator<TProjection, TData> aggregator,
-            FetchAndSaveProjection<TProjection> fetchAndSaveProjection)
+            FetchAndSaveProjection<TProjection> fetchAndSaveProjection,
+            HandleAggregatorError<TProjection> onError)
         {
             var added = aggregatorSubscriptions.TryAdd(typeof (TProjection),
-                                                       new AggregatorSubscription<TProjection, TData>(aggregator, fetchAndSaveProjection));
+                                                       new AggregatorSubscription<TProjection, TData>(aggregator,
+                                                                                                      fetchAndSaveProjection,
+                                                                                                      onError));
 
             if (!added)
             {
@@ -102,22 +105,36 @@ namespace Alluvial
                 stream.Id,
                 async projection =>
                 {
-                    var aggregationBatch = await getData(projection);
+                    // FIX: (Aggregate) handle errors here?
 
-                    var data = aggregationBatch.Batch;
-
-                    projection = await subscription.Aggregator.Aggregate(projection, data);
-
-                    var cursor = projection as ICursor<TCursor>;
-                    if (cursor != null)
+                    try
                     {
-                        cursor.AdvanceTo(aggregationBatch.Cursor.Position);
+                        var aggregationBatch = await getData(projection);
+
+                        var data = aggregationBatch.Batch;
+
+                        projection = await subscription.Aggregator.Aggregate(projection, data);
+
+                        var cursor = projection as ICursor<TCursor>;
+                        if (cursor != null)
+                        {
+                            cursor.AdvanceTo(aggregationBatch.Cursor.Position);
+                        }
+                    }
+                    catch (Exception exception)
+                    {
+                        var error = subscription.OnError.CheckErrorHandler(exception, projection);
+
+                        if (!error.ShouldContinue)
+                        {
+                            throw;
+                        }
                     }
 
                     return projection;
                 });
         }
-        
+
         protected struct AggregationBatch<TCursor>
         {
             public ICursor<TCursor> Cursor;

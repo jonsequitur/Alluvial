@@ -14,9 +14,9 @@ namespace Alluvial
 
                 try
                 {
-                    await fetchAndSaveProjection(id, async (projection) =>
+                    await fetchAndSaveProjection(id, async projection =>
                     {
-                        TProjection resultingProjection = default(TProjection);
+                        var resultingProjection = default(TProjection);
 
                         try
                         {
@@ -32,6 +32,8 @@ namespace Alluvial
                             }
 
                             innerException = exception;
+
+                            return error.Projection;
                         }
 
                         return resultingProjection;
@@ -52,7 +54,7 @@ namespace Alluvial
             };
         }
 
-        private static StreamCatchupError<TProjection> CheckErrorHandler<TProjection>(
+        internal static StreamCatchupError<TProjection> CheckErrorHandler<TProjection>(
             this HandleAggregatorError<TProjection> onError,
             Exception exception,
             TProjection projection = default(TProjection))

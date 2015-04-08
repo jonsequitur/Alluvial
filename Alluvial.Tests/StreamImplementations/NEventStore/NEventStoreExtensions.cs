@@ -7,7 +7,7 @@ namespace Alluvial.Tests
 {
     public static class NEventStoreExtensions
     {
-        public static IStream<IDomainEvent, int> DomainEvents(this IStream<EventMessage, int> stream)
+        public static IStream<IDomainEvent, TCursor> DomainEvents<TCursor>(this IStream<EventMessage, TCursor> stream)
         {
             return stream.Map(es => es.Select(e =>
             {
@@ -17,7 +17,7 @@ namespace Alluvial.Tests
                     de.StreamRevision = StreamRevision(e);
                 }
                 return e.Body;
-            }).OfType<IDomainEvent>(), 
+            }).OfType<IDomainEvent>(),
                               id: stream.Id);
         }
 

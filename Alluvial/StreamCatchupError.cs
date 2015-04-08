@@ -5,6 +5,7 @@ namespace Alluvial
     public class StreamCatchupError<TProjection>
     {
         public Exception Exception { get; internal set; }
+
         public TProjection Projection { get; internal set; }
         
         internal bool ShouldContinue { get; private set; }
@@ -12,11 +13,6 @@ namespace Alluvial
         public void Continue()
         {
             ShouldContinue = true;
-        }
-
-        public void Throw()
-        {
-            ShouldContinue = false;
         }
     }
 }

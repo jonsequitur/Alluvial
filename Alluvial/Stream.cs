@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using trace = System.Diagnostics.Trace;
 
@@ -29,6 +30,32 @@ namespace Alluvial
                               }
                           },
                           newCursor: () => Cursor.New<TData>());
+        }
+
+        /// <summary>
+        /// Creates a stream based on an enumerable sequence.
+        /// </summary>
+        public static IStream<TData, TCursor> AsStream<TData, TCursor>(
+            this IEnumerable<TData> source,
+            Func<TData, TCursor> cursor)
+        {
+            if (cursor == null)
+            {
+                throw new ArgumentNullException("cursor");
+            }
+
+            return Create(string.Format("{0}({1})", typeof (TData), source.GetHashCode()),
+                          query => source.SkipWhile(x => query.Cursor.HasReached(cursor(x)))
+                                         .Take(query.BatchCount ?? StreamBatch.MaxBatchCount),
+                          advanceCursor: (q, b) =>
+                          {
+                              var last = b.LastOrDefault();
+                              if (last != null)
+                              {
+                                  q.Cursor.AdvanceTo(cursor(last));
+                              }
+                          },
+                          newCursor: () => Cursor.New<TCursor>());
         }
 
         /// <summary>
@@ -132,12 +159,11 @@ namespace Alluvial
 
                     var sourceBatch = await sourceStream.Fetch(query);
 
-                    IEnumerable<TTo> mappedItems = map(sourceBatch);
+                    var mappedItems = map(sourceBatch);
 
                     var mappedCursor = Cursor.New<TCursorPosition>(sourceBatch.StartsAtCursorPosition);
 
-                    IStreamBatch<TTo> mappedBatch = StreamBatch.Create(mappedItems,
-                                                                       mappedCursor);
+                    var mappedBatch = StreamBatch.Create(mappedItems, mappedCursor);
 
                     return mappedBatch;
                 },
@@ -146,6 +172,38 @@ namespace Alluvial
                     // don't advance the cursor in the map operation, since sourceStream.Fetch will already have done it
                 },
                 newCursor: sourceStream.NewCursor);
+        }
+
+        public static IStream<TDownstream, TUpstreamCursor> Then<TUpstream, TDownstream, TUpstreamCursor>(
+            this IStream<TUpstream, TUpstreamCursor> upstream,
+            Func<TUpstream, TUpstreamCursor, TUpstreamCursor, Task<TDownstream>> queryDownstream)
+        {
+            // FIX: (Then) rename
+            return Create(
+                id: upstream.Id + "->Then",
+                query: async upstreamQuery =>
+                {
+                    var upstreamBatch = await upstream.Fetch(
+                        upstream.CreateQuery(upstreamQuery.Cursor,
+                                             upstreamQuery.BatchCount));
+
+                    var streams = upstreamBatch.Select(
+                        async x =>
+                        {
+                            TUpstreamCursor startingCursor = upstreamBatch.StartsAtCursorPosition;
+
+                            return await queryDownstream(x,
+                                                         startingCursor,
+                                                         upstreamQuery.Cursor.Position);
+                        });
+
+                    return await streams.AwaitAll();
+                },
+                advanceCursor: (query, batch) =>
+                {
+                    // we're passing the cursor through to the upstream query, so we don't want downstream queries to overwrite it
+                },
+                newCursor: upstream.NewCursor);
         }
 
         public static IStream<IStream<TDownstream, TDownstreamCursor>, TUpstreamCursor> Requery<TUpstream, TDownstream, TDownstreamCursor, TUpstreamCursor>(
@@ -160,9 +218,7 @@ namespace Alluvial
                         upstream.CreateQuery(upstreamQuery.Cursor,
                                              upstreamQuery.BatchCount));
 
-                    var streams = upstreamBatch.Select(queryDownstream);
-
-                    return streams;
+                    return upstreamBatch.Select(queryDownstream);
                 },
                 advanceCursor: (query, batch) =>
                 {
@@ -199,15 +255,15 @@ namespace Alluvial
         {
             onSendQuery = onSendQuery ??
                           (q => trace.WriteLine(
-                              string.Format("[Query] stream {0} @ cursor position {1}",
+                              string.Format("[Query] stream {0} @ cursor {1}",
                                             stream.Id,
-                                            (object) q.Cursor.Position)));
+                                            q.Cursor.Position)));
 
             onResults = onResults ??
                         ((q, streamBatch) =>
                         {
                             trace.WriteLine(
-                                string.Format("      [Fetched] stream {0} batch of {1}, now @ cursor position {2}",
+                                string.Format("      [Fetched] stream {0} batch of {1}, now @ cursor {2}",
                                               stream.Id,
                                               streamBatch.Count,
                                               q.Cursor.Position));
