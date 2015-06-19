@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using FluentAssertions;
 using Its.Log.Instrumentation;
 using System.Linq;
@@ -36,9 +35,9 @@ namespace Alluvial.Tests
                     : BankAccountType.Savings
             }, howMany: 100);
 
-            IStream<IStream<IDomainEvent, int>, string> eventsByAggregate = streamSource.EventsByAggregate()
-                                                                                        .Trace()
-                                                                                        .Map(ss => ss.Select(s => s.Trace()));
+            var eventsByAggregate = streamSource.EventsByAggregate()
+                                                .Trace()
+                                                .Map(ss => ss.Select(s => s.Trace()));
 
             var indexCatchup = StreamCatchup.Distribute(eventsByAggregate, batchCount: 1);
             var index = new Projection<ConcurrentBag<AccountOpened>, string>
@@ -133,11 +132,6 @@ namespace Alluvial.Tests
                 AggregateId = aggregateId
             }, 50);
 
-     //  store.WriteEvents(i => new AccountOpened
-     //  {
-     //      AggregateId = Guid.NewGuid().ToString()
-     //  }, 50);
-
             var streamPerAggregate = upstream.Then(
                 async (streamId, fromCursor, toCursor) =>
                 {
@@ -149,7 +143,7 @@ namespace Alluvial.Tests
                     var s = events.Select(e => e.Body)
                                   .Cast<IDomainEvent>()
                                   .GroupBy(e => e.AggregateId)
-                                  .Select(group => @group.AsStream(cursor: i => i.CheckpointToken));
+                                  .Select(group => @group.AsStream(cursorPosition: i => i.CheckpointToken));
 
                     return s;
                 });

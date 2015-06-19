@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -105,8 +104,6 @@ namespace Alluvial
                 stream.Id,
                 async projection =>
                 {
-                    // FIX: (Aggregate) handle errors here?
-
                     try
                     {
                         var aggregationBatch = await getData(projection);

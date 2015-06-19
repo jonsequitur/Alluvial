@@ -145,18 +145,15 @@ namespace Alluvial.Tests
         [Test]
         public async Task When_advancing_the_cursor_in_a_multi_stream_catchup_throws_then_the_exception_is_surfaced_to_OnError()
         {
-            var stream = Stream.Create<int>(q => Enumerable.Range(1, 24).Skip(q.Cursor.Position))
-                               .Requery<int, string, string, int>(i => Stream.Create<string, string>(
-                                   query: async q => Enumerable.Range(1, 10)
-                                                               .Select(ii => ii.ToString()),
-                                   advanceCursor: (q, b) =>
-                                   {
-                                       throw new Exception("oops!");
-                                   }));
+            var streams = Enumerable.Range(1, 24)
+                                    .AsStream()
+                                    .Then(async (i, from, to) => Stream.Create<string, int>(
+                                        query: async q => Enumerable.Range(from, to).Select(ii => ii.ToString()),
+                                        advanceCursor: (q, b) => { throw new Exception("oops!"); }));
 
             var error = default(StreamCatchupError<Projection<string, int>>);
 
-            var catchup = StreamCatchup.Distribute(stream);
+            var catchup = StreamCatchup.Distribute(streams);
 
             catchup.Subscribe<Projection<string, int>, string, int>(async (sum, batch) => new Projection<string, int>(),
                                                                     (streamId, use) => use(null),

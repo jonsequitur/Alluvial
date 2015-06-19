@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -8,13 +9,15 @@ namespace Alluvial
     {
         private readonly Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor;
         private readonly Func<IStreamQuery<TCursor>, Task<IStreamBatch<TData>>> fetch;
+        private readonly IEnumerable<TData> source;
         private readonly Func<ICursor<TCursor>> newCursor;
 
         public AnonymousStream(
             string id,
             Func<IStreamQuery<TCursor>, Task<IStreamBatch<TData>>> fetch,
             Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor,
-            Func<ICursor<TCursor>> newCursor = null)
+            Func<ICursor<TCursor>> newCursor = null,
+            IEnumerable<TData> source = null)
         {
             if (id == null)
             {
@@ -32,6 +35,7 @@ namespace Alluvial
 
             this.newCursor = newCursor ?? (() => Cursor.New<TCursor>());
             this.fetch = fetch;
+            this.source = source;
             Id = id;
         }
 
@@ -44,6 +48,14 @@ namespace Alluvial
             advanceCursor(query, batch);
 
             return batch;
+        }
+
+        public IEnumerable<TData> Source
+        {
+            get
+            {
+                return source;
+            }
         }
 
         public ICursor<TCursor> NewCursor()

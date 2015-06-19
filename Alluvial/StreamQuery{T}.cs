@@ -40,7 +40,7 @@ namespace Alluvial
             return await stream.Fetch(this);
         }
 
-        private string BatchCountDescription
+        private dynamic BatchCountDescription
         {
             get
             {
@@ -49,7 +49,7 @@ namespace Alluvial
                     return "all";
                 }
 
-                return BatchCount.Value.ToString();
+                return BatchCount.Value;
             }
         }
     }

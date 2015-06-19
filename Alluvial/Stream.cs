@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using trace = System.Diagnostics.Trace;
 
@@ -29,7 +28,8 @@ namespace Alluvial
                                   q.Cursor.AdvanceTo(last);
                               }
                           },
-                          newCursor: () => Cursor.New<TData>());
+                          newCursor: () => Cursor.New<TData>(),
+                          source: source);
         }
 
         /// <summary>
@@ -37,25 +37,29 @@ namespace Alluvial
         /// </summary>
         public static IStream<TData, TCursor> AsStream<TData, TCursor>(
             this IEnumerable<TData> source,
-            Func<TData, TCursor> cursor)
+            Func<TData, TCursor> cursorPosition,
+            string id = null)
         {
-            if (cursor == null)
+            if (cursorPosition == null)
             {
-                throw new ArgumentNullException("cursor");
+                throw new ArgumentNullException("cursorPosition");
             }
 
-            return Create(string.Format("{0}({1})", typeof (TData), source.GetHashCode()),
-                          query => source.SkipWhile(x => query.Cursor.HasReached(cursor(x)))
-                                         .Take(query.BatchCount ?? StreamBatch.MaxBatchCount),
-                          advanceCursor: (q, b) =>
-                          {
-                              var last = b.LastOrDefault();
-                              if (last != null)
-                              {
-                                  q.Cursor.AdvanceTo(cursor(last));
-                              }
-                          },
-                          newCursor: () => Cursor.New<TCursor>());
+            return Create(
+                id: id ?? string.Format("{0}({1})", typeof (TData), source.GetHashCode()),
+                query: query => source.SkipWhile(x =>
+                                                     query.Cursor.HasReached(cursorPosition(x)))
+                                      .Take(query.BatchCount ?? StreamBatch.MaxBatchCount),
+                advanceCursor: (q, b) =>
+                {
+                    var last = b.LastOrDefault();
+                    if (last != null)
+                    {
+                        q.Cursor.AdvanceTo(cursorPosition(last));
+                    }
+                },
+                newCursor: () => Cursor.New<TCursor>(),
+                source: source);
         }
 
         /// <summary>
@@ -134,13 +138,15 @@ namespace Alluvial
             string id,
             Func<IStreamQuery<TCursorPosition>, IEnumerable<TData>> query,
             Action<IStreamQuery<TCursorPosition>, IStreamBatch<TData>> advanceCursor = null,
-            Func<ICursor<TCursorPosition>> newCursor = null)
+            Func<ICursor<TCursorPosition>> newCursor = null,
+            IEnumerable<TData> source = null)
         {
             return new AnonymousStream<TData, TCursorPosition>(
                 id,
                 async q => StreamBatch.Create(query(q), q.Cursor),
                 advanceCursor,
-                newCursor);
+                newCursor,
+                source);
         }
 
         /// <summary>
@@ -198,27 +204,6 @@ namespace Alluvial
                         });
 
                     return await streams.AwaitAll();
-                },
-                advanceCursor: (query, batch) =>
-                {
-                    // we're passing the cursor through to the upstream query, so we don't want downstream queries to overwrite it
-                },
-                newCursor: upstream.NewCursor);
-        }
-
-        public static IStream<IStream<TDownstream, TDownstreamCursor>, TUpstreamCursor> Requery<TUpstream, TDownstream, TDownstreamCursor, TUpstreamCursor>(
-            this IStream<TUpstream, TUpstreamCursor> upstream,
-            Func<TUpstream, IStream<TDownstream, TDownstreamCursor>> queryDownstream)
-        {
-            return Create(
-                id: upstream.Id + "->Requery",
-                query: async upstreamQuery =>
-                {
-                    var upstreamBatch = await upstream.Fetch(
-                        upstream.CreateQuery(upstreamQuery.Cursor,
-                                             upstreamQuery.BatchCount));
-
-                    return upstreamBatch.Select(queryDownstream);
                 },
                 advanceCursor: (query, batch) =>
                 {

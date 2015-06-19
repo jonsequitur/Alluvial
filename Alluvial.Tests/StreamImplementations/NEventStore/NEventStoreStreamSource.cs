@@ -23,24 +23,31 @@ namespace Alluvial.Tests
         {
             return NEventStoreStream.ByAggregate(store, streamId).DomainEvents();
         }
-
+        
         public IStream<IStream<IDomainEvent, int>, string> EventsByAggregate()
         {
+            // FIX: (EventsByAggregate2) replace Requery-based stream with this, do away with Requery
+
             return StreamUpdates()
-                .Requery(update =>
-                {
-                    var stream = Open(update.StreamId);
+                .Then(
+                    async (streamUpdate, fromCursor, toCursor) =>
+                    {
+                        var allEvents = NEventStoreStream.AllEvents(store);
 
-                    stream = stream.Map(
-                        id: stream.Id,
-                        map: es => es.Select(e =>
-                        {
-                            e.CheckpointToken = update.CheckpointToken;
-                            return e;
-                        }));
+                        var cursor = Cursor.New(fromCursor);
+                        var batch = await allEvents.CreateQuery(cursor, int.Parse(toCursor))
+                                                   .NextBatch();
 
-                    return stream;
-                });
+                        var aggregate = batch.Select(e => e.Body)
+                                             .Cast<IDomainEvent>()
+                                             .Where(e => e.AggregateId == streamUpdate.StreamId);
+
+                        IStream<IDomainEvent, int> stream = aggregate.AsStream(
+                            id: streamUpdate.StreamId,
+                            cursorPosition: e => e.StreamRevision);
+
+                        return stream;
+                    });
         }
 
         private IStream<NEventStoreStreamUpdate, string> StreamUpdates()

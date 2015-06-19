@@ -119,7 +119,7 @@ namespace Alluvial.Tests
 
             public ICursor<int> NewCursor()
             {
-                return Cursor.New<int>();
+                return Cursor.New<int>(-1);
             }
 
         }
@@ -149,7 +149,7 @@ namespace Alluvial.Tests
             {
                 var commits = store.Advanced.GetFrom(query.Cursor.Position);
 
-                var batchCount = query.BatchCount ?? 100000;
+                var batchCount = query.BatchCount ?? 100;
                 var actualCount = 0;
 
                 var events = new List<EventMessage>();
@@ -165,6 +165,12 @@ namespace Alluvial.Tests
                     }
 
                     events.AddRange(commit.Events);
+
+                    foreach (var @event in commit.Events.Select(e => e.Body).OfType<IDomainEvent>())
+                    {
+                        @event.StreamRevision = commit.StreamRevision;
+                        @event.CheckpointToken = commit.CheckpointToken;
+                    }
 
                     cursorPosition = commit.CheckpointToken;
                 }

@@ -63,6 +63,6 @@ namespace Alluvial.Tests
             }
 
             return store;
-     ;   }
+        }
     }
 }

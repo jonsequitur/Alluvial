@@ -9,7 +9,7 @@ namespace Alluvial
     /// </summary>
     public static class StreamBatch
     {
-        internal const int MaxBatchCount = 1000000;
+        internal const int MaxBatchCount = 1000;
 
         /// <summary>
         /// Creates a stream query batch from an enumerable sequence.

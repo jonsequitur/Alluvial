@@ -24,7 +24,7 @@ namespace Alluvial.Tests
             // populate the event store
             store = TestEventStore.Create();
 
-            streamIds = Enumerable.Range(1, 1000)
+            streamIds = Enumerable.Range(1, 100)
                                   .Select(_ => Guid.NewGuid().ToString())
                                   .ToArray();
 
@@ -47,12 +47,12 @@ namespace Alluvial.Tests
 
             projectionStore.Sum(b => b.Balance)
                            .Should()
-                           .Be(1000);
+                           .Be(100);
             projectionStore.Select(b => b.AggregateId)
                            .Distinct()
                            .Count()
                            .Should()
-                           .Be(1000);
+                           .Be(100);
         }
 
         [Test]
@@ -93,13 +93,13 @@ namespace Alluvial.Tests
         [Test]
         public async Task Catchup_starting_cursor_can_be_specified()
         {
-            var catchup = StreamCatchup.Distribute(streamSource.EventsByAggregate(), batchCount: 500);
+            var catchup = StreamCatchup.Distribute(streamSource.EventsByAggregate(), batchCount: 50);
             catchup.Subscribe(new BalanceProjector(), new InMemoryProjectionStore<BalanceProjection>());
 
             var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
             var updatedStreams = streamSource.EventsByAggregate();
             var cursor = updatedStreams.NewCursor();
-            cursor.AdvanceTo("500");
+            cursor.AdvanceTo("50");
             catchup = StreamCatchup.Distribute(updatedStreams, cursor);
             catchup.Subscribe(new BalanceProjector(), projectionStore);
 
@@ -107,13 +107,13 @@ namespace Alluvial.Tests
 
             projectionStore.Count()
                            .Should()
-                           .Be(500);
+                           .Be(50);
         }
 
         [Test]
         public async Task Stream_traversal_can_continue_from_upstream_cursor_that_was_returned_by_RunSingleBatch()
         {
-            var catchup = StreamCatchup.Distribute(streamSource.EventsByAggregate(), batchCount: 500);
+            var catchup = StreamCatchup.Distribute(streamSource.EventsByAggregate(), batchCount: 50);
             catchup.Subscribe(new BalanceProjector(), new InMemoryProjectionStore<BalanceProjection>());
 
             var cursor = await catchup.RunSingleBatch();
@@ -126,7 +126,7 @@ namespace Alluvial.Tests
 
             projectionStore.Count()
                            .Should()
-                           .Be(500);
+                           .Be(50);
         }
 
         [Test]
@@ -134,20 +134,20 @@ namespace Alluvial.Tests
         {
             var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
 
-            var catchup = StreamCatchup.Distribute(streamSource.EventsByAggregate().Trace(), batchCount: 500);
+            var catchup = StreamCatchup.Distribute(streamSource.EventsByAggregate().Trace(), batchCount: 50);
             catchup.Subscribe(new BalanceProjector(), projectionStore);
 
             await catchup.RunSingleBatch();
 
             projectionStore.Sum(b => b.Balance)
                            .Should()
-                           .Be(500);
+                           .Be(50);
 
             await catchup.RunSingleBatch();
 
             projectionStore.Sum(b => b.Balance)
                            .Should()
-                           .Be(1000);
+                           .Be(100);
         }
 
         [Test]
@@ -164,12 +164,12 @@ namespace Alluvial.Tests
 
             projectionStore.Sum(b => b.Balance)
                            .Should()
-                           .Be(1000);
+                           .Be(100);
             projectionStore.Select(b => b.AggregateId)
                            .Distinct()
                            .Count()
                            .Should()
-                           .Be(1000);
+                           .Be(100);
         }
 
         [Test]
@@ -177,7 +177,7 @@ namespace Alluvial.Tests
         {
             var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
             var eventsAggregated = new List<IDomainEvent>();
-            var catchup = StreamCatchup.Distribute(streamSource.EventsByAggregate(), batchCount: 1000);
+            var catchup = StreamCatchup.Distribute(streamSource.EventsByAggregate(), batchCount: 100);
             catchup.Subscribe(new BalanceProjector()
                                   .Trace((p, es) => eventsAggregated.AddRange(es)), projectionStore);
 
@@ -191,13 +191,13 @@ namespace Alluvial.Tests
 
             cursor.Position
                   .Should()
-                  .Be("1001");
+                  .Be("101");
 
             var balanceProjection = await projectionStore.Get(streamId);
 
             balanceProjection.Balance.Should().Be(101);
             balanceProjection.CursorPosition.Should().Be(2);
-            eventsAggregated.Count.Should().Be(1001);
+            eventsAggregated.Count.Should().Be(101);
         }
 
         [Test]
@@ -206,7 +206,7 @@ namespace Alluvial.Tests
             var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
 
             var catchup = StreamCatchup.Distribute(streamSource.EventsByAggregate(),
-                                                   batchCount: 50);
+                                                   batchCount: 5);
             catchup.Subscribe(new BalanceProjector(), projectionStore);
 
             using (catchup.Poll(TimeSpan.FromMilliseconds(10)))
@@ -214,7 +214,7 @@ namespace Alluvial.Tests
                 // write more events
                 Task.Run(async () =>
                 {
-                    foreach (var streamId in Enumerable.Range(1, 200).Select(_ => Guid.NewGuid().ToString()))
+                    foreach (var streamId in Enumerable.Range(1, 20).Select(_ => Guid.NewGuid().ToString()))
                     {
                         store.WriteEvents(streamId);
                         await Task.Delay(1);
@@ -226,7 +226,7 @@ namespace Alluvial.Tests
                 {
                     var sum = projectionStore.Sum(b => b.Balance);
                     Console.WriteLine("sum is " + sum);
-                    return sum >= 1200;
+                    return sum >= 120;
                 });
             }
         }
@@ -236,7 +236,7 @@ namespace Alluvial.Tests
         {
             var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
 
-            var catchup = StreamCatchup.Distribute(streamSource.EventsByAggregate(), batchCount: 50);
+            var catchup = StreamCatchup.Distribute(streamSource.EventsByAggregate(), batchCount: 5);
             catchup.Subscribe(new BalanceProjector(), projectionStore);
 
             using (catchup.Poll(TimeSpan.FromMilliseconds(10)))
@@ -244,19 +244,19 @@ namespace Alluvial.Tests
                 // write more events
                 Task.Run(async () =>
                 {
-                    foreach (var streamId in streamIds.Take(200))
+                    foreach (var streamId in streamIds.Take(20))
                     {
                         store.WriteEvents(streamId);
                         await Task.Delay(1);
                     }
-                    Console.WriteLine("wrote 200 more events");
+                    Console.WriteLine("wrote 20 more events");
                 });
 
                 await Wait.Until(() =>
                 {
                     var sum = projectionStore.Sum(b => b.Balance);
                     Console.WriteLine("sum is " + sum);
-                    return sum >= 1200;
+                    return sum >= 120;
                 });
             }
         }
@@ -372,7 +372,7 @@ namespace Alluvial.Tests
                                                                        queriedEvents.Add(e);
                                                                    }
                                                                }))),
-                                                   Cursor.New("1000"),
+                                                   Cursor.New("100"),
                                                    batchCount: 1);
             catchup.Subscribe(new BalanceProjector());
 
@@ -395,7 +395,6 @@ namespace Alluvial.Tests
         [Test]
         public async Task When_multiple_projectors_are_subscribed_then_data_that_both_projections_have_seen_is_not_requeried()
         {
-            var store = this.store;
             var streamId = Guid.NewGuid().ToString();
             var queriedEvents = new ConcurrentBag<IDomainEvent>();
 
@@ -413,13 +412,13 @@ namespace Alluvial.Tests
                                                                        queriedEvents.Add(e);
                                                                    }
                                                                }))),
-                                                   Cursor.New("1000"),
+                                                   Cursor.New("100"),
                                                    batchCount: 1);
             catchup.Subscribe(new BalanceProjector(), balanceProjections);
 
-            store.WriteEvents(streamId);
-            store.WriteEvents(streamId);
-            store.WriteEvents(streamId);
+            store.WriteEvents(streamId); // "101" - 1
+            store.WriteEvents(streamId); // "102" - 2
+            store.WriteEvents(streamId); // "103" - 3
 
             await catchup.RunSingleBatch();
             queriedEvents.Count
@@ -442,7 +441,7 @@ namespace Alluvial.Tests
             await catchup.RunSingleBatch();
 
             queriedEvents.Select(e => e.StreamRevision)
-                         .ShouldBeEquivalentTo(new[] { 3, 3, 4 },
+                         .ShouldBeEquivalentTo(new[] { 3, 4 },
                                                "event 3 needs to be repeated because the newly-subscribed aggregator hasn't seen it yet");
         }
 
