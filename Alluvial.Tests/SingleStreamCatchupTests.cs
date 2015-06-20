@@ -13,7 +13,7 @@ using NUnit.Framework;
 namespace Alluvial.Tests
 {
     [TestFixture]
-    public class StreamCatchupTests
+    public class SingleStreamCatchupTests
     {
         private IStoreEvents store;
         private string streamId;
