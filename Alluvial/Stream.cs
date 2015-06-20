@@ -180,13 +180,21 @@ namespace Alluvial
                 newCursor: sourceStream.NewCursor);
         }
 
-        public static IStream<TDownstream, TUpstreamCursor> Then<TUpstream, TDownstream, TUpstreamCursor>(
+        /// <summary>
+        /// Splits a stream into many streams that can be independently caught up.
+        /// </summary>
+        /// <typeparam name="TUpstream">The type of the upstream stream.</typeparam>
+        /// <typeparam name="TDownstream">The type of the downstream stream.</typeparam>
+        /// <typeparam name="TUpstreamCursor">The type of the upstream cursor.</typeparam>
+        /// <param name="upstream">The upstream.</param>
+        /// <param name="queryDownstream">The query downstream.</param>
+        /// <returns></returns>
+        public static IStream<TDownstream, TUpstreamCursor> IntoMany<TUpstream, TDownstream, TUpstreamCursor>(
             this IStream<TUpstream, TUpstreamCursor> upstream,
             Func<TUpstream, TUpstreamCursor, TUpstreamCursor, Task<TDownstream>> queryDownstream)
         {
-            // FIX: (Then) rename
             return Create(
-                id: upstream.Id + "->Then",
+                id: upstream.Id + "->IntoMany",
                 query: async upstreamQuery =>
                 {
                     var upstreamBatch = await upstream.Fetch(

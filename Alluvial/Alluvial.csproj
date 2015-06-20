@@ -46,7 +46,7 @@
     <Compile Include="AggregatorSubscription.cs" />
     <Compile Include="AnonymousProjectionStore{TKey,TProjection}.cs" />
     <Compile Include="Cursor{TPosition}.cs" />
-    <Compile Include="DistributorCatchup{T}.cs" />
+    <Compile Include="MultiStreamCatchup{T}.cs" />
     <Compile Include="HandleAggregatorError{T}.cs" />
     <Compile Include="HandleProjection{T}.cs" />
     <Compile Include="IAggregatorSubscription.cs" />

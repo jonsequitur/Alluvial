@@ -4,32 +4,18 @@ using Alluvial.Tests;
 
 namespace Alluvial
 {
+    /// <summary>
+    /// Methods for working with stream catchups.
+    /// </summary>
     public static class StreamCatchup
     {
-        public static IStreamCatchup<TData, TUpstreamCursor> Distribute<TData, TUpstreamCursor, TDownstreamCursor>(
-            IStream<IStream<TData, TDownstreamCursor>, TUpstreamCursor> stream,
-            FetchAndSaveProjection<ICursor<TUpstreamCursor>> manageCursor,
-            int? batchCount = null)
-        {
-            var upstreamCatchup = new SingleStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor>(stream, batchCount);
-
-            return new DistributorCatchup<TData, TUpstreamCursor, TDownstreamCursor>(
-                upstreamCatchup,
-                manageCursor);
-        }
-
-        public static IStreamCatchup<TData, TUpstreamCursor> Distribute<TData, TUpstreamCursor, TDownstreamCursor>(
-            IStream<IStream<TData, TDownstreamCursor>, TUpstreamCursor> stream,
-            ICursor<TUpstreamCursor> cursor = null,
-            int? batchCount = null)
-        {
-            var upstreamCatchup = new SingleStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor>(stream, batchCount);
-
-            return new DistributorCatchup<TData, TUpstreamCursor, TDownstreamCursor>(
-                upstreamCatchup,
-                cursor ?? stream.NewCursor());
-        }
-
+        /// <summary>
+        /// Creates a catchup for the specified stream.
+        /// </summary>
+        /// <typeparam name="TData">The type of the stream's data.</typeparam>
+        /// <typeparam name="TCursor">The type of the cursor.</typeparam>
+        /// <param name="stream">The stream.</param>
+        /// <param name="batchCount">The number of items to retrieve from the stream per batch.</param>
         public static IStreamCatchup<TData, TCursor> Create<TData, TCursor>(
             IStream<TData, TCursor> stream,
             int? batchCount = null)
@@ -37,6 +23,47 @@ namespace Alluvial
             return new SingleStreamCatchup<TData, TCursor>(
                 stream,
                 batchCount);
+        }
+
+        /// <summary>
+        /// Creates a multiple-stream catchup.
+        /// </summary>
+        /// <typeparam name="TData">The type of the stream's data.</typeparam>
+        /// <typeparam name="TUpstreamCursor">The type of the upstream cursor.</typeparam>
+        /// <typeparam name="TDownstreamCursor">The type of the downstream cursor.</typeparam>
+        /// <param name="stream">The stream.</param>
+        /// <param name="cursor">The initial cursor position for the catchup.</param>
+        /// <param name="batchCount">The number of items to retrieve from the stream per batch.</param>
+        public static IStreamCatchup<TData, TUpstreamCursor> Distribute<TData, TUpstreamCursor, TDownstreamCursor>(
+            IStream<IStream<TData, TDownstreamCursor>, TUpstreamCursor> stream,
+            ICursor<TUpstreamCursor> cursor = null,
+            int? batchCount = null)
+        {
+            var upstreamCatchup = new SingleStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor>(stream, batchCount);
+
+            return new MultiStreamCatchup<TData, TUpstreamCursor, TDownstreamCursor>(
+                upstreamCatchup,
+                cursor ?? stream.NewCursor());
+        }
+
+        /// <summary>
+        /// Creates a multiple-stream catchup.
+        /// </summary>
+        /// <typeparam name="TData">The type of the stream's data.</typeparam>
+        /// <typeparam name="TUpstreamCursor">The type of the upstream cursor.</typeparam>
+        /// <typeparam name="TDownstreamCursor">The type of the downstream cursor.</typeparam>
+        /// <param name="stream">The stream.</param>
+        /// <param name="batchCount">The number of items to retrieve from the stream per batch.</param>
+        public static IStreamCatchup<TData, TUpstreamCursor> Distribute<TData, TUpstreamCursor, TDownstreamCursor>(
+            IStream<IStream<TData, TDownstreamCursor>, TUpstreamCursor> stream,
+            FetchAndSaveProjection<ICursor<TUpstreamCursor>> manageCursor,
+            int? batchCount = null)
+        {
+            var upstreamCatchup = new SingleStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor>(stream, batchCount);
+
+            return new MultiStreamCatchup<TData, TUpstreamCursor, TDownstreamCursor>(
+                upstreamCatchup,
+                manageCursor);
         }
 
         /// <summary>
@@ -60,11 +87,14 @@ namespace Alluvial
             return cursor;
         }
 
-        private static FetchAndSaveProjection<TProjection> NoCursor<TProjection>(TProjection projection)
-        {
-            return  (streamId, aggregate) => aggregate(projection);
-        }
-
+        /// <summary>
+        /// Runs catchup batches repeatedly with a specified interval after each batch.
+        /// </summary>
+        /// <typeparam name="TData">The type of the stream's data.</typeparam>
+        /// <typeparam name="TCursor">The type of the cursor.</typeparam>
+        /// <param name="catchup">The catchup.</param>
+        /// <param name="pollInterval">The amount of time to wait after each batch is processed.</param>
+        /// <returns>A disposable that, when disposed, stops the polling.</returns>
         public static IDisposable Poll<TData, TCursor>(
             this IStreamCatchup<TData, TCursor> catchup,
             TimeSpan pollInterval)
@@ -80,12 +110,19 @@ namespace Alluvial
                 }
             });
 
-            return Disposable.Create(() =>
-            {
-                canceled = true;
-            });
+            return Disposable.Create(() => { canceled = true; });
         }
 
+        /// <summary>
+        /// Subscribes the specified aggregator to a catchup.
+        /// </summary>
+        /// <typeparam name="TProjection">The type of the projection.</typeparam>
+        /// <typeparam name="TData">The type of the stream's data.</typeparam>
+        /// <typeparam name="TCursor">The type of the cursor.</typeparam>
+        /// <param name="catchup">The catchup.</param>
+        /// <param name="aggregator">The aggregator.</param>
+        /// <param name="projectionStore">The projection store.</param>
+        /// <returns>A disposable that, when disposed, unsubscribes the aggregator.</returns>
         public static IDisposable Subscribe<TProjection, TData, TCursor>(
             this IStreamCatchup<TData, TCursor> catchup,
             IStreamAggregator<TProjection, TData> aggregator,
@@ -95,6 +132,18 @@ namespace Alluvial
                                      projectionStore.AsHandler());
         }
 
+        /// <summary>
+        /// Subscribes the specified aggregator to a catchup.
+        /// </summary>
+        /// <typeparam name="TProjection">The type of the projection.</typeparam>
+        /// <typeparam name="TData">The type of the stream's data.</typeparam>
+        /// <typeparam name="TCursor">The type of the cursor.</typeparam>
+        /// <param name="catchup">The catchup.</param>
+        /// <param name="aggregate">A delegate that performs an aggregate operation on projections receiving new data.</param>
+        /// <param name="projectionStore">The projection store.</param>
+        /// <returns>
+        /// A disposable that, when disposed, unsubscribes the aggregator.
+        /// </returns>
         public static IDisposable Subscribe<TProjection, TData, TCursor>(
             this IStreamCatchup<TData, TCursor> catchup,
             AggregateAsync<TProjection, TData> aggregate,
@@ -104,6 +153,14 @@ namespace Alluvial
                                      projectionStore.AsHandler());
         }
 
+        /// <summary>
+        /// Subscribes the specified aggregator to a catchup.
+        /// </summary>
+        /// <typeparam name="TProjection">The type of the projection.</typeparam>
+        /// <typeparam name="TData">The type of the stream's data.</typeparam>
+        /// <typeparam name="TCursor">The type of the cursor.</typeparam>
+        /// <param name="catchup">The catchup.</param>
+        /// <returns>A disposable that, when disposed, unsubscribes the aggregator.</returns>
         public static IDisposable Subscribe<TProjection, TData, TCursor>(
             this IStreamCatchup<TData, TCursor> catchup,
             AggregateAsync<TProjection, TData> aggregate,
@@ -113,6 +170,15 @@ namespace Alluvial
             return catchup.Subscribe(Aggregator.Create(aggregate), manageProjection, onError);
         }
 
+        /// <summary>
+        /// Subscribes the specified aggregator to a catchup.
+        /// </summary>
+        /// <typeparam name="TProjection">The type of the projection.</typeparam>
+        /// <typeparam name="TData">The type of the stream's data.</typeparam>
+        /// <typeparam name="TCursor">The type of the cursor.</typeparam>
+        /// <param name="catchup">The catchup.</param>
+        /// <param name="aggregator">The aggregator.</param>
+        /// <returns>A disposable that, when disposed, unsubscribes the aggregator.</returns>
         public static IDisposable Subscribe<TProjection, TData, TCursor>(
             this IStreamCatchup<TData, TCursor> catchup,
             IStreamAggregator<TProjection, TData> aggregator,
@@ -120,6 +186,11 @@ namespace Alluvial
             HandleAggregatorError<TProjection> onError = null)
         {
             return catchup.SubscribeAggregator(aggregator, manageProjection, onError);
+        }
+
+        private static FetchAndSaveProjection<TProjection> NoCursor<TProjection>(TProjection projection)
+        {
+            return (streamId, aggregate) => aggregate(projection);
         }
 
         internal class Counter<TCursor> : Projection<int>

@@ -24,12 +24,10 @@ namespace Alluvial.Tests
             return NEventStoreStream.ByAggregate(store, streamId).DomainEvents();
         }
         
-        public IStream<IStream<IDomainEvent, int>, string> EventsByAggregate()
+        public IStream<IStream<IDomainEvent, int>, string> StreamPerAggregate()
         {
-            // FIX: (EventsByAggregate2) replace Requery-based stream with this, do away with Requery
-
             return StreamUpdates()
-                .Then(
+                .IntoMany(
                     async (streamUpdate, fromCursor, toCursor) =>
                     {
                         var allEvents = NEventStoreStream.AllEvents(store);

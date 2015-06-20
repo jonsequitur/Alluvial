@@ -6,7 +6,12 @@ using System.Threading.Tasks;
 
 namespace Alluvial
 {
-    internal abstract class StreamCatchupBase<TData, TCursorPosition> : IStreamCatchup<TData, TCursorPosition>
+    /// <summary>
+    /// An persistent query over a stream of data, which updates one or more stream aggregators.
+    /// </summary>
+    /// <typeparam name="TData">The type of the data that the catchup pushes to the aggregators.</typeparam>
+    /// <typeparam name="TCursor">The type of the cursor.</typeparam>
+    internal abstract class StreamCatchupBase<TData, TCursor> : IStreamCatchup<TData, TCursor>
     {
         private int isRunning;
         protected int? batchCount;
@@ -35,17 +40,23 @@ namespace Alluvial
             });
         }
 
-        public abstract Task<ICursor<TCursorPosition>> RunSingleBatch();
+        /// <summary>
+        /// Consumes a single batch from the source stream and updates the subscribed aggregators.
+        /// </summary>
+        /// <returns>
+        /// The updated cursor position after the batch is consumed.
+        /// </returns>
+        public abstract Task<ICursor<TCursor>> RunSingleBatch();
 
-        protected async Task<ICursor<TCursorPosition>> RunSingleBatch<TCursor>(IStream<TData, TCursor> stream)
+        protected async Task<ICursor<TCursor>> RunSingleBatch<TCursor>(IStream<TData, TCursor> stream)
         {
             if (Interlocked.CompareExchange(ref isRunning, 1, 0) != 0)
             {
                 // FIX: (RunSingleBatch): what would be a better behavior here? awaiting the running batch without triggering a new run might be best.
-                return new Cursor<TCursorPosition>();
+                return new Cursor<TCursor>();
             }
 
-            ICursor<TCursorPosition> upstreamCursor = null;
+            ICursor<TCursor> upstreamCursor = null;
 
             var projections = new ConcurrentBag<object>();
             var tcs = new TaskCompletionSource<AggregationBatch<TCursor>>();
@@ -53,7 +64,7 @@ namespace Alluvial
             Action runQuery = async () =>
             {
                 var cursor = projections.OfType<ICursor<TCursor>>().Minimum();
-                upstreamCursor = cursor as ICursor<TCursorPosition>;
+                upstreamCursor = cursor as ICursor<TCursor>;
                 var query = stream.CreateQuery(cursor, batchCount);
 
                 try

@@ -37,7 +37,7 @@ namespace Alluvial.Tests
         public async Task When_an_aggregation_fails_then_the_projection_is_not_updated()
         {
             var projections = new InMemoryProjectionStore<BalanceProjection>();
-            var catchup = StreamCatchup.Distribute(streamSource.EventsByAggregate().Trace());
+            var catchup = StreamCatchup.Distribute(streamSource.StreamPerAggregate().Trace());
 
             // subscribe a flaky projector
             catchup.Subscribe(new BalanceProjector()
@@ -64,7 +64,7 @@ namespace Alluvial.Tests
             var projections = new InMemoryProjectionStore<BalanceProjection>();
 
             // first catch up all the projections
-            IStream<IStream<IDomainEvent, int>, string> stream = streamSource.EventsByAggregate().Trace();
+            IStream<IStream<IDomainEvent, int>, string> stream = streamSource.StreamPerAggregate().Trace();
             var catchup = StreamCatchup.Distribute(stream);
             var initialSubscription = catchup.Subscribe(new BalanceProjector(), projections);
             await catchup.RunUntilCaughtUp();
@@ -147,7 +147,7 @@ namespace Alluvial.Tests
         {
             var streams = Enumerable.Range(1, 24)
                                     .AsStream()
-                                    .Then(async (i, from, to) => Stream.Create<string, int>(
+                                    .IntoMany(async (i, from, to) => Stream.Create<string, int>(
                                         query: async q => Enumerable.Range(from, to).Select(ii => ii.ToString()),
                                         advanceCursor: (q, b) => { throw new Exception("oops!"); }));
 

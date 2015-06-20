@@ -4,6 +4,9 @@ using trace = System.Diagnostics.Trace;
 
 namespace Alluvial.Tests
 {
+    /// <summary>
+    /// Methods for working with projection stores.
+    /// </summary>
     public static class ProjectionStore
     {
         public static IProjectionStore<TKey, TProjection> Create<TKey, TProjection>(

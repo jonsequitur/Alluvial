@@ -35,7 +35,7 @@ namespace Alluvial.Tests
                     : BankAccountType.Savings
             }, howMany: 100);
 
-            var eventsByAggregate = streamSource.EventsByAggregate()
+            var eventsByAggregate = streamSource.StreamPerAggregate()
                                                 .Trace()
                                                 .Map(ss => ss.Select(s => s.Trace()));
 
@@ -132,7 +132,7 @@ namespace Alluvial.Tests
                 AggregateId = aggregateId
             }, 50);
 
-            var streamPerAggregate = upstream.Then(
+            var streamPerAggregate = upstream.IntoMany(
                 async (streamId, fromCursor, toCursor) =>
                 {
                     var stream = NEventStoreStream.AllEvents(store);
