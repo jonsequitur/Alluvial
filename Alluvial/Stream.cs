@@ -74,24 +74,42 @@ namespace Alluvial
                           newCursor: () => Cursor.New<int>());
         }
 
-        public static IStream<TData, TCursorPosition> Create<TData, TCursorPosition>(
-            Func<IStreamQuery<TCursorPosition>, Task<IEnumerable<TData>>> query,
-            Action<IStreamQuery<TCursorPosition>, IStreamBatch<TData>> advanceCursor = null,
-            Func<ICursor<TCursorPosition>> newCursor = null)
+        /// <summary>
+        /// Creates a stream based on a queryable data source.
+        /// </summary>
+        /// <typeparam name="TData">The type of the stream's data.</typeparam>
+        /// <typeparam name="TCursor">The type of the cursor.</typeparam>
+        /// <param name="query">The query.</param>
+        /// <param name="advanceCursor">A delegate that advances the cursor after a batch is pulled from the stream.</param>
+        /// <param name="newCursor">A delegate that returns a new cursor.</param>
+        public static IStream<TData, TCursor> Create<TData, TCursor>(
+            Func<IStreamQuery<TCursor>, Task<IEnumerable<TData>>> query,
+            Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor = null,
+            Func<ICursor<TCursor>> newCursor = null)
         {
-            return Create(string.Format("{0}({1} by {2})", typeof (TData).Name, typeof(TCursorPosition).Name, query.GetHashCode()), 
+            return Create(string.Format("{0}({1} by {2})", typeof (TData).Name, typeof(TCursor).Name, query.GetHashCode()), 
                 query, 
                 advanceCursor, 
                 newCursor);
         }
 
-        public static IStream<TData, TCursorPosition> Create<TData, TCursorPosition>(
+        /// <summary>
+        /// Creates a stream based on a queryable data source.
+        /// </summary>
+        /// <typeparam name="TData">The type of the stream's data.</typeparam>
+        /// <typeparam name="TCursor">The type of the cursor.</typeparam>
+        /// <param name="id">The stream identifier.</param>
+        /// <param name="query">The query.</param>
+        /// <param name="advanceCursor">A delegate that advances the cursor after a batch is pulled from the stream.</param>
+        /// <param name="newCursor">A delegate that returns a new cursor.</param>
+        /// <returns></returns>
+        public static IStream<TData, TCursor> Create<TData, TCursor>(
             string id,
-            Func<IStreamQuery<TCursorPosition>, Task<IEnumerable<TData>>> query,
-            Action<IStreamQuery<TCursorPosition>, IStreamBatch<TData>> advanceCursor = null,
-            Func<ICursor<TCursorPosition>> newCursor = null)
+            Func<IStreamQuery<TCursor>, Task<IEnumerable<TData>>> query,
+            Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor = null,
+            Func<ICursor<TCursor>> newCursor = null)
         {
-            return new AnonymousStream<TData, TCursorPosition>(
+            return new AnonymousStream<TData, TCursor>(
                 id,
                 async q =>
                 {
@@ -103,10 +121,18 @@ namespace Alluvial
                 newCursor);
         }
 
-        public static IStream<TData, TCursorPosition> Create<TData, TCursorPosition>(
-            Func<IStreamQuery<TCursorPosition>, IEnumerable<TData>> query,
-            Action<IStreamQuery<TCursorPosition>, IStreamBatch<TData>> advanceCursor,
-            Func<ICursor<TCursorPosition>> newCursor = null)
+        /// <summary>
+        /// Creates a stream based on a queryable data source.
+        /// </summary>
+        /// <typeparam name="TData">The type of the stream's data.</typeparam>
+        /// <typeparam name="TCursor">The type of the cursor.</typeparam>
+        /// <param name="query">The query.</param>
+        /// <param name="advanceCursor">A delegate that advances the cursor after a batch is pulled from the stream.</param>
+        /// <param name="newCursor">A delegate that returns a new cursor.</param>
+        public static IStream<TData, TCursor> Create<TData, TCursor>(
+            Func<IStreamQuery<TCursor>, IEnumerable<TData>> query,
+            Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor,
+            Func<ICursor<TCursor>> newCursor = null)
         {
             return Create(
                 string.Format("{0}({1})", typeof (TData), query.GetHashCode()),
@@ -115,6 +141,13 @@ namespace Alluvial
                 newCursor);
         }
 
+        /// <summary>
+        /// Creates a stream based on a queryable data source where the stream data and cursor are of the same type.
+        /// </summary>
+        /// <typeparam name="TData">The type of the stream's data.</typeparam>
+        /// <param name="query">The query.</param>
+        /// <param name="advanceCursor">A delegate that advances the cursor after a batch is pulled from the stream.</param>
+        /// <param name="newCursor">A delegate that returns a new cursor.</param>
         public static IStream<TData, TData> Create<TData>(
             Func<IStreamQuery<TData>, IEnumerable<TData>> query,
             Action<IStreamQuery<TData>, IStreamBatch<TData>> advanceCursor = null,
@@ -134,14 +167,14 @@ namespace Alluvial
                 newCursor);
         }
 
-        internal static IStream<TData, TCursorPosition> Create<TData, TCursorPosition>(
+        internal static IStream<TData, TCursor> Create<TData, TCursor>(
             string id,
-            Func<IStreamQuery<TCursorPosition>, IEnumerable<TData>> query,
-            Action<IStreamQuery<TCursorPosition>, IStreamBatch<TData>> advanceCursor = null,
-            Func<ICursor<TCursorPosition>> newCursor = null,
+            Func<IStreamQuery<TCursor>, IEnumerable<TData>> query,
+            Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor = null,
+            Func<ICursor<TCursor>> newCursor = null,
             IEnumerable<TData> source = null)
         {
-            return new AnonymousStream<TData, TCursorPosition>(
+            return new AnonymousStream<TData, TCursor>(
                 id,
                 async q => StreamBatch.Create(query(q), q.Cursor),
                 advanceCursor,
@@ -152,12 +185,12 @@ namespace Alluvial
         /// <summary>
         /// Maps data from a stream into a new form.
         /// </summary>
-        public static IStream<TTo, TCursorPosition> Map<TFrom, TTo, TCursorPosition>(
-            this IStream<TFrom, TCursorPosition> sourceStream,
+        public static IStream<TTo, TCursor> Map<TFrom, TTo, TCursor>(
+            this IStream<TFrom, TCursor> sourceStream,
             Func<IEnumerable<TFrom>, IEnumerable<TTo>> map,
             string id = null)
         {
-            return Create<TTo, TCursorPosition>(
+            return Create<TTo, TCursor>(
                 id: id ?? sourceStream.Id + "->Map",
                 query: async q =>
                 {
@@ -167,7 +200,7 @@ namespace Alluvial
 
                     var mappedItems = map(sourceBatch);
 
-                    var mappedCursor = Cursor.New<TCursorPosition>(sourceBatch.StartsAtCursorPosition);
+                    var mappedCursor = Cursor.New<TCursor>(sourceBatch.StartsAtCursorPosition);
 
                     var mappedBatch = StreamBatch.Create(mappedItems, mappedCursor);
 
@@ -220,13 +253,13 @@ namespace Alluvial
                 newCursor: upstream.NewCursor);
         }
 
-        public static async Task<TProjection> Aggregate<TProjection, TData, TCursorPosition>(
-            this IStream<TData, TCursorPosition> stream,
+        public static async Task<TProjection> Aggregate<TProjection, TData, TCursor>(
+            this IStream<TData, TCursor> stream,
             IStreamAggregator<TProjection, TData> aggregator,
             TProjection projection = null)
             where TProjection : class
         {
-            var cursor = (projection as ICursor<TCursorPosition>) ??
+            var cursor = (projection as ICursor<TCursor>) ??
                          stream.NewCursor();
 
             var query = stream.CreateQuery(cursor);
@@ -241,10 +274,18 @@ namespace Alluvial
             return projection;
         }
 
-        public static IStream<TData, TCursorPosition> Trace<TData, TCursorPosition>(
-            this IStream<TData, TCursorPosition> stream,
-            Action<IStreamQuery<TCursorPosition>> onSendQuery = null,
-            Action<IStreamQuery<TCursorPosition>, IStreamBatch<TData>> onResults = null)
+        /// <summary>
+        /// Traces queries sent and and data received on a stream.
+        /// </summary>
+        /// <typeparam name="TData">The type of the stream's data.</typeparam>
+        /// <typeparam name="TCursor">The type of the cursor.</typeparam>
+        /// <param name="stream">The stream.</param>
+        /// <param name="onSendQuery">Specifies how to trace information about queries sent to the stream.</param>
+        /// <param name="onResults">Specifies how to trace data received from the stream.</param>
+        public static IStream<TData, TCursor> Trace<TData, TCursor>(
+            this IStream<TData, TCursor> stream,
+            Action<IStreamQuery<TCursor>> onSendQuery = null,
+            Action<IStreamQuery<TCursor>, IStreamBatch<TData>> onResults = null)
         {
             onSendQuery = onSendQuery ??
                           (q => trace.WriteLine(
@@ -262,7 +303,7 @@ namespace Alluvial
                                               q.Cursor.Position));
                         });
 
-            return Create<TData, TCursorPosition>(
+            return Create<TData, TCursor>(
                 id: stream.Id,
                 query: async q =>
                 {

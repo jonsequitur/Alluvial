@@ -57,7 +57,7 @@ namespace Alluvial
         /// <summary>
         /// Removes data from a batch that occurs prior to the specified cursor.
         /// </summary>
-        /// <typeparam name="TData">The type of the data.</typeparam>
+        /// <typeparam name="TData">The type of the stream's data.</typeparam>
         /// <param name="batch">The batch.</param>
         /// <param name="cursor">The cursor.</param>
         public static IStreamBatch<TData> Prune<TData>(

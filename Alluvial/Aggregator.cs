@@ -9,18 +9,36 @@ namespace Alluvial
     /// </summary>
     public static class Aggregator
     {
+        /// <summary>
+        /// Creates a stream aggregator.
+        /// </summary>
+        /// <typeparam name="TProjection">The type of the projection.</typeparam>
+        /// <typeparam name="TData">The type of the data.</typeparam>
+        /// <param name="aggregate">Performs aggregation of data from the stream.</param>
         public static IStreamAggregator<TProjection, TData> Create<TProjection, TData>(
             AggregateAsync<TProjection, TData> aggregate)
         {
             return new AnonymousStreamAggregator<TProjection, TData>(aggregate);
         }
 
+        /// <summary>
+        /// Creates a stream aggregator.
+        /// </summary>
+        /// <typeparam name="TProjection">The type of the projection.</typeparam>
+        /// <typeparam name="TData">The type of the data.</typeparam>
+        /// <param name="aggregate">Performs aggregation of data from the stream.</param>
         public static IStreamAggregator<TProjection, TData> Create<TProjection, TData>(
             Aggregate<TProjection, TData> aggregate)
         {
             return new AnonymousStreamAggregator<TProjection, TData>(async (initial, batch) => aggregate(initial, batch));
         }
 
+        /// <summary>
+        /// Creates a stream aggregator.
+        /// </summary>
+        /// <typeparam name="TProjection">The type of the projection.</typeparam>
+        /// <typeparam name="TData">The type of the data.</typeparam>
+        /// <param name="aggregate">Performs aggregation of data from the stream.</param>
         public static IStreamAggregator<TProjection, TData> Create<TProjection, TData>(
             Func<TProjection, IStreamBatch<TData>, Task> aggregate)
         {
@@ -32,6 +50,12 @@ namespace Alluvial
                 });
         }
 
+        /// <summary>
+        /// Creates a stream aggregator.
+        /// </summary>
+        /// <typeparam name="TProjection">The type of the projection.</typeparam>
+        /// <typeparam name="TData">The type of the data.</typeparam>
+        /// <param name="aggregate">Performs aggregation of data from the stream.</param>
         public static IStreamAggregator<TProjection, TData> Create<TProjection, TData>(
             Action<TProjection, IStreamBatch<TData>> aggregate)
         {

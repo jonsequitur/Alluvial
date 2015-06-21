@@ -2,7 +2,7 @@
 
 namespace Alluvial
 {
-    public interface IStream<TData, TCursorPosition>
+    public interface IStream<TData, TCursor>
     {
         /// <summary>
         /// Gets the identifier for the stream.
@@ -13,8 +13,8 @@ namespace Alluvial
         /// Fetches a batch of data from the stream.
         /// </summary>
         /// <param name="query">The query to apply to the stream.</param>
-        Task<IStreamBatch<TData>> Fetch(IStreamQuery<TCursorPosition> query);
+        Task<IStreamBatch<TData>> Fetch(IStreamQuery<TCursor> query);
 
-        ICursor<TCursorPosition> NewCursor();
+        ICursor<TCursor> NewCursor();
     }
 }

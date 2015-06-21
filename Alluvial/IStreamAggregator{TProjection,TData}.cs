@@ -6,7 +6,7 @@ namespace Alluvial
     /// Performs ongoing aggregation of data into a projection. 
     /// </summary>
     /// <typeparam name="TProjection">The type of the projection.</typeparam>
-    /// <typeparam name="TData">The type of the data.</typeparam>
+    /// <typeparam name="TData">The type of the stream's data.</typeparam>
     public interface IStreamAggregator<TProjection, in TData>
     {
         /// <summary>
