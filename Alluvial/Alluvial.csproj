@@ -42,14 +42,18 @@
     <Compile Include="AggregateAsync{TProjection,TData}.cs" />
     <Compile Include="Aggregate{TProjection,TData}.cs" />
     <Compile Include="AggregatorSubscription.cs" />
+    <Compile Include="AnonymousPartitionedStream{TData,TCursor,TPartition}.cs" />
     <Compile Include="AnonymousProjectionStore{TKey,TProjection}.cs" />
+    <Compile Include="AnonymousStreamBase{TData,TCursor}.cs" />
     <Compile Include="Cursor{TPosition}.cs" />
+    <Compile Include="IPartitionedStream{TData,TCursor,TPartition}.cs" />
+    <Compile Include="IStreamQueryPartition{TData}.cs" />
     <Compile Include="MultiStreamCatchup{T}.cs" />
     <Compile Include="HandleAggregatorError{T}.cs" />
     <Compile Include="HandleProjection{T}.cs" />
     <Compile Include="IAggregatorSubscription.cs" />
     <Compile Include="AggregatorSubscription{TProjection,TData}.cs" />
-    <Compile Include="AnonymousStream.cs" />
+    <Compile Include="AnonymousStream{TData,TCursor}.cs" />
     <Compile Include="AnonymousStreamSource{TKey,TData}.cs" />
     <Compile Include="AnonymousDisposable.cs" />
     <Compile Include="Cursor.cs" />
@@ -61,6 +65,7 @@
     <Compile Include="StreamCatchupBase{T}.cs" />
     <Compile Include="PipeAsync{TProjection,TData}.cs" />
     <Compile Include="StreamCatchupError.cs" />
+    <Compile Include="StreamQueryPartition{T}.cs" />
     <Compile Include="StreamSource.cs" />
     <Compile Include="StreamCatchup.cs" />
     <Compile Include="Stream.cs" />

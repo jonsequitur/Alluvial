@@ -24,5 +24,14 @@ namespace Alluvial
                 BatchCount = batchCount
             };
         }
+
+        public static IStreamQueryPartition<TPartition> Partition<TPartition>(TPartition lowerBound, TPartition upperBound)
+        {
+            return new StreamQueryPartition<TPartition>
+            {
+                LowerBoundInclusive = lowerBound,
+                UpperBoundExclusive = upperBound
+            };
+        }
     }
 }

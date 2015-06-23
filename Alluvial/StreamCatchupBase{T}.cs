@@ -64,7 +64,7 @@ namespace Alluvial
             Action runQuery = async () =>
             {
                 var cursor = projections.OfType<ICursor<TCursor>>().Minimum();
-                upstreamCursor = cursor as ICursor<TCursor>;
+                upstreamCursor = cursor;
                 var query = stream.CreateQuery(cursor, batchCount);
 
                 try
