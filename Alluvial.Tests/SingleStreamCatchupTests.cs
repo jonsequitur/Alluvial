@@ -267,7 +267,6 @@ namespace Alluvial.Tests
             var balanceProjections = new InMemoryProjectionStore<BalanceProjection>();
             await balanceProjections.Put(streamId, new BalanceProjection
             {
-                AggregateId = streamId,
                 CursorPosition = 2
             });
             var catchup = StreamCatchup.Create(stream.Trace(onResults: (q, b) =>
@@ -293,7 +292,6 @@ namespace Alluvial.Tests
             var accountHistoryProjections = new InMemoryProjectionStore<AccountHistoryProjection>();
             await accountHistoryProjections.Put(streamId, new AccountHistoryProjection
             {
-                AggregateId = streamId,
                 CursorPosition = 2
             });
             catchup.Subscribe(new AccountHistoryProjector(), accountHistoryProjections);
@@ -312,7 +310,6 @@ namespace Alluvial.Tests
         {
             var projection = new BalanceProjection
             {
-                AggregateId = streamId,
                 CursorPosition = 1
             };
 
