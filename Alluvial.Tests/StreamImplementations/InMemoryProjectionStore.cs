@@ -8,7 +8,7 @@ namespace Alluvial.Tests
     public class InMemoryProjectionStore<TProjection> : 
         IProjectionStore<string, TProjection>,
         IEnumerable<TProjection> 
-        where TProjection : IMapProjection, new()
+        where TProjection : new()
     {
         private readonly ConcurrentDictionary<string, TProjection> store = new ConcurrentDictionary<string, TProjection>();
 
@@ -24,10 +24,7 @@ namespace Alluvial.Tests
             {
                 return projection;
             }
-            projection = new TProjection
-            {
-                AggregateId = streamId
-            };
+            projection = new TProjection();
             return projection;
         }
 

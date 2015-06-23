@@ -49,9 +49,7 @@ namespace Alluvial.Tests
             projectionStore.Sum(b => b.Balance)
                            .Should()
                            .Be(100);
-            projectionStore.Select(b => b.AggregateId)
-                           .Distinct()
-                           .Count()
+            projectionStore.Count()
                            .Should()
                            .Be(100);
         }
@@ -166,9 +164,7 @@ namespace Alluvial.Tests
             projectionStore.Sum(b => b.Balance)
                            .Should()
                            .Be(100);
-            projectionStore.Select(b => b.AggregateId)
-                           .Distinct()
-                           .Count()
+            projectionStore.Count()
                            .Should()
                            .Be(100);
         }

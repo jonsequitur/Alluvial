@@ -44,9 +44,7 @@ namespace Alluvial.Tests
             projectionStore.Sum(b => b.Balance)
                            .Should()
                            .Be(1000);
-            projectionStore.Select(b => b.AggregateId)
-                           .Distinct()
-                           .Count()
+            projectionStore.Count()
                            .Should()
                            .Be(1);
         }
