@@ -25,12 +25,14 @@ namespace Alluvial
             };
         }
 
-        public static IStreamQueryPartition<TPartition> Partition<TPartition>(TPartition lowerBound, TPartition upperBound)
+        public static IStreamQueryPartition<TPartition> Partition<TPartition>(
+            TPartition lowerBound, 
+            TPartition upperBound)
         {
             return new StreamQueryPartition<TPartition>
             {
-                LowerBoundInclusive = lowerBound,
-                UpperBoundExclusive = upperBound
+                LowerBoundExclusive = lowerBound,
+                UpperBoundInclusive = upperBound
             };
         }
     }

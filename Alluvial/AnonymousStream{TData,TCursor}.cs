@@ -42,10 +42,5 @@ namespace Alluvial
                 return source;
             }
         }
-
-        public override string ToString()
-        {
-            return GetType().ReadableName();
-        }
     }
 }

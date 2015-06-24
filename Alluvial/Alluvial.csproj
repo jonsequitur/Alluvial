@@ -45,8 +45,9 @@
     <Compile Include="AnonymousPartitionedStream{TData,TCursor,TPartition}.cs" />
     <Compile Include="AnonymousProjectionStore{TKey,TProjection}.cs" />
     <Compile Include="AnonymousStreamBase{TData,TCursor}.cs" />
+    <Compile Include="AnonymousStreamQueryPartitioner{TData,TCursor,TPartition}.cs" />
     <Compile Include="Cursor{TPosition}.cs" />
-    <Compile Include="IPartitionedStream{TData,TCursor,TPartition}.cs" />
+    <Compile Include="IStreamQueryPartitioner{TData,TCursor,TPartition}.cs" />
     <Compile Include="IStreamQueryPartition{TData}.cs" />
     <Compile Include="MultiStreamCatchup{T}.cs" />
     <Compile Include="HandleAggregatorError{T}.cs" />

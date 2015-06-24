@@ -10,26 +10,30 @@ namespace Alluvial.Tests
     public class StreamQueryPartitioningTests
     {
         private int[] ints;
-        private IStreamPartitionGroup<int, int, int> partitions;
+        private IStreamQueryPartitioner<int, int, int> partitioner;
 
         [SetUp]
         public void SetUp()
         {
             ints = Enumerable.Range(1, 1000).ToArray();
 
-            partitions = Stream
+            partitioner = Stream
                 .Partition<int, int, int>(async (q, p) => ints
-                                              .Where(i => i >= p.LowerBoundInclusive &&
-                                                          i < p.UpperBoundExclusive)
+                                              .Where(i => i > p.LowerBoundExclusive &&
+                                                          i <= p.UpperBoundInclusive)
                                               .Skip(q.Cursor.Position)
-                                              .Take(q.BatchCount.Value));
+                                              .Take(q.BatchCount.Value),
+                                              advanceCursor: (query, batch) =>
+                                              {
+                                                  query.Cursor.AdvanceTo(batch.Last());
+                                              });
         }
 
         [Test]
         public async Task A_stream_can_be_partitioned_through_query_parameterization()
         {
-            var partition = StreamQuery.Partition(1, 100);
-            var stream = await partitions.GetStream(partition);
+            var partition = StreamQuery.Partition(0, 100);
+            var stream = await partitioner.GetStream(partition);
 
             var aggregator = Aggregator.CreateFor<int, int>((p, i) => p.Value += i.Sum());
 
@@ -37,21 +41,37 @@ namespace Alluvial.Tests
 
             projection.Value
                       .Should()
-                      .Be(Enumerable.Range(1, 99).Sum());
+                      .Be(Enumerable.Range(1, 100).Sum());
         }
 
-        [Ignore("Test not finished")]
         [Test]
-        public async Task When_a_partion_is_queried_then_the_cursor_is_updated()
+        public async Task When_a_partition_is_queried_then_the_cursor_is_updated()
         {
+            var partitions = new[]
+            {
+                StreamQuery.Partition(0, 500),
+                StreamQuery.Partition(500, 1000)
+            };
 
+            var store = new InMemoryProjectionStore<Projection<int, int>>();
 
+            await Task.WhenAll(partitions.Select(async partition =>
+            {
+                var stream = await partitioner.GetStream(partition);
 
+                Console.WriteLine(stream);
 
+                var aggregator = Aggregator.CreateFor<int, int>((p, i) => p.Value += i.Sum());
 
+                var catchup = StreamCatchup.Create(stream);
+                catchup.Subscribe(aggregator, store);
+                await catchup.RunSingleBatch();
+            }));
 
-            // FIX (testname) write test
-            Assert.Fail("Test not written yet.");
+            store.Should()
+                 .ContainSingle(p => p.CursorPosition == 500)
+                 .And
+                 .ContainSingle(p => p.CursorPosition == 1000);
         }
     }
 }

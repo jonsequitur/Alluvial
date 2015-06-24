@@ -42,5 +42,10 @@ namespace Alluvial
         }
 
         public abstract Task<IStreamBatch<TData>> Fetch(IStreamQuery<TCursor> query);
+
+        public override string ToString()
+        {
+            return string.Format("stream: {0} ({1})", Id, GetType().ReadableName());
+        }
     }
 }

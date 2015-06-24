@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 
 namespace Alluvial.Tests
 {
-    public class InMemoryProjectionStore<TProjection> : 
+    public class InMemoryProjectionStore<TProjection> :
         IProjectionStore<string, TProjection>,
-        IEnumerable<TProjection> 
+        IEnumerable<TProjection>
         where TProjection : new()
     {
         private readonly ConcurrentDictionary<string, TProjection> store = new ConcurrentDictionary<string, TProjection>();

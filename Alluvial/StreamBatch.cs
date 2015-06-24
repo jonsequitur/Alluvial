@@ -15,9 +15,15 @@ namespace Alluvial
         /// Creates a stream query batch from an enumerable sequence.
         /// </summary>
         /// <typeparam name="TData">The type of the data in the batch.</typeparam>
+        /// <typeparam name="TCursor">The type of the cursor.</typeparam>
         /// <param name="source">The source data.</param>
         /// <param name="cursor">The cursor that marks the location of the beginning of the batch within the source stream.</param>
         /// <returns></returns>
+        /// <exception cref="System.ArgumentNullException">
+        /// source
+        /// or
+        /// cursor
+        /// </exception>
         /// <exception cref="ArgumentNullException">source</exception>
         public static IStreamBatch<TData> Create<TData, TCursor>(
             IEnumerable<TData> source,
@@ -41,7 +47,10 @@ namespace Alluvial
         /// Represents an empty stream query batch.
         /// </summary>
         /// <typeparam name="TData">The type of the data in the source stream.</typeparam>
+        /// <typeparam name="TCursor">The type of the cursor.</typeparam>
         /// <param name="cursor">The cursor that marks the location of the beginning of the batch within the source stream.</param>
+        /// <returns></returns>
+        /// <exception cref="System.ArgumentNullException">cursor</exception>
         /// <exception cref="ArgumentNullException">cursor</exception>
         public static IStreamBatch<TData> EmptyBatch<TData, TCursor>(this ICursor<TCursor> cursor)
         {

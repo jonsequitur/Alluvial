@@ -2,8 +2,7 @@ namespace Alluvial
 {
     public interface IStreamQueryPartition<out TPartition>
     {
-        TPartition LowerBoundInclusive { get; }
-
-        TPartition UpperBoundExclusive { get; }
+        TPartition LowerBoundExclusive { get; }
+        TPartition UpperBoundInclusive { get; }
     }
 }
