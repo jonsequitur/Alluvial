@@ -33,7 +33,7 @@ namespace Alluvial
 
         public async Task<IStream<TData, TCursor>> GetStream(IStreamQueryPartition<TPartition> partition)
         {
-            var streamId = string.Format("{0}[{1}-{2}]", id, partition.LowerBoundExclusive, partition.UpperBoundInclusive);
+            var streamId = string.Format("{0}[{1}]", id, partition);
             return new AnonymousPartitionedStream<TData, TCursor, TPartition>(
                 streamId,
                 fetch,

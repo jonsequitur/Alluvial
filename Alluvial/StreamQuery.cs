@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Alluvial
 {
@@ -25,8 +28,15 @@ namespace Alluvial
             };
         }
 
+        /// <summary>
+        /// Creates a stream query partition having the specified boundaries.
+        /// </summary>
+        /// <typeparam name="TPartition">The type of the partition boundaries.</typeparam>
+        /// <param name="lowerBound">The lower, exclusive boundary.</param>
+        /// <param name="upperBound">The upper, inclusive boundary.</param>
+        /// <returns></returns>
         public static IStreamQueryPartition<TPartition> Partition<TPartition>(
-            TPartition lowerBound, 
+            TPartition lowerBound,
             TPartition upperBound)
         {
             return new StreamQueryPartition<TPartition>

@@ -5,7 +5,7 @@ namespace Alluvial
 {
     internal abstract class AnonymousStreamBase<TData, TCursor> : IStream<TData, TCursor>
     {
-        private Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor;
+        private readonly Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor;
         protected Func<ICursor<TCursor>> newCursor;
 
         protected AnonymousStreamBase(string id,
@@ -19,14 +19,10 @@ namespace Alluvial
 
             this.newCursor = newCursor ?? (() => Cursor.New<TCursor>());
 
-       
             this.advanceCursor = advanceCursor ??
-                                 ((query, batch) =>
-                                 {
-                                 });
-      
+                                 ((query, batch) => { });
+
             Id = id;
-        
         }
 
         public string Id { get; private set; }
@@ -45,7 +41,7 @@ namespace Alluvial
 
         public override string ToString()
         {
-            return string.Format("stream: {0} ({1})", Id, GetType().ReadableName());
+            return string.Format("stream:{0} ({1})", Id, GetType().ReadableName());
         }
     }
 }

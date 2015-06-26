@@ -55,7 +55,7 @@ namespace Alluvial
 
         public override string ToString()
         {
-            return string.Format("query: take {0} after {1} from {2}", BatchCountDescription, cursor.Position, stream);
+            return string.Format("query:take {0} after {1} from {2}", BatchCountDescription, cursor.Position, stream);
         }
     }
 }
