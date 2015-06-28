@@ -10,13 +10,16 @@ namespace Alluvial.Tests
         private InMemoryStreamQueryDistributor distributor;
 
         protected override IStreamQueryDistributor CreateDistributor(
-            Lease[] leases,
             Func<DistributorUnitOfWork, Task> onReceive = null,
+            Lease[] leases = null,
             int maxDegreesOfParallelism = 5,
             string name = null,
             TimeSpan? waitInterval = null)
         {
-            distributor = new InMemoryStreamQueryDistributor(leases, maxDegreesOfParallelism, waitInterval);
+            distributor = new InMemoryStreamQueryDistributor(
+                leases ?? DefaultLeases,
+                maxDegreesOfParallelism,
+                waitInterval);
             if (onReceive != null)
             {
                 distributor.OnReceive(onReceive);

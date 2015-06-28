@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -43,39 +44,56 @@ namespace Alluvial
 
         public async Task Start()
         {
-            Parallel.ForEach(Enumerable.Range(1, maxDegreesOfParallelism),
-                             _ => RunOne());
+            if (onReceive == null)
+            {
+                throw new InvalidOperationException("You must call OnReceive before calling Start.");
+            }
+
+            for (var i = 0; i < maxDegreesOfParallelism; i++)
+            {
+                RunOne();
+            }
         }
 
         private async Task RunOne()
         {
             if (stopped)
             {
+                Debug.WriteLine("Aborting");
                 return;
             }
 
-            var availableLease = leases.OrderBy(l => l.LastReleased)
-                                       .FirstOrDefault(l => !workInProgress.ContainsKey(l));
+            var availableLease = leases
+                .Where(l => l.LastReleased + waitInterval < DateTimeOffset.UtcNow)
+                .OrderBy(l => l.LastReleased)
+                .FirstOrDefault(l => !workInProgress.ContainsKey(l));
+            
+            Debug.WriteLine("Polling");
 
-            var unitOfWork = new DistributorUnitOfWork(availableLease);
-
-            if (availableLease == null || !workInProgress.TryAdd(availableLease, unitOfWork))
+            if (availableLease != null)
             {
-                await Task.Delay(waitInterval);
+                Debug.WriteLine("RunOne: available lease = " + availableLease.Name);
+
+                var unitOfWork = new DistributorUnitOfWork(availableLease);
+
+                if (workInProgress.TryAdd(availableLease, unitOfWork))
+                {
+                    unitOfWork.Lease.LastGranted = DateTimeOffset.UtcNow;
+
+                    try
+                    {
+                        await onReceive(unitOfWork);
+                    }
+                    catch (Exception exception)
+                    {
+                    }
+
+                    Complete(unitOfWork.Lease);
+                }
             }
             else
             {
-                unitOfWork.Lease.LastGranted = DateTimeOffset.UtcNow;
-
-                try
-                {
-                    await onReceive(unitOfWork);
-                }
-                catch (Exception exception)
-                {
-                }
-
-                Complete(unitOfWork.Lease);
+                await Task.Delay(waitInterval);
             }
 
             Task.Run(() => RunOne());
@@ -92,11 +110,19 @@ namespace Alluvial
 
         public async Task Stop()
         {
+            if (stopped)
+            {
+                return;
+            }
+
             stopped = true;
 
-            while (workInProgress.Any())
+            Debug.WriteLine("Stop");
+
+            while (workInProgress.Count > 0)
             {
-                await Task.Delay(150);
+                Debug.WriteLine("Stop: waiting for " + workInProgress.Count + " to complete" );
+                await Task.Delay(waitInterval);
             }
         }
 

@@ -15,6 +15,7 @@ namespace Alluvial
                 },
                 doWork: doWork =>
                 {
+                    // FIX: (Trace) this doesn't do anything if OnReceive was called before Trace, so a proper pipeline model may be better here.
                     distributor.OnReceive(async unitOfWork =>
                     {
                         System.Diagnostics.Trace.WriteLine("[Distribute] " + unitOfWork);
