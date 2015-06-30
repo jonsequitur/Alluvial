@@ -31,29 +31,29 @@ namespace Alluvial
             Debug.WriteLine("[Distribute] Polling");
 
             var availableLease = LeasablesResource
-                .Where(l => l.LastReleased + waitInterval < now)
-                .OrderBy(l => l.LastReleased)
+                .Where(l => l.LeaseLastReleased + waitInterval < now)
+                .OrderBy(l => l.LeaseLastReleased)
                 .FirstOrDefault(l => !workInProgress.ContainsKey(l));
 
             if (availableLease != null)
             {
-                var unitOfWork = new Lease(availableLease);
+                var lease = new Lease(availableLease);
 
-                if (workInProgress.TryAdd(availableLease, unitOfWork))
+                if (workInProgress.TryAdd(availableLease, lease))
                 {
-                    unitOfWork.LeasableResource.LastGranted = now;
+                    lease.LeasableResource.LeaseLastGranted = now;
 
                     try
                     {
-                        await onReceive(unitOfWork)
-                            .TimeoutAfter(unitOfWork.LeasableResource.Duration);
+                        await onReceive(lease)
+                            .TimeoutAfter(lease.LeasableResource.Duration);
                     }
                     catch (Exception exception)
                     {
                         Debug.WriteLine(exception);
                     }
 
-                    Complete(unitOfWork);
+                    Complete(lease);
                 }
             }
             else
@@ -70,24 +70,24 @@ namespace Alluvial
             Lease _;
             if (workInProgress.TryRemove(leasableResource, out _))
             {
-                leasableResource.LastReleased = DateTimeOffset.UtcNow;
+                leasableResource.LeaseLastReleased = DateTimeOffset.UtcNow;
             }
         }
 
-        protected override async Task Complete(Lease work)
+        protected override async Task Complete(Lease lease)
         {
-            if (!workInProgress.Values.Any(w => w.Equals(work)))
+            if (!workInProgress.Values.Any(l => l.Equals(lease)))
             {
-                Debug.WriteLine("[Distribute] failed to complete: " + work);
+                Debug.WriteLine("[Distribute] failed to complete: " + lease);
                 return;
             }
 
             Lease _;
 
-            if (workInProgress.TryRemove(work.LeasableResource, out _))
+            if (workInProgress.TryRemove(lease.LeasableResource, out _))
             {
-                Debug.WriteLine("[Distribute] complete: " + work);
-                work.LeasableResource.LastReleased = DateTimeOffset.UtcNow;
+                Debug.WriteLine("[Distribute] complete: " + lease);
+                lease.LeasableResource.LeaseLastReleased = DateTimeOffset.UtcNow;
             }
         }
     }

@@ -51,29 +51,29 @@ ORDER BY LastReleased";
             }
 
             var availableLease = LeasablesResource
-                .Where(l => l.LastReleased + waitInterval < DateTimeOffset.UtcNow)
-                .OrderBy(l => l.LastReleased)
+                .Where(l => l.LeaseLastReleased + waitInterval < DateTimeOffset.UtcNow)
+                .OrderBy(l => l.LeaseLastReleased)
                 .FirstOrDefault(l => !workInProgress.ContainsKey(l));
 
             if (availableLease != null)
             {
                 Debug.WriteLine("RunOne: available lease = " + availableLease.Name);
 
-                var unitOfWork = new Lease(availableLease);
+                var lease = new Lease(availableLease);
 
-                if (workInProgress.TryAdd(availableLease, unitOfWork))
+                if (workInProgress.TryAdd(availableLease, lease))
                 {
-                    unitOfWork.LeasableResource.LastGranted = DateTimeOffset.UtcNow;
+                    lease.LeasableResource.LeaseLastGranted = DateTimeOffset.UtcNow;
 
                     try
                     {
-                        await onReceive(unitOfWork);
+                        await onReceive(lease);
                     }
                     catch (Exception exception)
                     {
                     }
 
-                    Complete(unitOfWork);
+                    Complete(lease);
                 }
             }
             else

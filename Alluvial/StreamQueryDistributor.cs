@@ -17,10 +17,10 @@ namespace Alluvial
                 doWork: doWork =>
                 {
                     // FIX: (Trace) this doesn't do anything if OnReceive was called before Trace, so a proper pipeline model may be better here.
-                    distributor.OnReceive(async unitOfWork =>
+                    distributor.OnReceive(async lease =>
                     {
-                        System.Diagnostics.Trace.WriteLine("[Distribute] OnReceive " + unitOfWork);
-                        await doWork(unitOfWork);
+                        System.Diagnostics.Trace.WriteLine("[Distribute] OnReceive " + lease);
+                        await doWork(lease);
                     });
                 }, stop: () =>
                 {

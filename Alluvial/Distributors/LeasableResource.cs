@@ -22,22 +22,22 @@ namespace Alluvial.Distributors
 
         public string Name { get; private set; }
 
-        public DateTimeOffset LastGranted { get; set; }
+        public DateTimeOffset LeaseLastGranted { get; set; }
 
-        public DateTimeOffset LastReleased { get; set; }
+        public DateTimeOffset LeaseLastReleased { get; set; }
 
-        public bool IsExpired(DateTimeOffset asOf)
+        public bool IsLeaseExpired(DateTimeOffset asOf)
         {
-            return LastReleased < LastGranted &&
-                   LastGranted < asOf - Duration;
+            return LeaseLastReleased < LeaseLastGranted &&
+                   LeaseLastGranted < asOf - Duration;
         }
 
         public override string ToString()
         {
-            return string.Format("lease:{0} (granted @ {1}, released @ {2})",
+            return string.Format("leasable resource:{0} (granted @ {1}, released @ {2})",
                                  Name,
-                                 LastGranted,
-                                 LastReleased);
+                                 LeaseLastGranted,
+                                 LeaseLastReleased);
         }
     }
 }
