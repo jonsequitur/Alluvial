@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
   <metadata>
-    <id>Alluvial</id>
-    <title>Alluvial</title>
+    <id>Alluvial.Distributors.Sql</id>
+    <title>Alluvial.Distributors.Sql</title>
     <version>0.1.10-alpha</version>
     <authors>jonsequitur</authors>
     <owners>jonsequitur</owners>
@@ -10,7 +10,7 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <licenseUrl>http://opensource.org/licenses/MIT</licenseUrl>
     <copyright>Copyright © 2015 Jon Sequeira</copyright>
-    <description>Treat all of your data as streams, process them sequentially, build projections and aggregations from historical and realtime data, parallelize and distribute the workload over multiple machines.</description>
+    <description></description>
     <tags>data projections stream-processing</tags>
   </metadata>
 </package>

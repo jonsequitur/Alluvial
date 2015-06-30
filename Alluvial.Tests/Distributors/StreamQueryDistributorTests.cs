@@ -1,33 +1,33 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using FluentAssertions;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using FluentAssertions;
 using NUnit.Framework;
 
-namespace Alluvial.Tests
+namespace Alluvial.Tests.Distributors
 {
     [TestFixture]
     public abstract class StreamQueryDistributorTests
     {
         protected abstract IStreamQueryDistributor CreateDistributor(
             Func<DistributorUnitOfWork, Task> onReceive = null,
-            Lease[] leases = null, int maxDegreesOfParallelism = 5,
+            DistributorLease[] leases = null, int maxDegreesOfParallelism = 5,
             [CallerMemberName] string name = null,
             TimeSpan? waitInterval = null);
 
         protected abstract TimeSpan DefaultLeaseDuration { get; }
 
-        protected Lease[] DefaultLeases;
+        protected DistributorLease[] DefaultLeases;
 
         [SetUp]
         public void SetUp()
         {
             DefaultLeases = Enumerable.Range(1, 10)
-                                      .Select(i => new Lease(i.ToString(), DefaultLeaseDuration))
+                                      .Select(i => new DistributorLease(i.ToString(), DefaultLeaseDuration))
                                       .ToArray();
         }
 
@@ -184,8 +184,14 @@ namespace Alluvial.Tests
             {
                 if (w.Lease.Name == "5" && !blocked)
                 {
+                    Console.WriteLine("BLOCKING LEASE 5");
                     blocked = true;
-                    await Task.Delay(TimeSpan.FromSeconds(1));
+                    await Task.Delay(TimeSpan.FromSeconds(10));
+                }
+
+                if (w.Lease.Name == "5")
+                {
+                    Console.WriteLine("ADDING LEASE 5");
                 }
 
                 tally.AddOrUpdate(w.Lease.Name,
@@ -195,15 +201,15 @@ namespace Alluvial.Tests
 
             await distributor.Start();
 
-            await Task.Delay(200);
+            await Task.Delay((int)(DefaultLeaseDuration.TotalMilliseconds * 1.2));
 
-            await distributor.Stop();
-
-            tally["5"].Should().Be(1);
+            tally.Should().ContainKey("5").And.Subject["5"].Should().Be(1);
 
             new[] { "1", "2", "3", "4", "6", "7", "8", "9", "10" }
                 .ToList()
                 .ForEach(lease => { tally[lease].Should().BeGreaterThan(1); });
+
+            await distributor.Stop();
         }
 
         [Test]
@@ -255,7 +261,7 @@ namespace Alluvial.Tests
         [Test]
         public async Task Leases_record_the_time_when_they_were_last_granted()
         {
-            Lease lease = null;
+            DistributorLease lease = null;
             var received = default (DateTimeOffset);
             var distributor = CreateDistributor(async l =>
             {
@@ -274,7 +280,7 @@ namespace Alluvial.Tests
         [Test]
         public async Task Leases_record_the_time_when_they_were_last_released()
         {
-            Lease lease = null;
+            DistributorLease lease = null;
             var received = default (DateTimeOffset);
             var distributor = CreateDistributor(async l =>
             {

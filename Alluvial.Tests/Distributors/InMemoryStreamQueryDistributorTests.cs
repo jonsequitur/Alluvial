@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using NUnit.Framework;
 
-namespace Alluvial.Tests
+namespace Alluvial.Tests.Distributors
 {
     [TestFixture]
     public class InMemoryStreamQueryDistributorTests : StreamQueryDistributorTests
@@ -11,7 +11,7 @@ namespace Alluvial.Tests
 
         protected override IStreamQueryDistributor CreateDistributor(
             Func<DistributorUnitOfWork, Task> onReceive = null,
-            Lease[] leases = null,
+            DistributorLease[] leases = null,
             int maxDegreesOfParallelism = 5,
             string name = null,
             TimeSpan? waitInterval = null)
