@@ -48,8 +48,8 @@
     <Compile Include="AnonymousStreamQueryDistributor.cs" />
     <Compile Include="AnonymousStreamQueryPartitioner{TData,TCursor,TPartition}.cs" />
     <Compile Include="Cursor{TPosition}.cs" />
-    <Compile Include="DistributorLease.cs" />
-    <Compile Include="DistributorUnitOfWork.cs" />
+    <Compile Include="Distributors\LeasableResource.cs" />
+    <Compile Include="Distributors\Lease.cs" />
     <Compile Include="InMemoryStreamQueryDistributor.cs" />
     <Compile Include="IStreamQueryDistributor.cs" />
     <Compile Include="StreamQueryDistributor.cs" />

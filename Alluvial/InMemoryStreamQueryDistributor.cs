@@ -2,16 +2,17 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Alluvial.Distributors;
 
 namespace Alluvial
 {
     public class InMemoryStreamQueryDistributor : StreamQueryDistributorBase
     {
         public InMemoryStreamQueryDistributor(
-            DistributorLease[] leases,
+            LeasableResource[] LeasablesResource,
             int maxDegreesOfParallelism = 5,
             TimeSpan? waitInterval = null) :
-                base(leases,
+                base(LeasablesResource,
                      maxDegreesOfParallelism,
                      waitInterval)
         {
@@ -29,23 +30,23 @@ namespace Alluvial
 
             Debug.WriteLine("[Distribute] Polling");
 
-            var availableLease = leases
+            var availableLease = LeasablesResource
                 .Where(l => l.LastReleased + waitInterval < now)
                 .OrderBy(l => l.LastReleased)
                 .FirstOrDefault(l => !workInProgress.ContainsKey(l));
 
             if (availableLease != null)
             {
-                var unitOfWork = new DistributorUnitOfWork(availableLease);
+                var unitOfWork = new Lease(availableLease);
 
                 if (workInProgress.TryAdd(availableLease, unitOfWork))
                 {
-                    unitOfWork.Lease.LastGranted = now;
+                    unitOfWork.LeasableResource.LastGranted = now;
 
                     try
                     {
                         await onReceive(unitOfWork)
-                            .TimeoutAfter(unitOfWork.Lease.Duration);
+                            .TimeoutAfter(unitOfWork.LeasableResource.Duration);
                     }
                     catch (Exception exception)
                     {
@@ -63,17 +64,17 @@ namespace Alluvial
             Task.Run(() => RunOne());
         }
 
-        protected void Cancel(DistributorLease lease)
+        protected void Cancel(LeasableResource leasableResource)
         {
-            Debug.WriteLine("[Distribute] canceling: " + lease);
-            DistributorUnitOfWork _;
-            if (workInProgress.TryRemove(lease, out _))
+            Debug.WriteLine("[Distribute] canceling: " + leasableResource);
+            Lease _;
+            if (workInProgress.TryRemove(leasableResource, out _))
             {
-                lease.LastReleased = DateTimeOffset.UtcNow;
+                leasableResource.LastReleased = DateTimeOffset.UtcNow;
             }
         }
 
-        protected override async Task Complete(DistributorUnitOfWork work)
+        protected override async Task Complete(Lease work)
         {
             if (!workInProgress.Values.Any(w => w.Equals(work)))
             {
@@ -81,12 +82,12 @@ namespace Alluvial
                 return;
             }
 
-            DistributorUnitOfWork _;
+            Lease _;
 
-            if (workInProgress.TryRemove(work.Lease, out _))
+            if (workInProgress.TryRemove(work.LeasableResource, out _))
             {
                 Debug.WriteLine("[Distribute] complete: " + work);
-                work.Lease.LastReleased = DateTimeOffset.UtcNow;
+                work.LeasableResource.LastReleased = DateTimeOffset.UtcNow;
             }
         }
     }

@@ -3,37 +3,38 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Alluvial.Distributors;
 
 namespace Alluvial
 {
     public abstract class StreamQueryDistributorBase : IStreamQueryDistributor
     {
-        protected readonly ConcurrentDictionary<DistributorLease, DistributorUnitOfWork> workInProgress = new ConcurrentDictionary<DistributorLease, DistributorUnitOfWork>();
-        protected Func<DistributorUnitOfWork, Task> onReceive;
+        protected readonly ConcurrentDictionary<LeasableResource, Lease> workInProgress = new ConcurrentDictionary<LeasableResource, Lease>();
+        protected Func<Lease, Task> onReceive;
         protected int maxDegreesOfParallelism;
         protected bool stopped;
         protected TimeSpan waitInterval;
-        protected readonly DistributorLease[] leases;
+        protected readonly LeasableResource[] LeasablesResource;
 
         protected StreamQueryDistributorBase(
-            DistributorLease[] leases,
+            LeasableResource[] LeasablesResource,
             int maxDegreesOfParallelism = 5,
             TimeSpan? waitInterval = null)
         {
-            if (leases == null)
+            if (LeasablesResource == null)
             {
-                throw new ArgumentNullException("leases");
+                throw new ArgumentNullException("LeasablesResource");
             }
             if (maxDegreesOfParallelism <= 0)
             {
                 throw new ArgumentException("maxDegreesOfParallelism must be at least 1.");
             }
-            this.leases = leases;
-            this.maxDegreesOfParallelism = Math.Min(maxDegreesOfParallelism, leases.Count());
+            this.LeasablesResource = LeasablesResource;
+            this.maxDegreesOfParallelism = Math.Min(maxDegreesOfParallelism, LeasablesResource.Count());
             this.waitInterval = waitInterval ?? TimeSpan.FromSeconds(.5);
         }
 
-        public void OnReceive(Func<DistributorUnitOfWork, Task> onReceive)
+        public void OnReceive(Func<Lease, Task> onReceive)
         {
             if (this.onReceive != null)
             {
@@ -57,7 +58,7 @@ namespace Alluvial
 
         protected abstract Task RunOne();
 
-        protected abstract Task Complete(DistributorUnitOfWork lease);
+        protected abstract Task Complete(Lease lease);
 
         public async Task Stop()
         {

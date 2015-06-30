@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Alluvial.Distributors;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -11,7 +12,7 @@ namespace Alluvial.Tests.Distributors
         [Test]
         public async Task If_a_lease_is_currently_granted_and_within_duration_then_it_is_not_expired()
         {
-            var lease = new DistributorLease("1", TimeSpan.FromMinutes(1));
+            var lease = new LeasableResource("1", TimeSpan.FromMinutes(1));
 
             var now = DateTimeOffset.Now;
 
@@ -24,7 +25,7 @@ namespace Alluvial.Tests.Distributors
         [Test]
         public async Task If_a_lease_is_currently_granted_but_past_duration_then_it_is_expired()
         {
-            var lease = new DistributorLease("1", TimeSpan.FromMinutes(1));
+            var lease = new LeasableResource("1", TimeSpan.FromMinutes(1));
 
             var now = DateTimeOffset.Now;
 
@@ -36,7 +37,7 @@ namespace Alluvial.Tests.Distributors
         [Test]
         public async Task If_a_lease_is_not_currently_granted_then_it_is_not_expired()
         {
-            var lease = new DistributorLease("1", TimeSpan.FromMinutes(1));
+            var lease = new LeasableResource("1", TimeSpan.FromMinutes(1));
 
             var now = DateTimeOffset.Now;
 

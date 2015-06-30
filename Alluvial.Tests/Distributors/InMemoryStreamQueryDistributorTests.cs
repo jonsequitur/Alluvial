@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Alluvial.Distributors;
 using NUnit.Framework;
 
 namespace Alluvial.Tests.Distributors
@@ -10,14 +11,14 @@ namespace Alluvial.Tests.Distributors
         private InMemoryStreamQueryDistributor distributor;
 
         protected override IStreamQueryDistributor CreateDistributor(
-            Func<DistributorUnitOfWork, Task> onReceive = null,
-            DistributorLease[] leases = null,
+            Func<Lease, Task> onReceive = null,
+            LeasableResource[] LeasablesResource = null,
             int maxDegreesOfParallelism = 5,
             string name = null,
             TimeSpan? waitInterval = null)
         {
             distributor = new InMemoryStreamQueryDistributor(
-                leases ?? DefaultLeases,
+                LeasablesResource ?? DefaultLeasableResources,
                 maxDegreesOfParallelism,
                 waitInterval);
             if (onReceive != null)

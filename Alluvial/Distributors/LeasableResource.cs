@@ -1,10 +1,10 @@
 using System;
 
-namespace Alluvial
+namespace Alluvial.Distributors
 {
-    public class DistributorLease
+    public class LeasableResource
     {
-        public DistributorLease(string name, TimeSpan duration)
+        public LeasableResource(string name, TimeSpan duration)
         {
             if (name == null)
             {

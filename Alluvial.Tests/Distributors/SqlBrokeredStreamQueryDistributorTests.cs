@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Alluvial.Distributors;
 using Alluvial.Distributors.Sql;
 using NUnit.Framework;
 
@@ -16,14 +17,14 @@ namespace Alluvial.Tests.Distributors
         };
 
         protected override IStreamQueryDistributor CreateDistributor(
-            Func<DistributorUnitOfWork, Task> onReceive = null,
-            DistributorLease[] leases = null,
+            Func<Lease, Task> onReceive = null,
+            LeasableResource[] LeasablesResource = null,
             int maxDegreesOfParallelism = 5,
             string name = null,
             TimeSpan? waitInterval = null)
         {
             distributor = new SqlBrokeredStreamQueryDistributor(
-                leases ?? DefaultLeases,
+                LeasablesResource ?? DefaultLeasableResources,
                 settings,
                 maxDegreesOfParallelism,
                 waitInterval);

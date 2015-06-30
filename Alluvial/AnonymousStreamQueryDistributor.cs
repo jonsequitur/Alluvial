@@ -1,17 +1,18 @@
 using System;
 using System.Threading.Tasks;
+using Alluvial.Distributors;
 
 namespace Alluvial
 {
     internal class AnonymousStreamQueryDistributor : IStreamQueryDistributor
     {
         private readonly Func<Task> start;
-        private readonly Action<Func<DistributorUnitOfWork, Task>> onReceived;
+        private readonly Action<Func<Lease, Task>> onReceived;
         private readonly Func<Task> stop;
 
         public AnonymousStreamQueryDistributor(
             Func<Task> start,
-            Action<Func<DistributorUnitOfWork, Task>> onReceived,
+            Action<Func<Lease, Task>> onReceived,
             Func<Task> stop)
         {
             if (start == null)
@@ -31,7 +32,7 @@ namespace Alluvial
             this.stop = stop;
         }
 
-        public void OnReceive(Func<DistributorUnitOfWork, Task> onReceive)
+        public void OnReceive(Func<Lease, Task> onReceive)
         {
             onReceived(onReceive);
         }

@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Alluvial.Distributors;
 
 namespace Alluvial
 {
@@ -28,7 +29,7 @@ namespace Alluvial
                 });
         }
 
-        private static IStreamQueryDistributor Create(Func<Task> start, Action<Func<DistributorUnitOfWork, Task>> doWork, Func<Task> stop)
+        private static IStreamQueryDistributor Create(Func<Task> start, Action<Func<Lease, Task>> doWork, Func<Task> stop)
         {
             return new AnonymousStreamQueryDistributor(start, doWork, stop);
         }

@@ -16,11 +16,11 @@ namespace Alluvial.Distributors.Sql
         private readonly SqlBrokeredStreamQueryDistributorDatabaseSettings settings;
 
         public SqlBrokeredStreamQueryDistributor(
-            DistributorLease[] leases, 
+            LeasableResource[] LeasablesResource, 
             SqlBrokeredStreamQueryDistributorDatabaseSettings settings,
             int maxDegreesOfParallelism = 5, 
             TimeSpan? waitInterval = null)
-            : base(leases, maxDegreesOfParallelism, waitInterval)
+            : base(LeasablesResource, maxDegreesOfParallelism, waitInterval)
         {
             if (settings == null)
             {
@@ -50,7 +50,7 @@ ORDER BY LastReleased";
                 cmd.Parameters.AddWithValue(@"token", token);
             }
 
-            var availableLease = leases
+            var availableLease = LeasablesResource
                 .Where(l => l.LastReleased + waitInterval < DateTimeOffset.UtcNow)
                 .OrderBy(l => l.LastReleased)
                 .FirstOrDefault(l => !workInProgress.ContainsKey(l));
@@ -59,11 +59,11 @@ ORDER BY LastReleased";
             {
                 Debug.WriteLine("RunOne: available lease = " + availableLease.Name);
 
-                var unitOfWork = new DistributorUnitOfWork(availableLease);
+                var unitOfWork = new Lease(availableLease);
 
                 if (workInProgress.TryAdd(availableLease, unitOfWork))
                 {
-                    unitOfWork.Lease.LastGranted = DateTimeOffset.UtcNow;
+                    unitOfWork.LeasableResource.LastGranted = DateTimeOffset.UtcNow;
 
                     try
                     {
@@ -84,7 +84,7 @@ ORDER BY LastReleased";
             Task.Run(() => RunOne());
         }
 
-        protected override async Task Complete(DistributorUnitOfWork lease)
+        protected override async Task Complete(Lease lease)
         {
         }
     }

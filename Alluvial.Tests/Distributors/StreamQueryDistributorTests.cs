@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Alluvial.Distributors;
 using NUnit.Framework;
 
 namespace Alluvial.Tests.Distributors
@@ -14,20 +15,20 @@ namespace Alluvial.Tests.Distributors
     public abstract class StreamQueryDistributorTests
     {
         protected abstract IStreamQueryDistributor CreateDistributor(
-            Func<DistributorUnitOfWork, Task> onReceive = null,
-            DistributorLease[] leases = null, int maxDegreesOfParallelism = 5,
+            Func<Lease, Task> onReceive = null,
+            LeasableResource[] LeasablesResource = null, int maxDegreesOfParallelism = 5,
             [CallerMemberName] string name = null,
             TimeSpan? waitInterval = null);
 
         protected abstract TimeSpan DefaultLeaseDuration { get; }
 
-        protected DistributorLease[] DefaultLeases;
+        protected LeasableResource[] DefaultLeasableResources;
 
         [SetUp]
         public void SetUp()
         {
-            DefaultLeases = Enumerable.Range(1, 10)
-                                      .Select(i => new DistributorLease(i.ToString(), DefaultLeaseDuration))
+            DefaultLeasableResources = Enumerable.Range(1, 10)
+                                      .Select(i => new LeasableResource(i.ToString(), DefaultLeaseDuration))
                                       .ToArray();
         }
 
@@ -74,17 +75,17 @@ namespace Alluvial.Tests.Distributors
 
             distributor.OnReceive(async s =>
             {
-                if (currentlyGranted.Contains(s.Lease.Name))
+                if (currentlyGranted.Contains(s.LeasableResource.Name))
                 {
                     fail = true;
                 }
 
-                currentlyGranted.Add(s.Lease.Name);
-                everGranted.Add(s.Lease.Name);
+                currentlyGranted.Add(s.LeasableResource.Name);
+                everGranted.Add(s.LeasableResource.Name);
 
                 await Task.Delay((int) (1000*random.NextDouble()));
 
-                currentlyGranted.Remove(s.Lease.Name);
+                currentlyGranted.Remove(s.LeasableResource.Name);
             });
 
             await distributor.Start();
@@ -98,13 +99,13 @@ namespace Alluvial.Tests.Distributors
         [Test]
         public async Task The_least_recently_released_lease_is_granted_next()
         {
-            foreach (var lease in DefaultLeases)
+            foreach (var lease in DefaultLeasableResources)
             {
                 lease.LastGranted = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(2));
                 lease.LastReleased = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(2));
             }
 
-            var stalestLease = DefaultLeases.Single(l => l.Name == "5");
+            var stalestLease = DefaultLeasableResources.Single(l => l.Name == "5");
             stalestLease.LastGranted = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(2.1));
             stalestLease.LastReleased = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(2.1));
 
@@ -158,7 +159,7 @@ namespace Alluvial.Tests.Distributors
 
             distributor.OnReceive(async w =>
             {
-                tally.AddOrUpdate(w.Lease.Name,
+                tally.AddOrUpdate(w.LeasableResource.Name,
                                   addValueFactory: s => 1,
                                   updateValueFactory: (s, v) => v + 1);
             });
@@ -182,13 +183,13 @@ namespace Alluvial.Tests.Distributors
             var distributor = CreateDistributor().Trace();
             distributor.OnReceive(async w =>
             {
-                if (w.Lease.Name == "5" && !blocked)
+                if (w.LeasableResource.Name == "5" && !blocked)
                 {
                     blocked = true;
                     await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*1.5));
                 }
 
-                tally.AddOrUpdate(w.Lease.Name,
+                tally.AddOrUpdate(w.LeasableResource.Name,
                                   addValueFactory: s => 1,
                                   updateValueFactory: (s, v) => v + 1);
             });
@@ -208,12 +209,35 @@ namespace Alluvial.Tests.Distributors
 
         }
 
-        [Ignore("Test not finished")]
         [Test]
         public async Task A_lease_can_be_extended()
         {
-            // FIX (A_lease_can_be_extended) write test
-            Assert.Fail("Test not written yet.");
+            var blocked = false;
+            var tally = new ConcurrentDictionary<string, int>();
+            var distributor = CreateDistributor().Trace();
+            distributor.OnReceive(async w =>
+            {
+                if (w.LeasableResource.Name == "5" && !blocked)
+                {
+                    blocked = true;
+                    await w.Extend(TimeSpan.FromMilliseconds((int) (DefaultLeaseDuration.TotalMilliseconds*5)));
+                    await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*3));
+                }
+
+                tally.AddOrUpdate(w.LeasableResource.Name,
+                                  addValueFactory: s => 1,
+                                  updateValueFactory: (s, v) => v + 1);
+            });
+
+            await distributor.Start();
+
+            await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*4));
+
+            await distributor.Stop();
+
+            tally.Should().ContainKey("5")
+                 .And
+                 .Subject["5"].Should().Be(1);
         }
 
         [Test]
@@ -248,9 +272,9 @@ namespace Alluvial.Tests.Distributors
             var distributor = CreateDistributor(async l =>
             {
                 Console.WriteLine("GRANTED: " + l);
-                leasesGranted.Add(l.Lease.Name);
+                leasesGranted.Add(l.LeasableResource.Name);
 
-                if (l.Lease.Name == "2")
+                if (l.LeasableResource.Name == "2")
                 {
                     await Task.Delay(((int) DefaultLeaseDuration.TotalMilliseconds*6));
                 }
@@ -266,18 +290,18 @@ namespace Alluvial.Tests.Distributors
         [Test]
         public async Task Leases_record_the_time_when_they_were_last_granted()
         {
-            DistributorLease lease = null;
+            LeasableResource leasableResource = null;
             var received = default (DateTimeOffset);
             var distributor = CreateDistributor(async l =>
             {
                 received = DateTimeOffset.UtcNow;
-                lease = l.Lease;
+                leasableResource = l.LeasableResource;
             });
 
             await distributor.Start();
             await distributor.Stop();
 
-            lease.LastGranted
+            leasableResource.LastGranted
                  .Should()
                  .BeCloseTo(received);
         }
@@ -285,18 +309,18 @@ namespace Alluvial.Tests.Distributors
         [Test]
         public async Task Leases_record_the_time_when_they_were_last_released()
         {
-            DistributorLease lease = null;
+            LeasableResource leasableResource = null;
             var received = default (DateTimeOffset);
             var distributor = CreateDistributor(async l =>
             {
                 received = DateTimeOffset.UtcNow;
-                lease = l.Lease;
+                leasableResource = l.LeasableResource;
             });
 
             await distributor.Start();
             await distributor.Stop();
 
-            lease.LastReleased
+            leasableResource.LastReleased
                  .Should()
                  .BeCloseTo(received);
         }
