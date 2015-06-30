@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using FluentAssertions;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using FluentAssertions;
 using NUnit.Framework;
 
 namespace Alluvial.Tests.Distributors
@@ -179,19 +179,13 @@ namespace Alluvial.Tests.Distributors
         {
             var blocked = false;
             var tally = new ConcurrentDictionary<string, int>();
-            var distributor = CreateDistributor(waitInterval: TimeSpan.FromMilliseconds(10)).Trace();
+            var distributor = CreateDistributor().Trace();
             distributor.OnReceive(async w =>
             {
                 if (w.Lease.Name == "5" && !blocked)
                 {
-                    Console.WriteLine("BLOCKING LEASE 5");
                     blocked = true;
-                    await Task.Delay(TimeSpan.FromSeconds(10));
-                }
-
-                if (w.Lease.Name == "5")
-                {
-                    Console.WriteLine("ADDING LEASE 5");
+                    await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*1.5));
                 }
 
                 tally.AddOrUpdate(w.Lease.Name,
@@ -201,15 +195,25 @@ namespace Alluvial.Tests.Distributors
 
             await distributor.Start();
 
-            await Task.Delay((int)(DefaultLeaseDuration.TotalMilliseconds * 1.2));
+            await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*2));
 
-            tally.Should().ContainKey("5").And.Subject["5"].Should().Be(1);
+            await distributor.Stop();
+            tally.Should().ContainKey("5")
+                 .And
+                 .Subject["5"].Should().Be(2);
 
             new[] { "1", "2", "3", "4", "6", "7", "8", "9", "10" }
                 .ToList()
                 .ForEach(lease => { tally[lease].Should().BeGreaterThan(1); });
 
-            await distributor.Stop();
+        }
+
+        [Ignore("Test not finished")]
+        [Test]
+        public async Task A_lease_can_be_extended()
+        {
+            // FIX (A_lease_can_be_extended) write test
+            Assert.Fail("Test not written yet.");
         }
 
         [Test]
@@ -243,19 +247,20 @@ namespace Alluvial.Tests.Distributors
 
             var distributor = CreateDistributor(async l =>
             {
+                Console.WriteLine("GRANTED: " + l);
                 leasesGranted.Add(l.Lease.Name);
 
-                if (l.Lease.Name == "1")
+                if (l.Lease.Name == "2")
                 {
                     await Task.Delay(((int) DefaultLeaseDuration.TotalMilliseconds*6));
                 }
             });
 
             await distributor.Start();
-            await Task.Delay(((int) DefaultLeaseDuration.TotalMilliseconds*3));
+            await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*.5));
             await distributor.Stop();
 
-            leasesGranted.Should().ContainSingle(l => l == "1");
+            leasesGranted.Should().ContainSingle(l => l == "2");
         }
 
         [Test]

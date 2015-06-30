@@ -57,7 +57,7 @@ namespace Alluvial
 
         protected abstract Task RunOne();
 
-        protected abstract Task Complete(DistributorLease lease);
+        protected abstract Task Complete(DistributorUnitOfWork lease);
 
         public async Task Stop()
         {

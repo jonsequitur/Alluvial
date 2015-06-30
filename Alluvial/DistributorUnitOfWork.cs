@@ -30,7 +30,7 @@ namespace Alluvial
 
         public override string ToString()
         {
-            return "distributor:" + lease.Name;
+            return Lease.ToString();
         }
     }
 }

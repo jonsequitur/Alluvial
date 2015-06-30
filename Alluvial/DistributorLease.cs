@@ -25,5 +25,19 @@ namespace Alluvial
         public DateTimeOffset LastGranted { get; set; }
 
         public DateTimeOffset LastReleased { get; set; }
+
+        public bool IsExpired(DateTimeOffset asOf)
+        {
+            return LastReleased < LastGranted &&
+                   LastGranted < asOf - Duration;
+        }
+
+        public override string ToString()
+        {
+            return string.Format("lease:{0} (granted @ {1}, released @ {2})",
+                                 Name,
+                                 LastGranted,
+                                 LastReleased);
+        }
     }
 }

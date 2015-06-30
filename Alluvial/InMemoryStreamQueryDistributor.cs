@@ -21,37 +21,21 @@ namespace Alluvial
         {
             if (stopped)
             {
-                Debug.WriteLine("Aborting");
+                Debug.WriteLine("[Distribute] Aborting");
                 return;
             }
 
             var now = DateTimeOffset.UtcNow;
 
+            Debug.WriteLine("[Distribute] Polling");
+
             var availableLease = leases
                 .Where(l => l.LastReleased + waitInterval < now)
                 .OrderBy(l => l.LastReleased)
-                .FirstOrDefault(l =>
-                {
-                    if (!workInProgress.ContainsKey(l))
-                    {
-                        return true;
-                    }
-
-                    if (l.LastGranted < now - l.Duration)
-                    {
-                        // FIX: (RunOne) workInProgress needs to have the items removed / canceled / etc, so an owner token is going to be needed 
-                        return true;
-                    }
-
-                    return false;
-                });
-
-            Debug.WriteLine("Polling");
+                .FirstOrDefault(l => !workInProgress.ContainsKey(l));
 
             if (availableLease != null)
             {
-                Debug.WriteLine("RunOne: available lease = " + availableLease.Name);
-
                 var unitOfWork = new DistributorUnitOfWork(availableLease);
 
                 if (workInProgress.TryAdd(availableLease, unitOfWork))
@@ -60,13 +44,15 @@ namespace Alluvial
 
                     try
                     {
-                        await onReceive(unitOfWork);
+                        await onReceive(unitOfWork)
+                            .TimeoutAfter(unitOfWork.Lease.Duration);
                     }
                     catch (Exception exception)
                     {
+                        Debug.WriteLine(exception);
                     }
 
-                    Complete(unitOfWork.Lease);
+                    Complete(unitOfWork);
                 }
             }
             else
@@ -77,12 +63,30 @@ namespace Alluvial
             Task.Run(() => RunOne());
         }
 
-        protected override async Task Complete(DistributorLease lease)
+        protected void Cancel(DistributorLease lease)
         {
+            Debug.WriteLine("[Distribute] canceling: " + lease);
             DistributorUnitOfWork _;
             if (workInProgress.TryRemove(lease, out _))
             {
-                lease.LastReleased = DateTime.UtcNow;
+                lease.LastReleased = DateTimeOffset.UtcNow;
+            }
+        }
+
+        protected override async Task Complete(DistributorUnitOfWork work)
+        {
+            if (!workInProgress.Values.Any(w => w.Equals(work)))
+            {
+                Debug.WriteLine("[Distribute] failed to complete: " + work);
+                return;
+            }
+
+            DistributorUnitOfWork _;
+
+            if (workInProgress.TryRemove(work.Lease, out _))
+            {
+                Debug.WriteLine("[Distribute] complete: " + work);
+                work.Lease.LastReleased = DateTimeOffset.UtcNow;
             }
         }
     }

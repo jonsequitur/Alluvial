@@ -73,7 +73,7 @@ ORDER BY LastReleased";
                     {
                     }
 
-                    Complete(unitOfWork.Lease);
+                    Complete(unitOfWork);
                 }
             }
             else
@@ -84,7 +84,7 @@ ORDER BY LastReleased";
             Task.Run(() => RunOne());
         }
 
-        protected override async Task Complete(DistributorLease lease)
+        protected override async Task Complete(DistributorUnitOfWork lease)
         {
         }
     }

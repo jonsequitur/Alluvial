@@ -84,6 +84,7 @@
     <Compile Include="BankDomain\AccountClosed.cs" />
     <Compile Include="BankDomain\AccountOpened.cs" />
     <Compile Include="BankDomain\BankAccountType.cs" />
+    <Compile Include="Distributors\DistributorLeaseTests.cs" />
     <Compile Include="Infrastructure\Background.cs" />
     <Compile Include="BankDomain\AccountHistoryProjection.cs" />
     <Compile Include="BankDomain\BalanceProjection.cs" />

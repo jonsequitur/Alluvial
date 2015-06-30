@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Alluvial
@@ -12,6 +13,22 @@ namespace Alluvial
             var tasksArray = tasks.ToArray();
             await Task.WhenAll(tasksArray);
             return tasksArray.Select(t => t.Result);
+        }
+
+        public static async Task TimeoutAfter(this Task task, TimeSpan wait)
+        {
+            var cancellationTokenSource = new CancellationTokenSource();
+            var timeout = Task.Delay(wait, cancellationTokenSource.Token);
+
+            if (task == await Task.WhenAny(task, timeout))
+            {
+                await task;
+                cancellationTokenSource.Cancel();
+            }
+            else
+            {
+                throw new TimeoutException();
+            }
         }
     }
 }
