@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Alluvial.Distributors;
 
@@ -30,23 +31,30 @@ namespace Alluvial
 
             Debug.WriteLine("[Distribute] Polling");
 
-            var availableLease = LeasablesResource
+            var availableResource = LeasablesResource
                 .Where(l => l.LeaseLastReleased + waitInterval < now)
                 .OrderBy(l => l.LeaseLastReleased)
                 .FirstOrDefault(l => !workInProgress.ContainsKey(l));
 
-            if (availableLease != null)
+            if (availableResource != null)
             {
-                var lease = new Lease(availableLease);
+                var cancellationTokenSource = new CancellationTokenSource();
+                var lease = new Lease(availableResource,
+                                      availableResource.DefaultDuration,
+                                      extend: ts => cancellationTokenSource.CancelAfter(ts));
+                cancellationTokenSource.CancelAfter(lease.Duration);
 
-                if (workInProgress.TryAdd(availableLease, lease))
+                if (workInProgress.TryAdd(availableResource, lease))
                 {
                     lease.LeasableResource.LeaseLastGranted = now;
 
                     try
                     {
-                        await onReceive(lease)
-                            .TimeoutAfter(lease.LeasableResource.Duration);
+                        var receive = onReceive(lease);
+
+                        var timeout = Task.Delay(TimeSpan.FromMinutes(10), cancellationTokenSource.Token);
+
+                        await receive.TimeoutAfter(timeout);
                     }
                     catch (Exception exception)
                     {
@@ -86,8 +94,8 @@ namespace Alluvial
 
             if (workInProgress.TryRemove(lease.LeasableResource, out _))
             {
-                Debug.WriteLine("[Distribute] complete: " + lease);
                 lease.LeasableResource.LeaseLastReleased = DateTimeOffset.UtcNow;
+                Debug.WriteLine("[Distribute] complete: " + lease);
             }
         }
     }

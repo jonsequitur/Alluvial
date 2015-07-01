@@ -4,33 +4,27 @@ namespace Alluvial.Distributors
 {
     public class LeasableResource
     {
-        public LeasableResource(string name, TimeSpan duration)
+        public LeasableResource(string name, TimeSpan defaultDuration)
         {
             if (name == null)
             {
                 throw new ArgumentNullException("name");
             }
-            if (duration == new TimeSpan())
+            if (defaultDuration == new TimeSpan())
             {
                 throw new ArgumentException("duration cannot be zero.");
             }
             Name = name;
-            Duration = duration;
+            DefaultDuration = defaultDuration;
         }
 
-        public TimeSpan Duration { get; set; }
+        public TimeSpan DefaultDuration { get; set; }
 
         public string Name { get; private set; }
 
         public DateTimeOffset LeaseLastGranted { get; set; }
 
         public DateTimeOffset LeaseLastReleased { get; set; }
-
-        public bool IsLeaseExpired(DateTimeOffset asOf)
-        {
-            return LeaseLastReleased < LeaseLastGranted &&
-                   LeaseLastGranted < asOf - Duration;
-        }
 
         public override string ToString()
         {

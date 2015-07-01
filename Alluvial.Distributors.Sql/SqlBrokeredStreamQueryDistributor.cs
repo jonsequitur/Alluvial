@@ -59,7 +59,7 @@ ORDER BY LastReleased";
             {
                 Debug.WriteLine("RunOne: available lease = " + availableLease.Name);
 
-                var lease = new Lease(availableLease);
+                var lease = new Lease(availableLease, availableLease.DefaultDuration, null);
 
                 if (workInProgress.TryAdd(availableLease, lease))
                 {

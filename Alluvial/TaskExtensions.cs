@@ -15,7 +15,9 @@ namespace Alluvial
             return tasksArray.Select(t => t.Result);
         }
 
-        public static async Task TimeoutAfter(this Task task, TimeSpan wait)
+        public static async Task TimeoutAfter(
+            this Task task,
+            TimeSpan wait)
         {
             var cancellationTokenSource = new CancellationTokenSource();
             var timeout = Task.Delay(wait, cancellationTokenSource.Token);
@@ -24,6 +26,20 @@ namespace Alluvial
             {
                 await task;
                 cancellationTokenSource.Cancel();
+            }
+            else
+            {
+                throw new TimeoutException();
+            }
+        }
+
+        public static async Task TimeoutAfter(
+            this Task task,
+            Task timeout)
+        {
+            if (task == await Task.WhenAny(task, timeout))
+            {
+                await task;
             }
             else
             {

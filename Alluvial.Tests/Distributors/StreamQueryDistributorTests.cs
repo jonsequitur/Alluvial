@@ -28,8 +28,8 @@ namespace Alluvial.Tests.Distributors
         public void SetUp()
         {
             DefaultLeasableResources = Enumerable.Range(1, 10)
-                                      .Select(i => new LeasableResource(i.ToString(), DefaultLeaseDuration))
-                                      .ToArray();
+                                                 .Select(i => new LeasableResource(i.ToString(), DefaultLeaseDuration))
+                                                 .ToArray();
         }
 
         [Test]
@@ -206,21 +206,18 @@ namespace Alluvial.Tests.Distributors
             new[] { "1", "2", "3", "4", "6", "7", "8", "9", "10" }
                 .ToList()
                 .ForEach(resourceName => { tally[resourceName].Should().BeGreaterThan(1); });
-
         }
 
         [Test]
         public async Task A_lease_can_be_extended()
         {
-            var blocked = false;
             var tally = new ConcurrentDictionary<string, int>();
             var distributor = CreateDistributor().Trace();
             distributor.OnReceive(async lease =>
             {
-                if (lease.LeasableResource.Name == "5" && !blocked)
+                if (lease.LeasableResource.Name == "5")
                 {
-                    blocked = true;
-                    await lease.Extend(TimeSpan.FromMilliseconds((int) (DefaultLeaseDuration.TotalMilliseconds*5)));
+                    await lease.Extend(TimeSpan.FromMilliseconds((int) (DefaultLeaseDuration.TotalMilliseconds*10)));
                     await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*3));
                 }
 
@@ -230,9 +227,6 @@ namespace Alluvial.Tests.Distributors
             });
 
             await distributor.Start();
-
-            await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*4));
-
             await distributor.Stop();
 
             tally.Should().ContainKey("5")
@@ -302,8 +296,8 @@ namespace Alluvial.Tests.Distributors
             await distributor.Stop();
 
             leasableResource.LeaseLastGranted
-                 .Should()
-                 .BeCloseTo(received);
+                            .Should()
+                            .BeCloseTo(received);
         }
 
         [Test]
@@ -321,8 +315,8 @@ namespace Alluvial.Tests.Distributors
             await distributor.Stop();
 
             leasableResource.LeaseLastReleased
-                 .Should()
-                 .BeCloseTo(received);
+                            .Should()
+                            .BeCloseTo(received);
         }
     }
 }
