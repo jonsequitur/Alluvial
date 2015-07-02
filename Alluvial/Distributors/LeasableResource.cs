@@ -4,21 +4,21 @@ namespace Alluvial.Distributors
 {
     public class LeasableResource
     {
-        public LeasableResource(string name, TimeSpan defaultDuration)
+        public LeasableResource(string name, TimeSpan defaultLeaseDuration)
         {
             if (name == null)
             {
                 throw new ArgumentNullException("name");
             }
-            if (defaultDuration == new TimeSpan())
+            if (defaultLeaseDuration == new TimeSpan())
             {
                 throw new ArgumentException("duration cannot be zero.");
             }
             Name = name;
-            DefaultDuration = defaultDuration;
+            DefaultLeaseDuration = defaultLeaseDuration;
         }
 
-        public TimeSpan DefaultDuration { get; set; }
+        public TimeSpan DefaultLeaseDuration { get; set; }
 
         public string Name { get; private set; }
 

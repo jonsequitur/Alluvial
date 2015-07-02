@@ -1,4 +1,6 @@
 using System;
+using System.Data;
+using System.Data.SqlClient;
 using System.Threading.Tasks;
 using Alluvial.Distributors;
 using Alluvial.Distributors.Sql;
@@ -18,21 +20,49 @@ namespace Alluvial.Tests.Distributors
 
         protected override IStreamQueryDistributor CreateDistributor(
             Func<Lease, Task> onReceive = null,
-            LeasableResource[] LeasablesResource = null,
+            LeasableResource[] leasableResources = null,
             int maxDegreesOfParallelism = 1,
             string name = null,
             TimeSpan? waitInterval = null)
         {
+            leasableResources = leasableResources ?? DefaultLeasableResources;
+
             distributor = new SqlBrokeredStreamQueryDistributor(
-                LeasablesResource ?? DefaultLeasableResources,
+                leasableResources ,
                 settings,
                 maxDegreesOfParallelism,
                 waitInterval);
+            distributor.Scope = DateTime.Now.Ticks.ToString();
             if (onReceive != null)
             {
                 distributor.OnReceive(onReceive);
             }
+
+            ProvisionLeasableResources(leasableResources, distributor.Scope);
+
             return distributor;
+        }
+
+        private void ProvisionLeasableResources(LeasableResource[] leasableResources, string scope)
+        {
+            using (var connection = new SqlConnection(settings.ConnectionString))
+            {
+                connection.Open();
+
+                foreach (var resource in leasableResources)
+                {
+                    var cmd = connection.CreateCommand();
+                    cmd.CommandType = CommandType.Text;
+                    cmd.CommandText = @"
+INSERT INTO [Alluvial].[Leases]
+            ([ResourceName] ,[Scope])
+     VALUES 
+           (@resourceName, @scope)";
+                    cmd.Parameters.AddWithValue(@"@resourceName", resource.Name);
+                    cmd.Parameters.AddWithValue(@"@scope", scope);
+                    cmd.ExecuteScalar();
+                }
+            }
         }
 
         protected override TimeSpan DefaultLeaseDuration

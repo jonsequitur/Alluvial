@@ -1,32 +1,29 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Alluvial.Distributors
 {
     public class Lease
     {
+        private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly LeasableResource leasableResource;
+        private readonly dynamic token;
+        private bool completed = false;
         private TimeSpan duration;
-        private readonly Action<TimeSpan> extend;
-        private bool completed;
 
-        public Lease(
-            LeasableResource leasableResource,
-            TimeSpan duration,
-            Action<TimeSpan> extend) 
+        public Lease(LeasableResource leasableResource, TimeSpan duration, dynamic token = null)
         {
             if (leasableResource == null)
             {
                 throw new ArgumentNullException("leasableResource");
             }
-            if (extend == null)
-            {
-                throw new ArgumentNullException("extend");
-            }
+
             this.leasableResource = leasableResource;
             this.duration = duration;
-            this.extend = extend;
-            completed = false;
+            this.token = token;
+
+            cancellationTokenSource.CancelAfter(Duration);
         }
 
         public LeasableResource LeasableResource
@@ -45,6 +42,16 @@ namespace Alluvial.Distributors
             }
         }
 
+        public dynamic OwnerToken { get; set; }
+
+        public CancellationToken CancellationToken
+        {
+            get
+            {
+                return cancellationTokenSource.Token;
+            }
+        }
+
         public async Task Extend(TimeSpan by)
         {
             Console.WriteLine(string.Format("[Distribute] requesting extension: {0}: ", this) + duration);
@@ -55,7 +62,7 @@ namespace Alluvial.Distributors
             }
 
             duration += by;
-            extend(by);
+            cancellationTokenSource.CancelAfter(by);
 
             Console.WriteLine(string.Format("[Distribute] extended: {0}: ", this) + duration);
         }

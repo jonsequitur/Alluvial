@@ -12,13 +12,13 @@ namespace Alluvial.Tests.Distributors
 
         protected override IStreamQueryDistributor CreateDistributor(
             Func<Lease, Task> onReceive = null,
-            LeasableResource[] LeasablesResource = null,
+            LeasableResource[] leasableResources = null,
             int maxDegreesOfParallelism = 5,
             string name = null,
             TimeSpan? waitInterval = null)
         {
             distributor = new InMemoryStreamQueryDistributor(
-                LeasablesResource ?? DefaultLeasableResources,
+                leasableResources ?? DefaultLeasableResources,
                 maxDegreesOfParallelism,
                 waitInterval);
             if (onReceive != null)

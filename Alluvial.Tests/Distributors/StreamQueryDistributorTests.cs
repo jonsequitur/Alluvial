@@ -16,7 +16,7 @@ namespace Alluvial.Tests.Distributors
     {
         protected abstract IStreamQueryDistributor CreateDistributor(
             Func<Lease, Task> onReceive = null,
-            LeasableResource[] LeasablesResource = null, int maxDegreesOfParallelism = 5,
+            LeasableResource[] leasableResources = null, int maxDegreesOfParallelism = 5,
             [CallerMemberName] string name = null,
             TimeSpan? waitInterval = null);
 
@@ -41,6 +41,9 @@ namespace Alluvial.Tests.Distributors
             received.Should().BeFalse();
 
             await distributor.Start();
+
+            await Task.Delay(1000); // FIX: (When_the_distributor_is_started_then_notifications_begin) do away with the delay
+
             await distributor.Stop();
 
             received.Should().BeTrue();
@@ -194,10 +197,9 @@ namespace Alluvial.Tests.Distributors
             });
 
             await distributor.Start();
-
             await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*2));
-
             await distributor.Stop();
+
             tally.Should().ContainKey("5")
                  .And
                  .Subject["5"].Should().Be(2);

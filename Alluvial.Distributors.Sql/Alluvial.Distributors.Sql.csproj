@@ -41,6 +41,7 @@
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SqlBrokeredStreamQueryDistributor.cs" />
+    <Compile Include="SqlBrokeredStreamQueryDistributorDatabase.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Alluvial.nuspec" />

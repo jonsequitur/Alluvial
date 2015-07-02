@@ -56,9 +56,46 @@ namespace Alluvial
             }
         }
 
-        protected abstract Task RunOne();
+        private async Task RunOne()
+        {
+            if (stopped)
+            {
+                Debug.WriteLine("[Distribute] Aborting");
+                return;
+            }
 
-        protected abstract Task Complete(Lease lease);
+            Debug.WriteLine("[Distribute] Polling");
+
+            var lease = await AcquireLease();
+
+            if (lease != null)
+            {
+                try
+                {
+                    var receive = onReceive(lease);
+
+                    var timeout = Task.Delay(TimeSpan.FromMinutes(10), lease.CancellationToken);
+
+                    await receive.TimeoutAfter(timeout);
+                }
+                catch (Exception exception)
+                {
+                    Debug.WriteLine(exception);
+                }
+
+                ReleaseLease(lease);
+            }
+            else
+            {
+                await Task.Delay(waitInterval);
+            }
+
+            Task.Run(() => RunOne());
+        }
+
+        protected abstract Task ReleaseLease(Lease lease);
+
+        protected abstract Task<Lease> AcquireLease();
 
         public async Task Stop()
         {
