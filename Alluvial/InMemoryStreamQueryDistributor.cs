@@ -31,17 +31,16 @@ namespace Alluvial
 
             Debug.WriteLine("[Distribute] Polling");
 
-            var availableResource = LeasablesResource
-                .Where(l => l.LeaseLastReleased + waitInterval < now)
-                .OrderBy(l => l.LeaseLastReleased)
-                .FirstOrDefault(l => !workInProgress.ContainsKey(l));
+            var availableResource = AcquireAvailableResource(now);
 
             if (availableResource != null)
             {
                 var cancellationTokenSource = new CancellationTokenSource();
+                
                 var lease = new Lease(availableResource,
                                       availableResource.DefaultDuration,
                                       extend: ts => cancellationTokenSource.CancelAfter(ts));
+                
                 cancellationTokenSource.CancelAfter(lease.Duration);
 
                 if (workInProgress.TryAdd(availableResource, lease))
@@ -72,19 +71,19 @@ namespace Alluvial
             Task.Run(() => RunOne());
         }
 
-        protected void Cancel(LeasableResource leasableResource)
+        private LeasableResource AcquireAvailableResource(DateTimeOffset asOf)
         {
-            Debug.WriteLine("[Distribute] canceling: " + leasableResource);
-            Lease _;
-            if (workInProgress.TryRemove(leasableResource, out _))
-            {
-                leasableResource.LeaseLastReleased = DateTimeOffset.UtcNow;
-            }
+            return LeasablesResource
+                .Where(l => l.LeaseLastReleased + waitInterval < asOf)
+                .OrderBy(l => l.LeaseLastReleased)
+                .FirstOrDefault(l => !workInProgress.ContainsKey(l));
         }
 
         protected override async Task Complete(Lease lease)
         {
-            if (!workInProgress.Values.Any(l => l.Equals(lease)))
+            lease.NotifyCompleted();
+
+            if (!workInProgress.Values.Any(l => l.GetHashCode().Equals(lease.GetHashCode())))
             {
                 Debug.WriteLine("[Distribute] failed to complete: " + lease);
                 return;

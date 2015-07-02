@@ -1,4 +1,5 @@
 using System;
+using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Linq;
@@ -6,19 +7,21 @@ using System.Threading.Tasks;
 
 namespace Alluvial.Distributors.Sql
 {
-    public class SqlBrokeredStreamQueryDistributorDatabaseSettings
+    public class SqlBrokeredStreamQueryDistributorDatabase
     {
         public string ConnectionString { get; set; }
     }
 
+
+
     public class SqlBrokeredStreamQueryDistributor : StreamQueryDistributorBase
     {
-        private readonly SqlBrokeredStreamQueryDistributorDatabaseSettings settings;
+        private readonly SqlBrokeredStreamQueryDistributorDatabase settings;
 
         public SqlBrokeredStreamQueryDistributor(
-            LeasableResource[] LeasablesResource, 
-            SqlBrokeredStreamQueryDistributorDatabaseSettings settings,
-            int maxDegreesOfParallelism = 5, 
+            LeasableResource[] LeasablesResource,
+            SqlBrokeredStreamQueryDistributorDatabase settings,
+            int maxDegreesOfParallelism = 5,
             TimeSpan? waitInterval = null)
             : base(LeasablesResource, maxDegreesOfParallelism, waitInterval)
         {
@@ -39,21 +42,7 @@ namespace Alluvial.Distributors.Sql
 
             Debug.WriteLine("Polling");
 
-            using (var connection = new SqlConnection(settings.ConnectionString))
-            {
-                var token = Guid.NewGuid();
-                var cmd = connection.CreateCommand();
-                cmd.CommandText = @"
-SELECT TOP 1 * FROM Leases
-WHERE DATEADD(MILLISECOND, 1000, LastReleased) < SYSDATETIMEOFFSET()
-ORDER BY LastReleased";
-                cmd.Parameters.AddWithValue(@"token", token);
-            }
-
-            var availableLease = LeasablesResource
-                .Where(l => l.LeaseLastReleased + waitInterval < DateTimeOffset.UtcNow)
-                .OrderBy(l => l.LeaseLastReleased)
-                .FirstOrDefault(l => !workInProgress.ContainsKey(l));
+            var availableLease = await AcquireAvailableResource();
 
             if (availableLease != null)
             {
@@ -82,6 +71,51 @@ ORDER BY LastReleased";
             }
 
             Task.Run(() => RunOne());
+        }
+
+        private async Task<LeasableResource> AcquireAvailableResource()
+        {
+            using (var connection = new SqlConnection(settings.ConnectionString))
+            {
+                var cmd = connection.CreateCommand();
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.CommandText = @"AcquireLease";
+                cmd.Parameters.AddWithValue(@"@waitIntervalMilliseconds", waitInterval.TotalMilliseconds);
+                cmd.Parameters.AddWithValue(@"@leaseDurationMilliseconds", DefaultLeaseDuration.TotalMilliseconds);
+                cmd.Parameters.AddWithValue(@"@scope", Scope);
+
+                LeasableResource availableLease = null;
+
+                using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        var id = await reader.GetFieldValueAsync<string>(0);
+
+                        var leaseLastGranted = await reader.GetFieldValueAsync<DateTimeOffset>(2);
+                        var leaseLastReleased = await reader.GetFieldValueAsync<DateTimeOffset>(3);
+                        dynamic token = await reader.GetFieldValueAsync<dynamic>(4);
+
+                        availableLease = new LeasableResource(id, TimeSpan.FromMinutes(1))
+                        {
+                            LeaseLastGranted = leaseLastGranted,
+                            LeaseLastReleased = leaseLastReleased
+                        };
+                    }
+                }
+
+                return availableLease;
+            }
+        }
+
+        public string Scope { get; set; }
+
+        public TimeSpan DefaultLeaseDuration
+        {
+            get
+            {
+                return TimeSpan.FromMinutes(1);
+            }
         }
 
         protected override async Task Complete(Lease lease)

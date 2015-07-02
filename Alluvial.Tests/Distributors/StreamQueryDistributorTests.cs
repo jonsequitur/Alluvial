@@ -53,7 +53,6 @@ namespace Alluvial.Tests.Distributors
             var distributor = CreateDistributor(async lease => { Interlocked.Increment(ref received); });
 
             await distributor.Start();
-            Console.WriteLine("Stopping...");
             await distributor.Stop();
             await Task.Delay(10);
 
@@ -232,6 +231,47 @@ namespace Alluvial.Tests.Distributors
             tally.Should().ContainKey("5")
                  .And
                  .Subject["5"].Should().Be(1);
+        }
+
+        [Test]
+        public async Task When_Extend_is_called_after_a_lease_has_expired_then_it_throws()
+        {
+            Exception exception = null;
+            var blocked = false;
+            var tally = new ConcurrentDictionary<string, int>();
+            var distributor = CreateDistributor().Trace();
+
+            distributor.OnReceive(async lease =>
+            {
+                if (lease.LeasableResource.Name == "5" && !blocked)
+                {
+                    blocked = true;
+
+                    // wait too long, until another receiver gets the lease
+                    await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*1.5));
+
+                    // now try to extend the lease
+                    try
+                    {
+                        await lease.Extend(TimeSpan.FromMilliseconds((int) (DefaultLeaseDuration.TotalMilliseconds*10)));
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("CAUGHT "+ex);
+                        exception = ex;
+                    }
+                }
+
+                tally.AddOrUpdate(lease.LeasableResource.Name,
+                                  addValueFactory: s => 1,
+                                  updateValueFactory: (s, v) => v + 1);
+            });
+
+            await distributor.Start();
+            await distributor.Stop();
+            await Task.Delay(2000);
+            exception.Should().BeOfType<InvalidOperationException>();
+            exception.Message.Should().Contain("lease cannot be extended");
         }
 
         [Test]
