@@ -36,6 +36,14 @@ namespace Alluvial.Tests.Distributors
             }
         }
 
+        protected override TimeSpan ClockDriftTolerance
+        {
+            get
+            {
+                return TimeSpan.FromMilliseconds(30);
+            }
+        }
+
         [TearDown]
         public void TearDown()
         {

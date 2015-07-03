@@ -37,6 +37,11 @@ namespace Alluvial
             this Task task,
             Task timeout)
         {
+            if (task.IsCompleted)
+            {
+                return;
+            }
+
             if (task == await Task.WhenAny(task, timeout))
             {
                 await task;
@@ -46,5 +51,9 @@ namespace Alluvial
                 throw new TimeoutException();
             }
         }
+    }
+
+    internal struct Unit
+    {
     }
 }

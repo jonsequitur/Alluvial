@@ -8,6 +8,7 @@ namespace Alluvial
     {
         void OnReceive(Func<Lease, Task> onReceive);
         Task Start();
+        Task Distribute(int count);
         Task Stop();
     }
 }

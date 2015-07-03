@@ -8,11 +8,11 @@ namespace Alluvial.Distributors
     {
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly LeasableResource leasableResource;
-        private readonly dynamic token;
+        private readonly dynamic ownerToken;
         private bool completed = false;
         private TimeSpan duration;
 
-        public Lease(LeasableResource leasableResource, TimeSpan duration, dynamic token = null)
+        public Lease(LeasableResource leasableResource, TimeSpan duration, dynamic ownerToken = null)
         {
             if (leasableResource == null)
             {
@@ -21,7 +21,7 @@ namespace Alluvial.Distributors
 
             this.leasableResource = leasableResource;
             this.duration = duration;
-            this.token = token;
+            this.ownerToken = ownerToken;
 
             cancellationTokenSource.CancelAfter(Duration);
         }
@@ -42,7 +42,13 @@ namespace Alluvial.Distributors
             }
         }
 
-        public dynamic OwnerToken { get; set; }
+        public dynamic OwnerToken
+        {
+            get
+            {
+                return ownerToken;
+            }
+        }
 
         public CancellationToken CancellationToken
         {

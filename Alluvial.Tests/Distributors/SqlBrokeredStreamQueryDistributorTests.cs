@@ -28,11 +28,14 @@ namespace Alluvial.Tests.Distributors
             leasableResources = leasableResources ?? DefaultLeasableResources;
 
             distributor = new SqlBrokeredStreamQueryDistributor(
-                leasableResources ,
+                leasableResources,
                 settings,
                 maxDegreesOfParallelism,
-                waitInterval);
-            distributor.Scope = DateTime.Now.Ticks.ToString();
+                waitInterval)
+            {
+                Scope = DateTimeOffset.UtcNow.Ticks.ToString()
+            };
+
             if (onReceive != null)
             {
                 distributor.OnReceive(onReceive);
@@ -55,11 +58,19 @@ namespace Alluvial.Tests.Distributors
                     cmd.CommandType = CommandType.Text;
                     cmd.CommandText = @"
 INSERT INTO [Alluvial].[Leases]
-            ([ResourceName] ,[Scope])
+            ([ResourceName],
+             [Scope],
+             [LastGranted],
+             [LastReleased])
      VALUES 
-           (@resourceName, @scope)";
+            (@resourceName, 
+             @scope,
+             @lastGranted,
+             @lastReleased)";
                     cmd.Parameters.AddWithValue(@"@resourceName", resource.Name);
                     cmd.Parameters.AddWithValue(@"@scope", scope);
+                    cmd.Parameters.AddWithValue(@"@lastGranted", resource.LeaseLastGranted);
+                    cmd.Parameters.AddWithValue(@"@lastReleased", resource.LeaseLastReleased);
                     cmd.ExecuteScalar();
                 }
             }
@@ -70,6 +81,14 @@ INSERT INTO [Alluvial].[Leases]
             get
             {
                 return TimeSpan.FromSeconds(2);
+            }
+        }
+
+        protected override TimeSpan ClockDriftTolerance
+        {
+            get
+            {
+                return TimeSpan.FromSeconds(3);
             }
         }
 

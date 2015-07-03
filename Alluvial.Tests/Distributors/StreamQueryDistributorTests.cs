@@ -16,11 +16,14 @@ namespace Alluvial.Tests.Distributors
     {
         protected abstract IStreamQueryDistributor CreateDistributor(
             Func<Lease, Task> onReceive = null,
-            LeasableResource[] leasableResources = null, int maxDegreesOfParallelism = 5,
+            LeasableResource[] leasableResources = null,
+            int maxDegreesOfParallelism = 5,
             [CallerMemberName] string name = null,
             TimeSpan? waitInterval = null);
 
         protected abstract TimeSpan DefaultLeaseDuration { get; }
+        
+        protected abstract TimeSpan ClockDriftTolerance { get; }
 
         protected LeasableResource[] DefaultLeasableResources;
 
@@ -42,7 +45,7 @@ namespace Alluvial.Tests.Distributors
 
             await distributor.Start();
 
-            await Task.Delay(1000); // FIX: (When_the_distributor_is_started_then_notifications_begin) do away with the delay
+            await Task.Delay((int) DefaultLeaseDuration.TotalMilliseconds);
 
             await distributor.Stop();
 
@@ -57,7 +60,6 @@ namespace Alluvial.Tests.Distributors
 
             await distributor.Start();
             await distributor.Stop();
-            await Task.Delay(10);
 
             var receivedAsOfStop = received;
 
@@ -72,29 +74,35 @@ namespace Alluvial.Tests.Distributors
             var random = new Random();
             var currentlyGranted = new HashSet<string>();
             var everGranted = new HashSet<string>();
-            var fail = false;
+            var leasedConcurrently = "";
             var distributor = CreateDistributor(maxDegreesOfParallelism: 5).Trace();
 
             distributor.OnReceive(async lease =>
             {
-                if (currentlyGranted.Contains(lease.LeasableResource.Name))
+                lock (currentlyGranted)
                 {
-                    fail = true;
-                }
+                    if (currentlyGranted.Contains(lease.LeasableResource.Name))
+                    {
+                        leasedConcurrently = lease.LeasableResource.Name;
+                    }
 
-                currentlyGranted.Add(lease.LeasableResource.Name);
-                everGranted.Add(lease.LeasableResource.Name);
+                    currentlyGranted.Add(lease.LeasableResource.Name);
+                    everGranted.Add(lease.LeasableResource.Name);
+                }
 
                 await Task.Delay((int) (1000*random.NextDouble()));
 
-                currentlyGranted.Remove(lease.LeasableResource.Name);
+                lock (currentlyGranted)
+                {
+                    currentlyGranted.Remove(lease.LeasableResource.Name);
+                }
             });
 
             await distributor.Start();
             await Task.Delay(((int) DefaultLeaseDuration.TotalMilliseconds*3));
             await distributor.Stop();
 
-            fail.Should().BeFalse();
+            leasedConcurrently.Should().BeEmpty();
             everGranted.Count.Should().BeGreaterOrEqualTo(5);
         }
 
@@ -111,14 +119,18 @@ namespace Alluvial.Tests.Distributors
             stalestLease.LeaseLastGranted = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(2.1));
             stalestLease.LeaseLastReleased = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(2.1));
 
-            var distributor = CreateDistributor(maxDegreesOfParallelism: 1, waitInterval: TimeSpan.FromMinutes(1));
+            var distributor = CreateDistributor().Trace();
 
-            distributor.OnReceive(async lease => { });
+            Lease receivedLease = null;
 
-            await distributor.Start();
-            await distributor.Stop();
+            distributor.OnReceive(async lease =>
+            {
+                receivedLease = lease;
+            });
 
-            stalestLease.LeaseLastReleased.Should().BeCloseTo(DateTimeOffset.UtcNow);
+            await distributor.Distribute(1);
+
+            receivedLease.LeasableResource.Name.Should().Be("5");
         }
 
         [Test]
@@ -200,13 +212,13 @@ namespace Alluvial.Tests.Distributors
             await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*2));
             await distributor.Stop();
 
-            tally.Should().ContainKey("5")
-                 .And
-                 .Subject["5"].Should().Be(2);
-
             new[] { "1", "2", "3", "4", "6", "7", "8", "9", "10" }
                 .ToList()
                 .ForEach(resourceName => { tally[resourceName].Should().BeGreaterThan(1); });
+
+            tally.Should().ContainKey("5")
+                 .And
+                 .Subject["5"].Should().BeGreaterOrEqualTo(2);
         }
 
         [Test]
@@ -218,7 +230,10 @@ namespace Alluvial.Tests.Distributors
             {
                 if (lease.LeasableResource.Name == "5")
                 {
+                    // extend the lease
                     await lease.Extend(TimeSpan.FromMilliseconds((int) (DefaultLeaseDuration.TotalMilliseconds*10)));
+
+                    // wait longer than the lease would normally last
                     await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*3));
                 }
 
@@ -259,7 +274,7 @@ namespace Alluvial.Tests.Distributors
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("CAUGHT "+ex);
+                        Console.WriteLine("CAUGHT " + ex);
                         exception = ex;
                     }
                 }
@@ -271,7 +286,8 @@ namespace Alluvial.Tests.Distributors
 
             await distributor.Start();
             await distributor.Stop();
-            await Task.Delay(2000);
+            await Task.Delay(DefaultLeaseDuration);
+
             exception.Should().BeOfType<InvalidOperationException>();
             exception.Message.Should().Contain("lease cannot be extended");
         }
@@ -319,6 +335,7 @@ namespace Alluvial.Tests.Distributors
             await distributor.Start();
             await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*.5));
             await distributor.Stop();
+            await Task.Delay(10);
 
             leasesGranted.Should().ContainSingle(l => l == "2");
         }
@@ -331,15 +348,17 @@ namespace Alluvial.Tests.Distributors
             var distributor = CreateDistributor(async l =>
             {
                 received = DateTimeOffset.UtcNow;
+                Console.WriteLine(received);
                 leasableResource = l.LeasableResource;
             });
 
-            await distributor.Start();
-            await distributor.Stop();
+            await distributor.Distribute(1);
 
             leasableResource.LeaseLastGranted
+                            .ToUniversalTime()
                             .Should()
-                            .BeCloseTo(received);
+                            .BeCloseTo(received, 
+                            precision: (int) ClockDriftTolerance.TotalMilliseconds);
         }
 
         [Test]
@@ -353,12 +372,13 @@ namespace Alluvial.Tests.Distributors
                 leasableResource = l.LeasableResource;
             });
 
-            await distributor.Start();
-            await distributor.Stop();
+            await distributor.Distribute(1);
 
             leasableResource.LeaseLastReleased
+                            .ToUniversalTime()
                             .Should()
-                            .BeCloseTo(received);
+                            .BeCloseTo(received, 
+                            precision: (int) ClockDriftTolerance.TotalMilliseconds);
         }
     }
 }

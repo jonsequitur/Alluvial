@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,6 +9,8 @@ namespace Alluvial
 {
     public class InMemoryStreamQueryDistributor : StreamQueryDistributorBase
     {
+        private readonly ConcurrentDictionary<LeasableResource, Lease> workInProgress = new ConcurrentDictionary<LeasableResource, Lease>();
+
         public InMemoryStreamQueryDistributor(
             LeasableResource[] LeasablesResource,
             int maxDegreesOfParallelism = 5,

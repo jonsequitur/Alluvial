@@ -1,7 +1,7 @@
 using System;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Alluvial.Distributors;
 
@@ -9,12 +9,12 @@ namespace Alluvial
 {
     public abstract class StreamQueryDistributorBase : IStreamQueryDistributor
     {
-        protected readonly ConcurrentDictionary<LeasableResource, Lease> workInProgress = new ConcurrentDictionary<LeasableResource, Lease>();
         protected Func<Lease, Task> onReceive;
         protected int maxDegreesOfParallelism;
         protected bool stopped;
         protected TimeSpan waitInterval;
         protected readonly LeasableResource[] LeasablesResource;
+        private int leasesHeld;
 
         protected StreamQueryDistributorBase(
             LeasableResource[] LeasablesResource,
@@ -43,6 +43,11 @@ namespace Alluvial
             this.onReceive = onReceive;
         }
 
+        public async Task Distribute(int count)
+        {
+            await RunOne(loop: false);
+        }
+
         public async Task Start()
         {
             if (onReceive == null)
@@ -52,11 +57,14 @@ namespace Alluvial
 
             for (var i = 0; i < maxDegreesOfParallelism; i++)
             {
-                RunOne();
+#pragma warning disable 4014
+                // deliberately fire and forget so that the tasks can run in parallel
+                RunOne(loop: true);
+#pragma warning restore 4014
             }
         }
 
-        private async Task RunOne()
+        private async Task RunOne(bool loop)
         {
             if (stopped)
             {
@@ -70,6 +78,8 @@ namespace Alluvial
 
             if (lease != null)
             {
+                Interlocked.Increment(ref leasesHeld);
+
                 try
                 {
                     var receive = onReceive(lease);
@@ -80,17 +90,35 @@ namespace Alluvial
                 }
                 catch (Exception exception)
                 {
-                    Debug.WriteLine(exception);
+                    Debug.WriteLine("[Distribute] Exception during AcquireLease:\n" + exception);
                 }
 
-                ReleaseLease(lease);
+                try
+                {
+                    await ReleaseLease(lease);
+                }
+                catch (Exception exception)
+                {
+                    Debug.WriteLine("[Distribute] Exception during ReleaseLease:\n" + exception);
+                }
+
+                Interlocked.Decrement(ref leasesHeld);
             }
             else
             {
-                await Task.Delay(waitInterval);
+                if (loop)
+                {
+                    await Task.Delay(waitInterval);
+                }
             }
 
-            Task.Run(() => RunOne());
+            if (loop)
+            {
+#pragma warning disable 4014
+                // async recursion. we don't await in order to truncate the call stack.
+                Task.Run(() => RunOne(loop));
+#pragma warning restore 4014
+            }
         }
 
         protected abstract Task ReleaseLease(Lease lease);
@@ -99,20 +127,15 @@ namespace Alluvial
 
         public async Task Stop()
         {
-            if (stopped)
-            {
-                return;
-            }
-
             stopped = true;
 
-            Debug.WriteLine("Stop");
-
-            while (workInProgress.Count > 0)
+            while (leasesHeld > 0)
             {
-                Debug.WriteLine("Stop: waiting for " + workInProgress.Count + " to complete");
+                Debug.WriteLine(string.Format("Stop: waiting for {0} to complete", leasesHeld));
                 await Task.Delay(waitInterval);
-            }
+            } 
+            
+            await Task.Delay(waitInterval);
         }
 
         public void Dispose()

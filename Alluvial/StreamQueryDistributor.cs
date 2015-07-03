@@ -26,12 +26,12 @@ namespace Alluvial
                 {
                     System.Diagnostics.Trace.WriteLine("[Distribute] Stop");
                     return distributor.Stop();
-                });
+                }, distribute: distributor.Distribute);
         }
 
-        private static IStreamQueryDistributor Create(Func<Task> start, Action<Func<Lease, Task>> doWork, Func<Task> stop)
+        private static IStreamQueryDistributor Create(Func<Task> start, Action<Func<Lease, Task>> doWork, Func<Task> stop, Func<int, Task> distribute)
         {
-            return new AnonymousStreamQueryDistributor(start, doWork, stop);
+            return new AnonymousStreamQueryDistributor(start, doWork, stop, distribute);
         }
     }
 }
