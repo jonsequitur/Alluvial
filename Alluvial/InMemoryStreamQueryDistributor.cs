@@ -54,7 +54,7 @@ namespace Alluvial
 
             if (!workInProgress.Values.Any(l => l.GetHashCode().Equals(lease.GetHashCode())))
             {
-                Debug.WriteLine("[Distribute] failed to complete: " + lease);
+                Debug.WriteLine("[Distribute] ReleaseLease (failed): " + lease);
                 return;
             }
 
@@ -63,7 +63,7 @@ namespace Alluvial
             if (workInProgress.TryRemove(lease.LeasableResource, out _))
             {
                 lease.LeasableResource.LeaseLastReleased = DateTimeOffset.UtcNow;
-                Debug.WriteLine("[Distribute] complete: " + lease);
+                Debug.WriteLine("[Distribute] ReleaseLease: " + lease);
             }
         }
     }

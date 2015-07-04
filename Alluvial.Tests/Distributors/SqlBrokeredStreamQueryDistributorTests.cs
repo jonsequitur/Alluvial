@@ -61,16 +61,19 @@ INSERT INTO [Alluvial].[Leases]
             ([ResourceName],
              [Scope],
              [LastGranted],
-             [LastReleased])
+             [LastReleased],
+             [Expires])
      VALUES 
             (@resourceName, 
              @scope,
              @lastGranted,
-             @lastReleased)";
+             @lastReleased,
+             @expires)";
                     cmd.Parameters.AddWithValue(@"@resourceName", resource.Name);
                     cmd.Parameters.AddWithValue(@"@scope", scope);
                     cmd.Parameters.AddWithValue(@"@lastGranted", resource.LeaseLastGranted);
                     cmd.Parameters.AddWithValue(@"@lastReleased", resource.LeaseLastReleased);
+                    cmd.Parameters.AddWithValue(@"@expires",DateTimeOffset.MinValue);
                     cmd.ExecuteScalar();
                 }
             }

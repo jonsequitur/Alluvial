@@ -50,8 +50,6 @@ namespace Alluvial.Distributors.Sql
                         var leaseLastReleased = await reader.GetFieldValueAsync<dynamic>(3);
                         var token = await reader.GetFieldValueAsync<dynamic>(5);
 
-                        Debug.WriteLine(new { resourceName, leaseLastGranted, leaseLastReleased, token });
-
                         var resource = new LeasableResource(resourceName, defaultLeaseDuration)
                         {
                             LeaseLastGranted = leaseLastGranted is DBNull
@@ -90,9 +88,11 @@ namespace Alluvial.Distributors.Sql
                 {
                     var leaseLastReleased = (DateTimeOffset) await cmd.ExecuteScalarAsync();
                     lease.LeasableResource.LeaseLastReleased = leaseLastReleased;
+                    Debug.WriteLine("[Distribute] ReleaseLease: " + lease);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    Debug.WriteLine("[Distribute] ReleaseLease (failed): " + lease + "\n" + ex);
                 }
             }
         }

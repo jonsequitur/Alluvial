@@ -21,6 +21,7 @@ namespace Alluvial
                     {
                         System.Diagnostics.Trace.WriteLine("[Distribute] OnReceive " + lease);
                         await doWork(lease);
+                        System.Diagnostics.Trace.WriteLine("[Distribute] OnReceive (done) " + lease);
                     });
                 }, stop: () =>
                 {

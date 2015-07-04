@@ -9,10 +9,10 @@ namespace Alluvial
 {
     public abstract class StreamQueryDistributorBase : IStreamQueryDistributor
     {
-        protected Func<Lease, Task> onReceive;
-        protected int maxDegreesOfParallelism;
-        protected bool stopped;
-        protected TimeSpan waitInterval;
+        private Func<Lease, Task> onReceive;
+        private readonly int maxDegreesOfParallelism;
+        private bool stopped;
+        protected readonly TimeSpan waitInterval;
         protected readonly LeasableResource[] LeasablesResource;
         private int leasesHeld;
 
@@ -131,11 +131,9 @@ namespace Alluvial
 
             while (leasesHeld > 0)
             {
-                Debug.WriteLine(string.Format("Stop: waiting for {0} to complete", leasesHeld));
+                Debug.WriteLine(string.Format("[Distribute] Stop: waiting for {0} to complete", leasesHeld));
                 await Task.Delay(waitInterval);
             } 
-            
-            await Task.Delay(waitInterval);
         }
 
         public void Dispose()

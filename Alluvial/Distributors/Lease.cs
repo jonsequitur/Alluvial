@@ -75,7 +75,7 @@ namespace Alluvial.Distributors
 
         public override string ToString()
         {
-            return LeasableResource.ToString();
+            return LeasableResource + " (" + ownerToken + ")";
         }
 
         internal void NotifyCompleted()
