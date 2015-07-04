@@ -105,9 +105,11 @@ namespace Alluvial.Tests.Distributors
                 countDown.Signal();
             });
 
-            await distributor.Start();
-            await countDown.WaitAsync().Timeout();
-            await distributor.Stop();
+            Enumerable.Range(1, 10).ToList().ForEach(_ =>
+            {
+                distributor.Distribute(1);
+            });
+            await countDown.WaitAsync();
 
             leasedConcurrently.Should().BeEmpty();
             everGranted.Count.Should().Be(10);
