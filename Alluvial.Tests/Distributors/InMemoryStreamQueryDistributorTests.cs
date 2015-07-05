@@ -15,10 +15,12 @@ namespace Alluvial.Tests.Distributors
             LeasableResource[] leasableResources = null,
             int maxDegreesOfParallelism = 5,
             string name = null,
-            TimeSpan? waitInterval = null)
+            TimeSpan? waitInterval = null,
+            string scope = null)
         {
             distributor = new InMemoryStreamQueryDistributor(
                 leasableResources ?? DefaultLeasableResources,
+                scope ?? DateTimeOffset.UtcNow.Ticks.ToString(),
                 maxDegreesOfParallelism,
                 waitInterval);
             if (onReceive != null)

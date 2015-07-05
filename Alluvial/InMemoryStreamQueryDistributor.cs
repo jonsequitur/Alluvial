@@ -9,16 +9,25 @@ namespace Alluvial
 {
     public class InMemoryStreamQueryDistributor : StreamQueryDistributorBase
     {
-        private readonly ConcurrentDictionary<LeasableResource, Lease> workInProgress = new ConcurrentDictionary<LeasableResource, Lease>();
+        private static readonly ConcurrentDictionary<string, ConcurrentDictionary<LeasableResource, Lease>> workInProgressGlobal =
+            new ConcurrentDictionary<string, ConcurrentDictionary<LeasableResource, Lease>>();
+
+        private readonly ConcurrentDictionary<LeasableResource, Lease> workInProgress;
 
         public InMemoryStreamQueryDistributor(
             LeasableResource[] LeasablesResource,
+            string scope,
             int maxDegreesOfParallelism = 5,
             TimeSpan? waitInterval = null) :
                 base(LeasablesResource,
                      maxDegreesOfParallelism,
                      waitInterval)
         {
+            if (scope == null)
+            {
+                throw new ArgumentNullException("scope");
+            }
+            workInProgress = workInProgressGlobal.GetOrAdd(scope, s => new ConcurrentDictionary<LeasableResource, Lease>());
         }
 
         protected override async Task<Lease> AcquireLease()

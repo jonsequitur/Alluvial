@@ -10,11 +10,13 @@ namespace Alluvial.Distributors.Sql
     public class SqlBrokeredStreamQueryDistributor : StreamQueryDistributorBase
     {
         private readonly SqlBrokeredStreamQueryDistributorDatabase settings;
+        private readonly string scope;
         private readonly TimeSpan defaultLeaseDuration;
 
         public SqlBrokeredStreamQueryDistributor(
             LeasableResource[] LeasablesResource,
             SqlBrokeredStreamQueryDistributorDatabase settings,
+            string scope,
             int maxDegreesOfParallelism = 5,
             TimeSpan? waitInterval = null,
             TimeSpan? defaultLeaseDuration = null)
@@ -24,7 +26,12 @@ namespace Alluvial.Distributors.Sql
             {
                 throw new ArgumentNullException("settings");
             }
+            if (scope == null)
+            {
+                throw new ArgumentNullException("scope");
+            }
             this.settings = settings;
+            this.scope = scope;
             this.defaultLeaseDuration = defaultLeaseDuration ?? TimeSpan.FromMinutes(5);
         }
 
@@ -39,7 +46,7 @@ namespace Alluvial.Distributors.Sql
                 cmd.CommandText = @"Alluvial.AcquireLease";
                 cmd.Parameters.AddWithValue(@"@waitIntervalMilliseconds", waitInterval.TotalMilliseconds);
                 cmd.Parameters.AddWithValue(@"@leaseDurationMilliseconds", defaultLeaseDuration.TotalMilliseconds);
-                cmd.Parameters.AddWithValue(@"@scope", Scope);
+                cmd.Parameters.AddWithValue(@"@scope", scope);
 
                 using (var reader = await cmd.ExecuteReaderAsync())
                 {
@@ -69,8 +76,6 @@ namespace Alluvial.Distributors.Sql
                 return null;
             }
         }
-
-        public string Scope { get; set; }
 
         protected override async Task ReleaseLease(Lease lease)
         {

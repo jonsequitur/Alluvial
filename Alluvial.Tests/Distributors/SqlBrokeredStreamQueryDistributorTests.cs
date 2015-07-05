@@ -23,25 +23,26 @@ namespace Alluvial.Tests.Distributors
             LeasableResource[] leasableResources = null,
             int maxDegreesOfParallelism = 1,
             string name = null,
-            TimeSpan? waitInterval = null)
+            TimeSpan? waitInterval = null,
+            string scope = null)
         {
             leasableResources = leasableResources ?? DefaultLeasableResources;
 
+            scope = scope ?? DateTimeOffset.UtcNow.Ticks.ToString();
             distributor = new SqlBrokeredStreamQueryDistributor(
                 leasableResources,
                 settings,
+                scope,
                 maxDegreesOfParallelism,
-                waitInterval)
-            {
-                Scope = DateTimeOffset.UtcNow.Ticks.ToString()
-            };
+                waitInterval,
+                DefaultLeaseDuration);
 
             if (onReceive != null)
             {
                 distributor.OnReceive(onReceive);
             }
 
-            ProvisionLeasableResources(leasableResources, distributor.Scope);
+            ProvisionLeasableResources(leasableResources, scope);
 
             return distributor;
         }
@@ -57,23 +58,28 @@ namespace Alluvial.Tests.Distributors
                     var cmd = connection.CreateCommand();
                     cmd.CommandType = CommandType.Text;
                     cmd.CommandText = @"
-INSERT INTO [Alluvial].[Leases]
-            ([ResourceName],
-             [Scope],
-             [LastGranted],
-             [LastReleased],
-             [Expires])
-     VALUES 
-            (@resourceName, 
-             @scope,
-             @lastGranted,
-             @lastReleased,
-             @expires)";
+IF NOT EXISTS (SELECT * FROM [Alluvial].[Leases] 
+               WHERE Scope = @scope AND 
+               ResourceName = @resourceName)
+    BEGIN
+        INSERT INTO [Alluvial].[Leases]
+                        ([ResourceName],
+                         [Scope],
+                         [LastGranted],
+                         [LastReleased],
+                         [Expires])
+                 VALUES 
+                        (@resourceName, 
+                         @scope,
+                         @lastGranted,
+                         @lastReleased,
+                         @expires)
+    END";
                     cmd.Parameters.AddWithValue(@"@resourceName", resource.Name);
                     cmd.Parameters.AddWithValue(@"@scope", scope);
                     cmd.Parameters.AddWithValue(@"@lastGranted", resource.LeaseLastGranted);
                     cmd.Parameters.AddWithValue(@"@lastReleased", resource.LeaseLastReleased);
-                    cmd.Parameters.AddWithValue(@"@expires",DateTimeOffset.MinValue);
+                    cmd.Parameters.AddWithValue(@"@expires", DateTimeOffset.MinValue);
                     cmd.ExecuteScalar();
                 }
             }

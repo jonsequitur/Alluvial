@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using FluentAssertions;
+using Its.Log.Instrumentation;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -19,7 +20,8 @@ namespace Alluvial.Tests.Distributors
             LeasableResource[] leasableResources = null,
             int maxDegreesOfParallelism = 5,
             [CallerMemberName] string name = null,
-            TimeSpan? waitInterval = null);
+            TimeSpan? waitInterval = null,
+            string scope = null);
 
         protected abstract TimeSpan DefaultLeaseDuration { get; }
 
@@ -105,10 +107,7 @@ namespace Alluvial.Tests.Distributors
                 countDown.Signal();
             });
 
-            Enumerable.Range(1, 10).ToList().ForEach(_ =>
-            {
-                distributor.Distribute(1);
-            });
+            Enumerable.Range(1, 10).ToList().ForEach(_ => { distributor.Distribute(1); });
             await countDown.WaitAsync();
 
             leasedConcurrently.Should().BeEmpty();
@@ -143,7 +142,7 @@ namespace Alluvial.Tests.Distributors
         public async Task When_receiver_throws_then_work_distribution_continues()
         {
             var received = 0;
-            var distributor = CreateDistributor(waitInterval: TimeSpan.FromMilliseconds(10)).Trace();
+            var distributor = CreateDistributor(waitInterval: TimeSpan.FromMilliseconds(100)).Trace();
             var countdown = new AsyncCountdownEvent(20);
 
             distributor.OnReceive(async lease =>
@@ -231,30 +230,37 @@ namespace Alluvial.Tests.Distributors
         public async Task A_lease_can_be_extended()
         {
             var tally = new ConcurrentDictionary<string, int>();
-            var distributor = CreateDistributor().Trace();
+            var scope = DateTimeOffset.UtcNow.Ticks.ToString();
+            var distributor1 = CreateDistributor(scope: scope).Trace();
+            var distributor2 = CreateDistributor(scope: scope).Trace();
             var mre = new AsyncManualResetEvent();
 
-            distributor.OnReceive(async lease =>
+            Func<Lease, Task> onReceive = async lease =>
             {
-                if (lease.LeasableResource.Name == "5")
-                {
-                    // extend the lease
-                    await lease.Extend(TimeSpan.FromMilliseconds((int) (DefaultLeaseDuration.TotalMilliseconds*10)));
-
-                    // wait longer than the lease would normally last
-                    await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*3));
-
-                    mre.Set();
-                }
-
                 tally.AddOrUpdate(lease.LeasableResource.Name,
                                   addValueFactory: s => 1,
                                   updateValueFactory: (s, v) => v + 1);
-            });
 
-            await distributor.Start();
-            await mre.WaitAsync().Timeout();
-            await distributor.Stop();
+                if (lease.LeasableResource.Name == "5")
+                {
+                    // extend the lease
+                    await lease.Extend(TimeSpan.FromDays(2));
+
+                    // wait longer than the lease would normally last
+                    await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*5));
+                }
+            };
+
+            distributor1.OnReceive(onReceive);
+            distributor2.OnReceive(onReceive);
+            await distributor1.Start();
+            await distributor2.Start();
+            //await mre.WaitAsync().Timeout();
+            await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds * 2.5));
+            await distributor1.Stop();
+            await distributor2.Stop();
+
+            Console.WriteLine(tally.ToLogString());
 
             tally.Should().ContainKey("5")
                  .And
