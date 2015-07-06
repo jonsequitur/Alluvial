@@ -10,7 +10,7 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <licenseUrl>http://opensource.org/licenses/MIT</licenseUrl>
     <copyright>Copyright © 2015 Jon Sequeira</copyright>
-    <description></description>
+    <description>A SQL-based query distributor for Alluvial</description>
     <tags>data projections stream-processing</tags>
     <dependencies>
         <dependency id="Alluvial" version="[0.1.10-alpha,)" />
