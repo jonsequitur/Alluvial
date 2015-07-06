@@ -68,7 +68,7 @@ namespace Alluvial.Distributors
         {
             Console.WriteLine(string.Format("[Distribute] requesting extension: {0}: ", this) + duration);
 
-            if (completed)
+            if (completed || cancellationTokenSource.IsCancellationRequested)
             {
                 throw new InvalidOperationException("The lease cannot be extended.");
             }

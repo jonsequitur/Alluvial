@@ -108,7 +108,7 @@ namespace Alluvial.Tests.Distributors
             });
 
             Enumerable.Range(1, 10).ToList().ForEach(_ => { distributor.Distribute(1); });
-            await countDown.WaitAsync();
+            await countDown.WaitAsync().Timeout();
 
             leasedConcurrently.Should().BeEmpty();
             everGranted.Count.Should().Be(10);
@@ -292,7 +292,7 @@ namespace Alluvial.Tests.Distributors
             });
 
             distributor.Distribute(1);
-            await mre.WaitAsync();
+            await mre.WaitAsync().Timeout();
             await Task.Delay(1000);
 
             exception.Should().BeOfType<InvalidOperationException>();
