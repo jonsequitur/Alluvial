@@ -122,7 +122,7 @@ namespace Alluvial
         }
 
         protected abstract Task ReleaseLease(Lease lease);
-
+       
         protected abstract Task<Lease> AcquireLease();
 
         public async Task Stop()

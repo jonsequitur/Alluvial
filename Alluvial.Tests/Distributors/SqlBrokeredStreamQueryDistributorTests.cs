@@ -8,7 +8,6 @@ using NUnit.Framework;
 
 namespace Alluvial.Tests.Distributors
 {
-    [Ignore("Not set up to run on AppVeyor yet")]
     [TestFixture]
     public class SqlBrokeredStreamQueryDistributorTests : StreamQueryDistributorTests
     {
