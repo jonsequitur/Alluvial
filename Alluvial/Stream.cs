@@ -224,7 +224,7 @@ namespace Alluvial
         /// <returns></returns>
         public static IStream<TDownstream, TUpstreamCursor> IntoMany<TUpstream, TDownstream, TUpstreamCursor>(
             this IStream<TUpstream, TUpstreamCursor> upstream,
-            Func<TUpstream, TUpstreamCursor, TUpstreamCursor, Task<TDownstream>> queryDownstream)
+            QueryDownstream< TUpstream, TDownstream,  TUpstreamCursor> queryDownstream)
         {
             return Create(
                 id: upstream.Id + "->IntoMany",
