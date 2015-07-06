@@ -44,13 +44,13 @@
     <Compile Include="SqlBrokeredStreamQueryDistributorDatabase.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Alluvial.nuspec" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\Alluvial\Alluvial.csproj">
       <Project>{04E9B45A-0459-491F-A812-31FE37237770}</Project>
       <Name>Alluvial</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Alluvial.Distributors.Sql.nuspec" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

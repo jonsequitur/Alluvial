@@ -227,13 +227,12 @@ namespace Alluvial.Tests.Distributors
         }
 
         [Test]
-        public async Task A_lease_can_be_extended()
+        public virtual async Task A_lease_can_be_extended()
         {
             var tally = new ConcurrentDictionary<string, int>();
             var scope = DateTimeOffset.UtcNow.Ticks.ToString();
             var distributor1 = CreateDistributor(scope: scope).Trace();
             var distributor2 = CreateDistributor(scope: scope).Trace();
-            var mre = new AsyncManualResetEvent();
 
             Func<Lease, Task> onReceive = async lease =>
             {
@@ -255,7 +254,6 @@ namespace Alluvial.Tests.Distributors
             distributor2.OnReceive(onReceive);
             await distributor1.Start();
             await distributor2.Start();
-            //await mre.WaitAsync().Timeout();
             await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds * 2.5));
             await distributor1.Stop();
             await distributor2.Stop();
@@ -268,7 +266,7 @@ namespace Alluvial.Tests.Distributors
         }
 
         [Test]
-        public async Task When_Extend_is_called_after_a_lease_has_expired_then_it_throws()
+        public virtual async Task When_Extend_is_called_after_a_lease_has_expired_then_it_throws()
         {
             Exception exception = null;
             var distributor = CreateDistributor().Trace();
