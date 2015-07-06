@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 namespace Alluvial
 {
     [DebuggerStepThrough]
-    [DebuggerDisplay("Take {BatchCountDescription} after {Cursor.Position}")]
+    [DebuggerDisplay("{ToString()}")]
     internal class StreamQuery<TData, TCursor> : IStreamIterator<TData, TCursor>
     {
         private readonly IStream<TData, TCursor> stream;
@@ -51,6 +51,11 @@ namespace Alluvial
 
                 return BatchCount.Value;
             }
+        }
+
+        public override string ToString()
+        {
+            return string.Format("query:take {0} after {1} from {2}", BatchCountDescription, cursor.Position, stream);
         }
     }
 }

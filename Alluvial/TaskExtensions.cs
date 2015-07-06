@@ -13,5 +13,28 @@ namespace Alluvial
             await Task.WhenAll(tasksArray);
             return tasksArray.Select(t => t.Result);
         }
+
+        public static async Task TimeoutAfter(
+            this Task task,
+            Task timeout)
+        {
+            if (task.IsCompleted)
+            {
+                return;
+            }
+
+            if (task == await Task.WhenAny(task, timeout))
+            {
+                await task;
+            }
+            else
+            {
+                throw new TimeoutException();
+            }
+        }
+    }
+
+    internal struct Unit
+    {
     }
 }

@@ -1,16 +1,19 @@
 <?xml version="1.0"?>
 <package>
   <metadata>
-    <id>Alluvial</id>
-    <title>Alluvial</title>
-    <version>0.1.10-alpha</version>
+    <id>Alluvial.Distributors.Sql</id>
+    <title>Alluvial.Distributors.Sql</title>
+    <version>0.1.0-alpha</version>
     <authors>jonsequitur</authors>
     <owners>jonsequitur</owners>
     <projectUrl>https://github.com/jonsequitur/Alluvial</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <licenseUrl>http://opensource.org/licenses/MIT</licenseUrl>
     <copyright>Copyright © 2015 Jon Sequeira</copyright>
-    <description>Treat all of your data as streams, process them sequentially, build projections and aggregations from historical and realtime data, parallelize and distribute the workload over multiple machines.</description>
+    <description>A SQL-based query distributor for Alluvial</description>
     <tags>data projections stream-processing</tags>
-  </metadata>
+    <dependencies>
+        <dependency id="Alluvial" version="[0.1.10-alpha,)" />
+    </dependencies>
+</metadata>
 </package>

@@ -39,7 +39,6 @@ namespace Alluvial.Tests
         {
             var projection = new BalanceProjection
             {
-                AggregateId = streamId,
                 Balance = 100m,
                 CursorPosition = 2
             };
@@ -58,7 +57,6 @@ namespace Alluvial.Tests
         {
             var initialProjection = new BalanceProjection
             {
-                AggregateId = streamId,
                 Balance = 321m,
                 CursorPosition = 5
             };
@@ -134,16 +132,7 @@ namespace Alluvial.Tests
                                              .OfType<FundsDeposited>()
                                              .Sum(e => e.Amount);
                 })
-                             .Pipeline(async (projection, e, next) =>
-                             {
-                                 return await next(projection ?? new BalanceProjection
-                                 {
-                                     AggregateId = e.Select(m => m.Body)
-                                                    .OfType<IDomainEvent>()
-                                                    .First()
-                                                    .AggregateId
-                                 }, e);
-                             });
+                             .Pipeline(async (projection, e, next) => await next(projection ?? new BalanceProjection(), e));
         }
     }
 }

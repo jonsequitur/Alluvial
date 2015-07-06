@@ -6,7 +6,7 @@ using System.Linq;
 namespace Alluvial
 {
     [DebuggerStepThrough]
-    [DebuggerDisplay("{Count} items starting at {StartsAtCursorPosition}")]
+    [DebuggerDisplay("{ToString()}")]
     internal class StreamBatch<TData> : IStreamBatch<TData>
     {
         private readonly TData[] results;
@@ -36,5 +36,12 @@ namespace Alluvial
         }
 
         public dynamic StartsAtCursorPosition { get; private set; }
+
+        public override string ToString()
+        {
+            return string.Format("batch: {0} items starting at {1}",
+                                 Count,
+                                 StartsAtCursorPosition);
+        }
     }
 }
