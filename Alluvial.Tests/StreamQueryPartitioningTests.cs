@@ -73,7 +73,7 @@ namespace Alluvial.Tests
                  .ContainSingle(p => p.CursorPosition == 1000);
         }
 
-        [Ignore("Still working on the distributor")]
+        [Ignore("Test not finished")]
         [Test]
         public async Task Competing_catchups_can_lease_a_partition_using_a_distributor()
         {

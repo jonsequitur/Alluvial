@@ -13,7 +13,7 @@ namespace Alluvial.Tests.Distributors
     {
         private SqlBrokeredStreamQueryDistributor distributor;
 
-        private readonly SqlBrokeredStreamQueryDistributorDatabase settings = new SqlBrokeredStreamQueryDistributorDatabase
+        private static readonly SqlBrokeredStreamQueryDistributorDatabase settings = new SqlBrokeredStreamQueryDistributorDatabase
         {
             ConnectionString = @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=AlluvialSqlDistributor"
         };
@@ -99,6 +99,13 @@ IF NOT EXISTS (SELECT * FROM [Alluvial].[Leases]
             {
                 return TimeSpan.FromSeconds(3);
             }
+        }
+
+        [TestFixtureSetUp]
+        public void TestFixtureSetUp()
+        {
+            settings.CreateDatabase().Wait();
+            settings.InitializeSchema().Wait();
         }
 
         [TearDown]
