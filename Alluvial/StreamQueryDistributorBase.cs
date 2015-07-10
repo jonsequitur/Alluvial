@@ -13,24 +13,24 @@ namespace Alluvial
         private readonly int maxDegreesOfParallelism;
         private bool stopped;
         protected readonly TimeSpan waitInterval;
-        protected readonly LeasableResource[] LeasablesResource;
+        protected readonly LeasableResource[] leasableResources;
         private int leasesHeld;
 
         protected StreamQueryDistributorBase(
-            LeasableResource[] LeasablesResource,
+            LeasableResource[] leasableResources,
             int maxDegreesOfParallelism = 5,
             TimeSpan? waitInterval = null)
         {
-            if (LeasablesResource == null)
+            if (leasableResources == null)
             {
-                throw new ArgumentNullException("LeasablesResource");
+                throw new ArgumentNullException("leasableResources");
             }
             if (maxDegreesOfParallelism <= 0)
             {
                 throw new ArgumentException("maxDegreesOfParallelism must be at least 1.");
             }
-            this.LeasablesResource = LeasablesResource;
-            this.maxDegreesOfParallelism = Math.Min(maxDegreesOfParallelism, LeasablesResource.Count());
+            this.leasableResources = leasableResources;
+            this.maxDegreesOfParallelism = Math.Min(maxDegreesOfParallelism, leasableResources.Count());
             this.waitInterval = waitInterval ?? TimeSpan.FromSeconds(.5);
         }
 

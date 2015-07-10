@@ -14,13 +14,13 @@ namespace Alluvial.Distributors.Sql
         private readonly TimeSpan defaultLeaseDuration;
 
         public SqlBrokeredStreamQueryDistributor(
-            LeasableResource[] LeasablesResource,
+            LeasableResource[] leasableResources,
             SqlBrokeredStreamQueryDistributorDatabase settings,
             string scope,
             int maxDegreesOfParallelism = 5,
             TimeSpan? waitInterval = null,
             TimeSpan? defaultLeaseDuration = null)
-            : base(LeasablesResource, maxDegreesOfParallelism, waitInterval)
+            : base(leasableResources, maxDegreesOfParallelism, waitInterval)
         {
             if (settings == null)
             {
