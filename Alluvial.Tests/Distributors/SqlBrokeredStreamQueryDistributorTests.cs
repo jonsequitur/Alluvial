@@ -104,8 +104,22 @@ IF NOT EXISTS (SELECT * FROM [Alluvial].[Leases]
         [TestFixtureSetUp]
         public void TestFixtureSetUp()
         {
-            settings.CreateDatabase().Wait();
-            settings.InitializeSchema().Wait();
+//            settings.CreateDatabase().Wait();
+//            settings.InitializeSchema().Wait();
+        }
+
+
+
+        [Test]
+        public async Task Setup()
+        {
+              settings.CreateDatabase().Wait();
+              settings.InitializeSchema().Wait();
+            
+
+
+            // FIX (Setup) write test
+            Assert.Fail("Test not written yet.");
         }
 
         [TearDown]
