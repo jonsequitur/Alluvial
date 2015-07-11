@@ -47,11 +47,38 @@ namespace Alluvial.Tests
         }
 
         [Test]
+        public async Task By_default_Aggregator_Trace_writes_exceptions_to_trace_output()
+        {
+            var aggregagator = Aggregator.Create<Projection<int, int>, string>((p, es) =>
+            {
+                throw new Exception("OUCH!");
+                return p;
+            }).Trace();
+
+            try
+            {
+                await aggregagator.Aggregate(new Projection<int, int>
+                {
+                    Value = 1
+                }, StreamBatch.Create(new[] { "hi", "there" }, Cursor.New(0)));
+            }
+            catch (Exception)
+            {
+            }
+
+            traceListener.Messages
+                         .Should()
+                         .Contain(m => m.Contains("[Aggregate] Exception:"))
+                         .And
+                         .Contain(m => m.Contains("OUCH!"));
+        }
+
+        [Test]
         public async Task By_default_Stream_Trace_writes_events_that_are_read_from_the_stream_to_trace_output()
         {
             var stream = Stream.Create<int>(q => Enumerable.Range(1, 100)
-                                                      .Skip(q.Cursor.Position)
-                                                      .Take(q.BatchCount ?? 100000))
+                                                           .Skip(q.Cursor.Position)
+                                                           .Take(q.BatchCount ?? 100000))
                                .Trace();
 
             var iterator = stream.CreateQuery(Cursor.New(15), 10);
@@ -96,9 +123,7 @@ namespace Alluvial.Tests
         {
             var store = ProjectionStore.Create<string, BalanceProjection>(
                 get: async key => null,
-                put: async (key, p) =>
-                {
-                });
+                put: async (key, p) => { });
 
             await store.Trace().Get("the-stream-id");
 
