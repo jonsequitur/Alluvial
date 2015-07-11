@@ -87,10 +87,10 @@ namespace Alluvial
             Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor = null,
             Func<ICursor<TCursor>> newCursor = null)
         {
-            return Create(string.Format("{0}({1} by {2})", typeof (TData).Name, typeof(TCursor).Name, query.GetHashCode()), 
-                query, 
-                advanceCursor, 
-                newCursor);
+            return Create(string.Format("{0}({1} by {2})", typeof (TData).Name, typeof (TCursor).Name, query.GetHashCode()),
+                          query,
+                          advanceCursor,
+                          newCursor);
         }
 
         /// <summary>
@@ -272,6 +272,24 @@ namespace Alluvial
             }
 
             return projection;
+        }
+
+        public static IStreamQueryPartitioner<TData, TCursor, TPartition> Partition<TData, TCursor, TPartition>(
+            Func<IStreamQuery<TCursor>, IStreamQueryPartition<TPartition>, Task<IEnumerable<TData>>> query, 
+            string id = null, 
+            Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor = null, 
+            Func<ICursor<TCursor>> newCursor = null)
+        {
+            return new AnonymousStreamQueryPartitioner<TData, TCursor, TPartition>(
+                id: id ?? query.GetHashCode().ToString(), // TODO: (Partition) a better default id
+                fetch: async (q, partition) =>
+                {
+                    q.BatchCount = q.BatchCount ?? StreamBatch.MaxBatchCount;
+                    var batch = await query(q, partition);
+                    return StreamBatch.Create(batch, q.Cursor);
+                },
+                advanceCursor: advanceCursor,
+                newCursor: newCursor);
         }
 
         /// <summary>

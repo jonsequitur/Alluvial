@@ -49,9 +49,7 @@ namespace Alluvial.Tests
             projectionStore.Sum(b => b.Balance)
                            .Should()
                            .Be(100);
-            projectionStore.Select(b => b.AggregateId)
-                           .Distinct()
-                           .Count()
+            projectionStore.Count()
                            .Should()
                            .Be(100);
         }
@@ -166,9 +164,7 @@ namespace Alluvial.Tests
             projectionStore.Sum(b => b.Balance)
                            .Should()
                            .Be(100);
-            projectionStore.Select(b => b.AggregateId)
-                           .Distinct()
-                           .Count()
+            projectionStore.Count()
                            .Should()
                            .Be(100);
         }
@@ -402,7 +398,6 @@ namespace Alluvial.Tests
             var balanceProjections = new InMemoryProjectionStore<BalanceProjection>();
             await balanceProjections.Put(streamId, new BalanceProjection
             {
-                AggregateId = streamId,
                 CursorPosition = 2
             });
             var catchup = StreamCatchup.Distribute(streamSource.StreamPerAggregate()
@@ -433,7 +428,6 @@ namespace Alluvial.Tests
             var accountHistoryProjections = new InMemoryProjectionStore<AccountHistoryProjection>();
             await accountHistoryProjections.Put(streamId, new AccountHistoryProjection
             {
-                AggregateId = streamId,
                 CursorPosition = 2
             });
             catchup.Subscribe(new AccountHistoryProjector(), accountHistoryProjections);
@@ -452,7 +446,6 @@ namespace Alluvial.Tests
             var streamId = "hello";
             var projection = new BalanceProjection
             {
-                AggregateId = streamId,
                 CursorPosition = 1
             };
 

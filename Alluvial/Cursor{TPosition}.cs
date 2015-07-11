@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace Alluvial
 {
-    [DebuggerDisplay("Position: {Position}")]
+    [DebuggerDisplay("{ToString()}")]
     internal class Cursor<T> : ICursor<T>
     {
         private static readonly Func<Cursor<T>, T, bool> hasCursorReached;
@@ -50,5 +50,10 @@ namespace Alluvial
         }
 
         public virtual T Position { get; protected set; }
+
+        public override string ToString()
+        {
+            return string.Format("@{0}", Position);
+        }
     }
 }

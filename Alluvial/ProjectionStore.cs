@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using trace = System.Diagnostics.Trace;
 
-namespace Alluvial.Tests
+namespace Alluvial
 {
     /// <summary>
     /// Methods for working with projection stores.

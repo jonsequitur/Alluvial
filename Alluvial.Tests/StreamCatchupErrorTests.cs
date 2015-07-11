@@ -64,7 +64,7 @@ namespace Alluvial.Tests
             var projections = new InMemoryProjectionStore<BalanceProjection>();
 
             // first catch up all the projections
-            IStream<IStream<IDomainEvent, int>, string> stream = streamSource.StreamPerAggregate().Trace();
+            var stream = streamSource.StreamPerAggregate().Trace();
             var catchup = StreamCatchup.Distribute(stream);
             var initialSubscription = catchup.Subscribe(new BalanceProjector(), projections);
             await catchup.RunUntilCaughtUp();
@@ -82,7 +82,8 @@ namespace Alluvial.Tests
             catchup.Subscribe(new BalanceProjector()
                                   .Pipeline(async (projection, batch, next) =>
                                   {
-                                      if (streamIdsWithErrors.Contains(projection.AggregateId))
+                                      var aggregateId = batch.Select(i => i.AggregateId).First();
+                                      if (streamIdsWithErrors.Contains(aggregateId))
                                       {
                                           throw new Exception("oops");
                                       }
