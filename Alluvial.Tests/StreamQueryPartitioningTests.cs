@@ -4,6 +4,7 @@ using FluentAssertions;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
+using Alluvial.Distributors;
 using NUnit.Framework;
 
 namespace Alluvial.Tests
@@ -13,12 +14,13 @@ namespace Alluvial.Tests
     {
         private int[] ints;
         private IStreamQueryPartitioner<int, int, int> partitioner;
+        private CompositeDisposable disposables;
 
         [SetUp]
         public void SetUp()
         {
             ints = Enumerable.Range(1, 1000).ToArray();
-
+            disposables = new CompositeDisposable();
             partitioner = Stream
                 .Partition<int, int, int>(async (q, p) => ints
                                               .Where(i => i > p.LowerBoundExclusive &&
@@ -80,31 +82,40 @@ namespace Alluvial.Tests
             var partitions = Enumerable.Range(0, 9)
                                        .Select(i => StreamQuery.Partition(i*100, (i + 1)*100))
                                        .ToArray();
-            var subscriptions = new CompositeDisposable();
 
             var store = new InMemoryProjectionStore<Projection<HashSet<int>, int>>();
 
             var aggregator = Aggregator.CreateFor<HashSet<int>, int>((p, xs) =>
             {
+                if (p.Value == null)
+                {
+                    p.Value = new HashSet<int>();
+                }
+
                 foreach (var x in xs)
                 {
                     p.Value.Add(x);
                 }
-            });
+            }).Trace();
 
             // set up 10 competing catchups
             for (var i = 0; i < 10; i++)
             {
-                using (subscriptions)
+                var distributor = new InMemoryStreamQueryDistributor(
+                    partitions.Select(p => new LeasableResource(p.ToString(), TimeSpan.FromSeconds(10))).ToArray(), "")
+                    .Trace();
+
+                distributor.OnReceive(async lease =>
                 {
-//                    var s = partitions.Distribute(async p =>
-//                    {
-//                        var catchup = StreamCatchup.Create(await partitioner.GetStream(p));
-//                        catchup.Subscribe(aggregator, store);
-//                        await catchup.RunSingleBatch();
-//                    });
-//                    subscriptions.Add(s);
-                }
+                    var partition = partitions.Single(p => p.ToString() == lease.LeasableResource.Name);
+                    var catchup = StreamCatchup.Create(await partitioner.GetStream(partition));
+                    catchup.Subscribe(aggregator, store.Trace());
+                    await catchup.RunSingleBatch();
+                });
+
+                distributor.Start();
+
+                disposables.Add(distributor);
             }
 
             partitions.ToList()
@@ -115,7 +126,4 @@ namespace Alluvial.Tests
                                                            p.Value.OrderBy(i => i).Last() == partition.UpperBoundInclusive));
         }
     }
-
-    
-    
 }
