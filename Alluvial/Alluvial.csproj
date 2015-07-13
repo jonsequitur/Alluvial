@@ -37,6 +37,8 @@
     <Reference Include="System.Core" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AggregateAsync{TProjection,TData}.cs" />
@@ -52,6 +54,7 @@
     <Compile Include="Distributors\Lease.cs" />
     <Compile Include="InMemoryStreamQueryDistributor.cs" />
     <Compile Include="IStreamQueryDistributor.cs" />
+    <Compile Include="SqlGuidPartitioner.cs" />
     <Compile Include="StreamQueryDistributor.cs" />
     <Compile Include="StreamQueryDistributorBase.cs" />
     <Compile Include="IStreamQueryPartitioner{TData,TCursor,TPartition}.cs" />
