@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Data.SqlTypes;
-using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 
-namespace Alluvial
+namespace Alluvial.PartitionBuilders
 {
-    public static class SqlGuidPartitioner
+    internal static class SqlGuidPartitionBuilder
     {
+        // this is the byte order in which SQL guids are evaluated for sorting
         private static readonly byte[] byteOrder =
         {
             // group 1
@@ -34,14 +34,16 @@ namespace Alluvial
             10,
         };
 
-        public static readonly BigInteger MaxSigned128BitBigInt;
-        public static readonly BigInteger MaxUnsigned128BitBigInt;
+        // the max signed int that will fit into a guid
+        internal static readonly BigInteger MaxSigned128BitBigInt;
 
-        static SqlGuidPartitioner()
+        // the max unsigned int that will fit into a guid
+        internal static readonly BigInteger MaxUnsigned128BitBigInt;
+
+        static SqlGuidPartitionBuilder()
         {
             MaxSigned128BitBigInt = BigInteger.Parse("170141183460469231731687303715884105727");
-            MaxUnsigned128BitBigInt = (MaxSigned128BitBigInt * 2);
-            Debug.WriteLine(new  { MaxUnsigned128BitBigInt });
+            MaxUnsigned128BitBigInt = (MaxSigned128BitBigInt*2);
         }
 
         public static IEnumerable<Guid> OrderBySqlServer(this IEnumerable<Guid> source)
@@ -49,7 +51,10 @@ namespace Alluvial
             return source.OrderBy(g => new SqlGuid(g));
         }
 
-        public static BigInteger ToBigInteger(this Guid guid)
+        /// <summary>
+        /// Transforms a Guid into a naturally-sortable unsigned integer according to SQL server sort order
+        /// </summary>
+        internal static BigInteger ToBigInteger(this Guid guid)
         {
             var bytes = guid.ToByteArray();
 
@@ -74,14 +79,17 @@ namespace Alluvial
                     bytes[byteOrder[15]],
                 });
 
-            value = Sortify(value);
+            value = ShiftNegativeToUnsigned(value);
 
             return value;
         }
 
-        public static Guid ToGuid(this BigInteger value)
+        /// <summary>
+        /// Transforms an unsigned integer into a Guid with a corresponding sort order per SQL Server's Guid sorting algorithm.
+        /// </summary>
+        internal static Guid ToGuid(this BigInteger value)
         {
-            var bytes = value.Unsortify().ToByteArray();
+            var bytes = value.ShiftUnsignedToNegative().ToByteArray();
 
             if (bytes.Length > 16)
             {
@@ -127,7 +135,10 @@ namespace Alluvial
             return new Guid(bytes);
         }
 
-        public static BigInteger Sortify(this BigInteger value)
+        /// <summary>
+        /// Shifts a negative number to an unsigned number of higher value than <see cref="MaxSigned128BitBigInt" />, such that -1 becomes <see cref="MaxUnsigned128BitBigInt" />.
+        /// </summary>
+        internal static BigInteger ShiftNegativeToUnsigned(this BigInteger value)
         {
             if (value < 0)
             {
@@ -137,7 +148,10 @@ namespace Alluvial
             return value;
         }
 
-        public static BigInteger Unsortify(this BigInteger value)
+        /// <summary>
+        /// Shifts an unsigned value higher than <see cref="MaxSigned128BitBigInt" /> into its negative complement.
+        /// </summary>
+        internal static BigInteger ShiftUnsignedToNegative(this BigInteger value)
         {
             if (value > MaxSigned128BitBigInt)
             {
@@ -145,6 +159,37 @@ namespace Alluvial
             }
 
             return value;
+        }
+
+        internal class Builder
+        {
+            public IEnumerable<IStreamQueryPartition<Guid>> Build(
+                Guid lowerBoundExclusive,
+                Guid upperBoundInclusive,
+                int numberOfPartitions)
+            {
+                var upperBigIntInclusive = upperBoundInclusive.ToBigInteger();
+                var lowerBigIntExclusive = lowerBoundExclusive.ToBigInteger();
+                var space = upperBigIntInclusive - lowerBigIntExclusive;
+
+                foreach (var i in Enumerable.Range(0, numberOfPartitions))
+                {
+                    var lower = lowerBigIntExclusive + (i*(space/numberOfPartitions));
+
+                    var upper = lowerBigIntExclusive + ((i + 1)*(space/numberOfPartitions));
+
+                    if (i == numberOfPartitions - 1)
+                    {
+                        upper = upperBigIntInclusive;
+                    }
+
+                    yield return new StreamQueryPartition<Guid>
+                    {
+                        LowerBoundExclusive = lower.ToGuid(),
+                        UpperBoundInclusive = upper.ToGuid()
+                    };
+                }
+            }
         }
     }
 }

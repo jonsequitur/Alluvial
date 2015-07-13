@@ -54,7 +54,10 @@
     <Compile Include="Distributors\Lease.cs" />
     <Compile Include="InMemoryStreamQueryDistributor.cs" />
     <Compile Include="IStreamQueryDistributor.cs" />
-    <Compile Include="SqlGuidPartitioner.cs" />
+    <Compile Include="PartitionBuilders\BigIntegerPartitionBuilder.cs" />
+    <Compile Include="PartitionBuilders\Int32PartitionBuilder.cs" />
+    <Compile Include="PartitionBuilders\Int64PartitionBuilder.cs" />
+    <Compile Include="PartitionBuilders\SqlGuidPartitionBuilder.cs" />
     <Compile Include="StreamQueryDistributor.cs" />
     <Compile Include="StreamQueryDistributorBase.cs" />
     <Compile Include="IStreamQueryPartitioner{TData,TCursor,TPartition}.cs" />
@@ -107,6 +110,7 @@
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

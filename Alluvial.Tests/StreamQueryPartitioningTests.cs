@@ -137,6 +137,11 @@ namespace Alluvial.Tests
             var totalNumberOfGuids = 1000;
             var numberOfPartitions = 50;
 
+            var partitions = StreamQuery.Partition(
+                Guid.Empty,
+                Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff"))
+                                        .Among(numberOfPartitions);
+
             var guids = Enumerable.Range(1, totalNumberOfGuids).Select(_ => Guid.NewGuid()).ToArray();
 
             var partitioner = Stream.Partition<Guid, int, Guid>(
@@ -157,11 +162,6 @@ namespace Alluvial.Tests
                 }
             });
             var store = new InMemoryProjectionStore<Projection<HashSet<Guid>, int>>();
-
-            var partitions = StreamQuery.Partition(
-                Guid.Empty,
-                Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff"))
-                                        .Among(numberOfPartitions);
 
             await Task.WhenAll(partitions.Select(async partition =>
             {

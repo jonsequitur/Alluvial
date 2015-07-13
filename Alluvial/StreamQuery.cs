@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
+using Alluvial.PartitionBuilders;
 
 namespace Alluvial
 {
@@ -46,12 +47,16 @@ namespace Alluvial
             };
         }
 
-        public static IEnumerable<IStreamQueryPartition<TPartition>> Among<TPartition>(this IStreamQueryPartition<TPartition> partition,
-                                                                                       int numberOfPartitions)
+        /// <summary>
+        /// Splits a query partition into several smaller, non-overlapping, gapless partitions.
+        /// </summary>
+        public static IEnumerable<IStreamQueryPartition<TPartition>> Among<TPartition>(
+            this IStreamQueryPartition<TPartition> partition,
+            int numberOfPartitions)
         {
             if (typeof (TPartition) == typeof (Guid))
             {
-                return (IEnumerable<IStreamQueryPartition<TPartition>>) new GuidPartitionBuilder().Build(
+                return (IEnumerable<IStreamQueryPartition<TPartition>>) new SqlGuidPartitionBuilder.Builder().Build(
                     (dynamic) partition.LowerBoundExclusive,
                     (dynamic) partition.UpperBoundInclusive,
                     numberOfPartitions);
@@ -64,7 +69,7 @@ namespace Alluvial
                     (dynamic) partition.UpperBoundInclusive,
                     numberOfPartitions);
             }
-            
+
             if (typeof (TPartition) == typeof (long))
             {
                 return (IEnumerable<IStreamQueryPartition<TPartition>>) new Int64PartitionBuilder().Build(
@@ -73,127 +78,15 @@ namespace Alluvial
                     numberOfPartitions);
             }
 
-            // TODO: (Among) make this expandable
+            if (typeof (TPartition) == typeof (BigInteger))
+            {
+                return (IEnumerable<IStreamQueryPartition<TPartition>>) new BigIntegerPartitionBuilder().Build(
+                    (dynamic) partition.LowerBoundExclusive,
+                    (dynamic) partition.UpperBoundInclusive,
+                    numberOfPartitions);
+            }
 
             throw new ArgumentException("Partitions of type {0} cannot be generated dynamically.");
-        }
-    }
-
-    internal class GuidPartitionBuilder
-    {
-        public IEnumerable<IStreamQueryPartition<Guid>> Build(
-            Guid lowerBoundExclusive,
-            Guid upperBoundInclusive,
-            int numberOfPartitions)
-        {
-            var upperBigIntInclusive = upperBoundInclusive.ToBigInteger();
-            var lowerBigIntExclusive = lowerBoundExclusive.ToBigInteger();
-            var space = upperBigIntInclusive - lowerBigIntExclusive;
-
-            foreach (var i in Enumerable.Range(0, numberOfPartitions))
-            {
-                var lower = lowerBigIntExclusive + (i*(space/numberOfPartitions));
-
-                var upper = lowerBigIntExclusive + ((i + 1)*(space/numberOfPartitions));
-
-                if (i == numberOfPartitions - 1)
-                {
-                    upper = upperBigIntInclusive;
-                }
-
-                yield return new StreamQueryPartition<Guid>
-                {
-                    LowerBoundExclusive = lower.ToGuid(),
-                    UpperBoundInclusive = upper.ToGuid()
-                };
-            }
-        }
-    }
-
-    internal class Int32PartitionBuilder
-    {
-        public IEnumerable<IStreamQueryPartition<Int32>> Build(
-            Int32 lowerBoundExclusive,
-            Int32 upperBoundInclusive,
-            int numberOfPartitions)
-        {
-            var space = upperBoundInclusive - lowerBoundExclusive;
-
-            foreach (var i in Enumerable.Range(0, numberOfPartitions))
-            {
-                var lower = lowerBoundExclusive + (i*(space/numberOfPartitions));
-
-                var upper = lowerBoundExclusive + ((i + 1)*(space/numberOfPartitions));
-
-                if (i == numberOfPartitions - 1)
-                {
-                    upper = upperBoundInclusive;
-                }
-
-                yield return new StreamQueryPartition<Int32>
-                {
-                    LowerBoundExclusive = lower,
-                    UpperBoundInclusive = upper
-                };
-            }
-        }
-    }
-
-    internal class Int64PartitionBuilder
-    {
-        public IEnumerable<IStreamQueryPartition<Int64>> Build(
-            Int64 lowerBoundExclusive,
-            Int64 upperBoundInclusive,
-            int numberOfPartitions)
-        {
-            var space = upperBoundInclusive - lowerBoundExclusive;
-
-            foreach (var i in Enumerable.Range(0, numberOfPartitions))
-            {
-                var lower = lowerBoundExclusive + (i*(space/numberOfPartitions));
-
-                var upper = lowerBoundExclusive + ((i + 1)*(space/numberOfPartitions));
-
-                if (i == numberOfPartitions - 1)
-                {
-                    upper = upperBoundInclusive;
-                }
-
-                yield return new StreamQueryPartition<Int64>
-                {
-                    LowerBoundExclusive = lower,
-                    UpperBoundInclusive = upper
-                };
-            }
-        }
-    }
-
-    internal class BigIntegerPartitionBuilder
-    {
-        public IEnumerable<IStreamQueryPartition<BigInteger>> Build(
-            BigInteger lowerBoundExclusive,
-            BigInteger upperBoundInclusive,
-            int numberOfPartitions)
-        {
-            var space = upperBoundInclusive - lowerBoundExclusive;
-
-            foreach (var i in Enumerable.Range(0, numberOfPartitions))
-            {
-                var lower = lowerBoundExclusive + (i*(space/numberOfPartitions));
-
-                var upper = lowerBoundExclusive + ((i + 1)*(space/numberOfPartitions));
-
-                if (i == numberOfPartitions - 1)
-                {
-                    upper = upperBoundInclusive;
-                }
-
-                yield return new StreamQueryPartition<BigInteger>
-                {
-                    LowerBoundExclusive = lower,
-                    UpperBoundInclusive = upper
-                };
-            }
         }
     }
 }
