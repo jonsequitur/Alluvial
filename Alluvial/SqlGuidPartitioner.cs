@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.SqlTypes;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 
@@ -32,6 +33,16 @@ namespace Alluvial
             11,
             10,
         };
+
+        public static readonly BigInteger MaxSigned128BitBigInt;
+        public static readonly BigInteger MaxUnsigned128BitBigInt;
+
+        static SqlGuidPartitioner()
+        {
+            MaxSigned128BitBigInt = BigInteger.Parse("170141183460469231731687303715884105727");
+            MaxUnsigned128BitBigInt = (MaxSigned128BitBigInt * 2);
+            Debug.WriteLine(new  { MaxUnsigned128BitBigInt });
+        }
 
         public static IEnumerable<Guid> OrderBySqlServer(this IEnumerable<Guid> source)
         {
@@ -82,7 +93,7 @@ namespace Alluvial
                 return Guid.Empty;
             }
 
-            var extreme = value > 0 ? byte.MinValue : byte.MaxValue;
+            var extreme = value <= MaxSigned128BitBigInt ? byte.MinValue : byte.MaxValue;
 
             bytes = new[]
             {
@@ -120,8 +131,7 @@ namespace Alluvial
         {
             if (value < 0)
             {
-                value = (Max128BitBigInt*2) + 1 + value;
-                return value;
+                value = (MaxSigned128BitBigInt*2) + value + 1;
             }
 
             return value;
@@ -129,15 +139,12 @@ namespace Alluvial
 
         public static BigInteger Unsortify(this BigInteger value)
         {
-            if (value > Max128BitBigInt)
+            if (value > MaxSigned128BitBigInt)
             {
-                value = (value) - 1 - (Max128BitBigInt*2);
-                return value;
+                value = (value) - 1 - (MaxSigned128BitBigInt*2);
             }
 
             return value;
         }
-
-        public static readonly BigInteger Max128BitBigInt = BigInteger.Parse("170141183460469231731687303715884105727");
     }
 }

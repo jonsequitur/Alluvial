@@ -6,7 +6,6 @@ using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
 using Alluvial.Distributors;
-using Its.Log.Instrumentation;
 using NUnit.Framework;
 
 namespace Alluvial.Tests
@@ -135,7 +134,7 @@ namespace Alluvial.Tests
         [Test]
         public async Task GuidQueryPartitioner_partitions_guids_fairly()
         {
-            var totalNumberOfGuids = 100000;
+            var totalNumberOfGuids = 1000;
             var numberOfPartitions = 50;
 
             var guids = Enumerable.Range(1, totalNumberOfGuids).Select(_ => Guid.NewGuid()).ToArray();
@@ -146,8 +145,18 @@ namespace Alluvial.Tests
                                      new SqlGuid(g).CompareTo(new SqlGuid(p.UpperBoundInclusive)) <= 0),
                 advanceCursor: (q, b) => q.Cursor.AdvanceTo(totalNumberOfGuids));
 
-            var aggregator = Aggregator.Create<Projection<int, int>, Guid>((p, b) => { p.Value += b.Count; });
-            var store = new InMemoryProjectionStore<Projection<int, int>>();
+            var aggregator = Aggregator.Create<Projection<HashSet<Guid>, int>, Guid>((p, b) =>
+            {
+                if (p.Value == null)
+                {
+                    p.Value = new HashSet<Guid>();
+                }
+                foreach (var guid in b)
+                {
+                    p.Value.Add(guid);
+                }
+            });
+            var store = new InMemoryProjectionStore<Projection<HashSet<Guid>, int>>();
 
             var partitions = StreamQuery.Partition(
                 Guid.Empty,
@@ -158,18 +167,34 @@ namespace Alluvial.Tests
             {
                 var stream = await partitioner.GetStream(partition);
 
-                var catchup = StreamCatchup.Create(stream);
+                var catchup = StreamCatchup.Create(stream, batchCount: int.MaxValue);
                 catchup.Subscribe(aggregator, store);
                 await catchup.RunSingleBatch();
+                await Task.Delay(500);
 
-                Console.WriteLine(partition + ": " + await store.Get(stream.Id));
+                var projection = await store.Get(stream.Id);
+                Console.WriteLine(partition + ": " + projection.Value.Count);
             }));
 
             var approximateGuidsPerPartition = totalNumberOfGuids/numberOfPartitions;
-            var tolerance = 120;
+            var tolerance = (int) (totalNumberOfGuids*.12);
 
-            store.ToList().ForEach(p => { p.Value.Should().BeInRange(approximateGuidsPerPartition - tolerance, approximateGuidsPerPartition + tolerance); });
-            store.Sum(p => p.Value).Should().Be(totalNumberOfGuids);
+            Console.WriteLine("\nMissing guids: ");
+            foreach (var guid in guids.Where(g => !store.Any(p => p.Value.Contains(g))))
+            {
+                Console.WriteLine("     " + guid);
+            }
+
+            store.Sum(p => p.Value.Count).Should().Be(totalNumberOfGuids);
+
+            store.ToList().ForEach(projection =>
+            {
+                projection.Value
+                          .Count
+                          .Should()
+                          .BeInRange(approximateGuidsPerPartition - tolerance,
+                                     approximateGuidsPerPartition + tolerance);
+            });
         }
 
         [Test]

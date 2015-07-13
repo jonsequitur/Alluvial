@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using FluentAssertions;
 using System.Linq;
 using System.Numerics;
@@ -55,53 +56,51 @@ namespace Alluvial.Tests
         [Test]
         public async Task GuidConverter_can_round_trip_random_guids_correctly()
         {
-            Enumerable.Range(1, 100000)
-                      .ToList()
-                      .ForEach(_ =>
-                      {
-                          Guid guid = Guid.NewGuid();
-                          BigInteger bigInteger;
-                          bigInteger = guid.ToBigInteger();
-                          try
-                          {
-                              bigInteger.ToGuid().Should().Be(guid);
-                          }
-                          catch (Exception exception)
-                          {
-                              Console.WriteLine(exception);
-                              Console.WriteLine(new
-                              {
-                                  bigInteger,
-                                  diff = bigInteger - SqlGuidPartitioner.Max128BitBigInt
-                              });
-                              throw;
-                          }
-                      });
+            var list = Enumerable.Range(1, 10000).Select(_ => Guid.NewGuid()).ToList();
+
+            var roundTripped = list.Select(guid =>
+            {
+                var bigInteger = guid.ToBigInteger();
+                var guidAgain = bigInteger.ToGuid();
+                return guidAgain;
+            }).ToList();
+
+            var missingGuids = list.Where(guid => !roundTripped.Contains(guid)).ToList();
+
+            Console.WriteLine(missingGuids.ToLogString());
+
+            missingGuids.Count.Should().Be(0);
         }
 
         [Test]
         public async Task GuidConverter_can_round_trip_interesting_guids_correctly()
         {
             sqlServerSortedGuids
-                .Reverse()
                 .ToList()
-                .ForEach(TestGuid);
+                .ForEach(TestGuidRoundTrip);
 
             sqlServerSortedGuids
                 .Select(g => Guid.Parse(g.ToString().Replace("01", "ff")))
-                .Reverse()
                 .ToList()
-                .ForEach(TestGuid);
+                .ForEach(TestGuidRoundTrip);
 
             sqlServerSortedGuids
                 .Select(g => Guid.Parse(g.ToString().Replace("00", "ff")))
-                .Reverse()
                 .ToList()
-                .ForEach(TestGuid);
+                .ForEach(TestGuidRoundTrip);
+        }
 
-            TestGuid(Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff"));
+        [Test]
+        public async Task GuidConverter_can_round_trip_max_guid_correctly()
+        {
+            var maxGuid = Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff");
+            TestGuidRoundTrip(maxGuid);
+        }
 
-            TestGuid(Guid.Empty);
+        [Test]
+        public async Task GuidConverter_can_round_trip_empty_guid_correctly()
+        {
+            TestGuidRoundTrip(Guid.Empty);
         }
 
         [Test]
@@ -155,12 +154,6 @@ namespace Alluvial.Tests
                     .BeInAscendingOrder();
         }
 
-        private static void TestGuid(Guid guid)
-        {
-            Console.WriteLine(guid);
-            guid.ToBigInteger().ToGuid().Should().Be(guid);
-        }
-
         [Test]
         public async Task Sortify_and_Unsortify_are_complementary()
         {
@@ -171,6 +164,8 @@ namespace Alluvial.Tests
                 new BigInteger(1000),
                 new BigInteger(-1),
                 new BigInteger(-1000),
+                SqlGuidPartitioner.MaxSigned128BitBigInt - 1,
+                SqlGuidPartitioner.MaxSigned128BitBigInt
             };
 
             foreach (var bigInteger in bigInts)
@@ -180,76 +175,75 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task Find_max_guid()
+        public async Task Unsortify_shifts_max_guid_to_negative_1()
         {
-            Console.WriteLine(SqlGuidPartitioner.Max128BitBigInt.ToGuid());
-
-            var big = SqlGuidPartitioner.Max128BitBigInt + 1;
-
-            Console.WriteLine(big.ToGuid());
-
-            // FIX (Find_max_guid) write test
-            Assert.Fail("Test not written yet.");
+            var maxGuid = Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff");
+            maxGuid.ToBigInteger().Unsortify().Should().Be(-1);
         }
 
         [Test]
-        public async Task find_max_int()
+        public async Task Sortify_treats_negative_1_as_the_max_unsigned_value()
         {
-            var guids = new[]
-            {
+            var bigInteger = new BigInteger(-1)
+                .Sortify();
+
+            bigInteger
+                .Should()
+                .Be(SqlGuidPartitioner.MaxUnsigned128BitBigInt);
+        }
+
+
+
+        [Test]
+        public async Task Max_unsigned_integer_guidifies_as_max_guid()
+        {
+            SqlGuidPartitioner.MaxUnsigned128BitBigInt
+                              .ToGuid()
+                              .Should()
+                              .Be(Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff"));
+        }
+
+        [Test]
+        public async Task Sortify_treats_negative_max_unsigned_as_the_max_signed_value_plus_1()
+        {
+            (new BigInteger(0) - SqlGuidPartitioner.MaxSigned128BitBigInt)
+                .Sortify()
+                .Should()
+                .Be(SqlGuidPartitioner.MaxSigned128BitBigInt + 1);
+        }
+
+        [Test]
+        public async Task Guid_partitions_as_integers_are_gapless()
+        {
+            int numberOfPartitions = 1000;
+
+            var partitions = StreamQuery.Partition(
                 Guid.Empty,
-                Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff"),
-                Guid.Parse("00ffffff-ffff-ffff-ffff-ffffffffffff"),
-                Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffff00"),
-                Guid.Parse("ffffffff-ffff-ffff-ffff-fffffffffff0"),
-                Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffff01"),
-                Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffff0f"),
-                Guid.Parse("ffffffff-ffff-ffff-ffff-fffffffffffe"),
-                Guid.Parse("00000000-ffff-ffff-ffff-ffffffffffff"),
-                Guid.Parse("ffffffff-0000-ffff-ffff-ffffffffffff"),
-                Guid.Parse("ffffffff-ffff-0000-ffff-ffffffffffff"),
-                Guid.Parse("ffffffff-ffff-ffff-0000-ffffffffffff"),
-                Guid.Parse("ffffffff-ffff-ffff-ffff-000000000000")
-            }.OrderBySqlServer();
+                Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff"))
+                                        .Among(numberOfPartitions)
+                                        .ToArray();
 
-            var ints = guids
-                .Select(g => g.ToBigInteger())
-                .ToArray();
-
-            foreach (var bigInt in ints)
+            for (int i = 0; i < numberOfPartitions - 1; i++)
             {
-                Console.WriteLine(new { bigInt, guid = bigInt.ToGuid() });
+                var firstPartition = partitions[i];
+                var secondPartition = partitions[i + 1];
+
+                firstPartition.LowerBoundExclusive.Should().NotBe(firstPartition.UpperBoundInclusive);
+
+                firstPartition.UpperBoundInclusive
+                              .Should()
+                              .Be(secondPartition.LowerBoundExclusive);
+
+                firstPartition.UpperBoundInclusive.ToBigInteger()
+                              .Should()
+                              .Be(secondPartition.LowerBoundExclusive.ToBigInteger());
             }
+        }
 
-            var start = BigInteger.Parse("308276084001730439550074881");
-            var realBig = BigInteger.Pow(2, 127) - 1;
-
-            Console.WriteLine("long.MaxValue = " + long.MaxValue);
-
-            Console.WriteLine(new
-            {
-                realBig,
-                bytes = realBig.ToByteArray().Length
-            }
-                );
-
-            var guid = Guid.Empty;
-
-            for (var i = 0; i < 100; i++)
-            {
-                var value = (start + i);
-
-                try
-                {
-                    guid = value.ToGuid();
-                    Console.WriteLine(new { value, guid });
-                }
-                catch (Exception exception)
-                {
-                    Console.WriteLine(exception);
-                    Console.WriteLine(new { value, guid });
-                }
-            }
+        private static void TestGuidRoundTrip(Guid guid)
+        {
+            Console.WriteLine(guid);
+            guid.ToBigInteger().ToGuid().Should().Be(guid);
         }
     }
 }
