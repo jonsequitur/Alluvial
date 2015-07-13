@@ -14,13 +14,13 @@ namespace Alluvial.Distributors.Sql
         private readonly TimeSpan defaultLeaseDuration;
 
         public SqlBrokeredStreamQueryDistributor(
-            LeasableResource[] LeasablesResource,
+            LeasableResource[] leasableResources,
             SqlBrokeredStreamQueryDistributorDatabase settings,
             string scope,
             int maxDegreesOfParallelism = 5,
             TimeSpan? waitInterval = null,
             TimeSpan? defaultLeaseDuration = null)
-            : base(LeasablesResource, maxDegreesOfParallelism, waitInterval)
+            : base(leasableResources, maxDegreesOfParallelism, waitInterval)
         {
             if (settings == null)
             {
@@ -57,7 +57,9 @@ namespace Alluvial.Distributors.Sql
                         var leaseLastReleased = await reader.GetFieldValueAsync<dynamic>(3);
                         var token = await reader.GetFieldValueAsync<dynamic>(5);
 
-                        var resource = new LeasableResource(resourceName, defaultLeaseDuration)
+                        var resource = new LeasableResource(
+                            resourceName,
+                            defaultLeaseDuration)
                         {
                             LeaseLastGranted = leaseLastGranted is DBNull
                                 ? DateTimeOffset.MinValue
@@ -67,13 +69,33 @@ namespace Alluvial.Distributors.Sql
                                 : (DateTimeOffset) leaseLastReleased
                         };
 
-                        return new Lease(resource,
-                                         resource.DefaultLeaseDuration,
-                                         token);
+                        Lease lease = null;
+                        lease = new Lease(resource,
+                                          resource.DefaultLeaseDuration,
+                                          (int) token,
+                                          extend: by => ExtendLease(lease, @by));
+                        return lease;
                     }
                 }
 
                 return null;
+            }
+        }
+
+        private async Task ExtendLease(Lease lease, TimeSpan by)
+        {
+            using (var connection = new SqlConnection(settings.ConnectionString))
+            {
+                await connection.OpenAsync();
+
+                var cmd = connection.CreateCommand();
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.CommandText = @"Alluvial.ExtendLease";
+                cmd.Parameters.AddWithValue(@"@resourceName", lease.LeasableResource.Name);
+                cmd.Parameters.AddWithValue(@"@byMilliseconds", by.TotalMilliseconds);
+                cmd.Parameters.AddWithValue(@"@token", (int) lease.OwnerToken);
+
+                await cmd.ExecuteNonQueryAsync();
             }
         }
 

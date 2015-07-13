@@ -2,7 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading.Tasks;
+using System.Numerics;
+using Alluvial.PartitionBuilders;
 
 namespace Alluvial
 {
@@ -32,18 +33,60 @@ namespace Alluvial
         /// Creates a stream query partition having the specified boundaries.
         /// </summary>
         /// <typeparam name="TPartition">The type of the partition boundaries.</typeparam>
-        /// <param name="lowerBound">The lower, exclusive boundary.</param>
-        /// <param name="upperBound">The upper, inclusive boundary.</param>
+        /// <param name="lowerBoundExclusive">The lower, exclusive boundary.</param>
+        /// <param name="upperBoundInclusive">The upper, inclusive boundary.</param>
         /// <returns></returns>
         public static IStreamQueryPartition<TPartition> Partition<TPartition>(
-            TPartition lowerBound,
-            TPartition upperBound)
+            TPartition lowerBoundExclusive,
+            TPartition upperBoundInclusive)
         {
             return new StreamQueryPartition<TPartition>
             {
-                LowerBoundExclusive = lowerBound,
-                UpperBoundInclusive = upperBound
+                LowerBoundExclusive = lowerBoundExclusive,
+                UpperBoundInclusive = upperBoundInclusive
             };
+        }
+
+        /// <summary>
+        /// Splits a query partition into several smaller, non-overlapping, gapless partitions.
+        /// </summary>
+        public static IEnumerable<IStreamQueryPartition<TPartition>> Among<TPartition>(
+            this IStreamQueryPartition<TPartition> partition,
+            int numberOfPartitions)
+        {
+            if (typeof (TPartition) == typeof (Guid))
+            {
+                return (IEnumerable<IStreamQueryPartition<TPartition>>) new SqlGuidPartitionBuilder.Builder().Build(
+                    (dynamic) partition.LowerBoundExclusive,
+                    (dynamic) partition.UpperBoundInclusive,
+                    numberOfPartitions);
+            }
+
+            if (typeof (TPartition) == typeof (int))
+            {
+                return (IEnumerable<IStreamQueryPartition<TPartition>>) new Int32PartitionBuilder().Build(
+                    (dynamic) partition.LowerBoundExclusive,
+                    (dynamic) partition.UpperBoundInclusive,
+                    numberOfPartitions);
+            }
+
+            if (typeof (TPartition) == typeof (long))
+            {
+                return (IEnumerable<IStreamQueryPartition<TPartition>>) new Int64PartitionBuilder().Build(
+                    (dynamic) partition.LowerBoundExclusive,
+                    (dynamic) partition.UpperBoundInclusive,
+                    numberOfPartitions);
+            }
+
+            if (typeof (TPartition) == typeof (BigInteger))
+            {
+                return (IEnumerable<IStreamQueryPartition<TPartition>>) new BigIntegerPartitionBuilder().Build(
+                    (dynamic) partition.LowerBoundExclusive,
+                    (dynamic) partition.UpperBoundInclusive,
+                    numberOfPartitions);
+            }
+
+            throw new ArgumentException("Partitions of type {0} cannot be generated dynamically.");
         }
     }
 }

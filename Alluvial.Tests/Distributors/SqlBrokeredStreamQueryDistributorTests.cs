@@ -13,7 +13,7 @@ namespace Alluvial.Tests.Distributors
     {
         private SqlBrokeredStreamQueryDistributor distributor;
 
-        private readonly SqlBrokeredStreamQueryDistributorDatabase settings = new SqlBrokeredStreamQueryDistributorDatabase
+        private static readonly SqlBrokeredStreamQueryDistributorDatabase settings = new SqlBrokeredStreamQueryDistributorDatabase
         {
             ConnectionString = @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=AlluvialSqlDistributor"
         };
@@ -101,16 +101,11 @@ IF NOT EXISTS (SELECT * FROM [Alluvial].[Leases]
             }
         }
 
-        [Ignore("Extend not working yet for SQL distributor")]
-        public override Task A_lease_can_be_extended()
+        [TestFixtureSetUp]
+        public void TestFixtureSetUp()
         {
-            return base.A_lease_can_be_extended();
-        }
-
-        [Ignore("Extend not working yet for SQL distributor")]
-        public override Task When_Extend_is_called_after_a_lease_has_expired_then_it_throws()
-        {
-            return base.When_Extend_is_called_after_a_lease_has_expired_then_it_throws();
+            settings.CreateDatabase().Wait();
+            settings.InitializeSchema().Wait();
         }
 
         [TearDown]

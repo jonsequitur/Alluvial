@@ -15,11 +15,11 @@ namespace Alluvial
         private readonly ConcurrentDictionary<LeasableResource, Lease> workInProgress;
 
         public InMemoryStreamQueryDistributor(
-            LeasableResource[] LeasablesResource,
+            LeasableResource[] leasableResources,
             string scope,
             int maxDegreesOfParallelism = 5,
             TimeSpan? waitInterval = null) :
-                base(LeasablesResource,
+                base(leasableResources,
                      maxDegreesOfParallelism,
                      waitInterval)
         {
@@ -34,7 +34,7 @@ namespace Alluvial
         {
             var now = DateTimeOffset.UtcNow;
 
-            var resource = LeasablesResource
+            var resource = leasableResources
                 .Where(l => l.LeaseLastReleased + waitInterval < now)
                 .OrderBy(l => l.LeaseLastReleased)
                 .FirstOrDefault(l => !workInProgress.ContainsKey(l));

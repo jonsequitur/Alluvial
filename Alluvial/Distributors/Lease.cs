@@ -9,10 +9,15 @@ namespace Alluvial.Distributors
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly LeasableResource leasableResource;
         private readonly dynamic ownerToken;
+        private readonly Func<TimeSpan, Task> extend;
         private bool completed = false;
         private TimeSpan duration;
 
-        public Lease(LeasableResource leasableResource, TimeSpan duration, dynamic ownerToken = null)
+        public Lease(
+            LeasableResource leasableResource,
+            TimeSpan duration,
+            dynamic ownerToken = null,
+            Func<TimeSpan, Task> extend = null)
         {
             if (leasableResource == null)
             {
@@ -22,6 +27,7 @@ namespace Alluvial.Distributors
             this.leasableResource = leasableResource;
             this.duration = duration;
             this.ownerToken = ownerToken;
+            this.extend = extend;
 
             cancellationTokenSource.CancelAfter(Duration);
         }
@@ -62,9 +68,14 @@ namespace Alluvial.Distributors
         {
             Console.WriteLine(string.Format("[Distribute] requesting extension: {0}: ", this) + duration);
 
-            if (completed)
+            if (completed || cancellationTokenSource.IsCancellationRequested)
             {
                 throw new InvalidOperationException("The lease cannot be extended.");
+            }
+
+            if (extend != null)
+            {
+                extend(by);
             }
 
             duration += by;
