@@ -14,13 +14,13 @@ namespace Alluvial
                     System.Diagnostics.Trace.WriteLine("[Distribute] Start");
                     return distributor.Start();
                 },
-                doWork: doWork =>
+                onReceive: onReceive =>
                 {
                     // FIX: (Trace) this doesn't do anything if OnReceive was called before Trace, so a proper pipeline model may be better here.
                     distributor.OnReceive(async lease =>
                     {
                         System.Diagnostics.Trace.WriteLine("[Distribute] OnReceive " + lease);
-                        await doWork(lease);
+                        await onReceive(lease);
                         System.Diagnostics.Trace.WriteLine("[Distribute] OnReceive (done) " + lease);
                     });
                 }, stop: () =>
@@ -30,9 +30,9 @@ namespace Alluvial
                 }, distribute: distributor.Distribute);
         }
 
-        private static IStreamQueryDistributor Create(Func<Task> start, Action<Func<Lease, Task>> doWork, Func<Task> stop, Func<int, Task> distribute)
+        private static IStreamQueryDistributor Create(Func<Task> start, Action<Func<Lease, Task>> onReceive, Func<Task> stop, Func<int, Task> distribute)
         {
-            return new AnonymousStreamQueryDistributor(start, doWork, stop, distribute);
+            return new AnonymousStreamQueryDistributor(start, onReceive, stop, distribute);
         }
     }
 }

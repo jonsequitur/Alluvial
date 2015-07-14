@@ -4,6 +4,7 @@ using System.Diagnostics;
 using FluentAssertions;
 using System.Linq;
 using System.Threading.Tasks;
+using Alluvial.Distributors;
 using Alluvial.Tests.BankDomain;
 using NUnit.Framework;
 
@@ -130,6 +131,64 @@ namespace Alluvial.Tests
             traceListener.Messages
                          .Should()
                          .Contain("[Get] no projection for stream the-stream-id");
+        }
+
+        [Test]
+        public async Task By_default_QueryStreamDistributor_Trace_writes_start_events_to_trace_output()
+        {
+            using (var distributor = CreateDistributor())
+            {
+                await distributor.Start();
+
+                traceListener.Messages
+                             .Should()
+                             .Contain("[Distribute] Start");
+            }
+        }
+
+        [Test]
+        public async Task By_default_QueryStreamDistributor_Trace_writes_stop_events_to_trace_output()
+        {
+            using (var distributor = CreateDistributor())
+            {
+                await distributor.Start();
+
+                await distributor.Stop();
+
+                traceListener.Messages
+                             .Should()
+                             .Contain("[Distribute] Stop");
+            }
+        }
+
+        [Test]
+        public async Task By_default_QueryStreamDistributor_Trace_writes_onReceive_events_to_trace_output()
+        {
+            Lease lease = null;
+            using (var distributor = CreateDistributor(async l => lease = l))
+            {
+                await distributor.Distribute(1);
+
+                traceListener.Messages
+                             .Should()
+                             .Contain(m => m.Contains("[Distribute] OnReceive leasable resource:1"));
+
+                traceListener.Messages
+                             .Should()
+                             .Contain(m => m.Contains("[Distribute] OnReceive (done) leasable resource:1"));
+            }
+        }
+
+        private static IStreamQueryDistributor CreateDistributor(Func<Lease, Task> onReceive = null)
+        {
+            var distributor = new InMemoryStreamQueryDistributor(new[]
+            {
+                new LeasableResource("1", TimeSpan.FromSeconds(1))
+            }, "").Trace();
+
+            distributor.OnReceive(onReceive ?? (async _ => { }));
+
+            return distributor;
         }
 
         private class TraceListener : System.Diagnostics.TraceListener
