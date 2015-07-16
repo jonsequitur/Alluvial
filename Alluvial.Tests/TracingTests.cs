@@ -4,6 +4,7 @@ using System.Diagnostics;
 using FluentAssertions;
 using System.Linq;
 using System.Threading.Tasks;
+using Alluvial.Distributors;
 using Alluvial.Tests.BankDomain;
 using NUnit.Framework;
 
@@ -130,6 +131,159 @@ namespace Alluvial.Tests
             traceListener.Messages
                          .Should()
                          .Contain("[Get] no projection for stream the-stream-id");
+        }
+
+        [Test]
+        public async Task By_default_QueryStreamDistributor_Trace_writes_start_events_to_trace_output()
+        {
+            using (var distributor = CreateDistributor())
+            {
+                await distributor.Start();
+
+                traceListener.Messages
+                             .Should()
+                             .Contain("[Distribute] Start");
+            }
+        }
+
+        [Test]
+        public async Task By_default_QueryStreamDistributor_Trace_writes_stop_events_to_trace_output()
+        {
+            using (var distributor = CreateDistributor())
+            {
+                await distributor.Start();
+
+                await distributor.Stop();
+
+                traceListener.Messages
+                             .Should()
+                             .Contain("[Distribute] Stop");
+            }
+        }
+
+        [Test]
+        public async Task By_default_QueryStreamDistributor_Trace_writes_onReceive_events_to_trace_output()
+        {
+            Lease lease = null;
+            using (var distributor = CreateDistributor(async l => lease = l))
+            {
+                await distributor.Distribute(1);
+
+                traceListener.Messages
+                             .Should()
+                             .Contain(m => m.Contains("[Distribute] OnReceive leasable resource:1"));
+
+                traceListener.Messages
+                             .Should()
+                             .Contain(m => m.Contains("[Distribute] OnReceive (done) leasable resource:1"));
+            }
+        }
+
+        [Test]
+        public async Task StreamQueryDistributor_Trace_default_behavior_can_be_overridden()
+        {
+            Lease leaseAcquired = null;
+            Lease leaseReleased = null;
+
+            var distributor1 = new InMemoryStreamQueryDistributor(new[]
+            {
+                new LeasableResource("1", TimeSpan.FromSeconds(1))
+            }, "").Trace(
+                onLeaseAcquired: l => { leaseAcquired = l; },
+                onLeaseReleasing: l => { leaseReleased = l; });
+
+            distributor1.OnReceive((async _ => { }));
+            var distributor = distributor1;
+
+            await distributor.Distribute(1);
+
+            leaseAcquired.Should().NotBeNull();
+            leaseReleased.Should().NotBeNull();
+        }
+
+        [Test]
+        public async Task Aggregator_Trace_default_behavior_can_be_overridden()
+        {
+            var receivedProjection = 0;
+            IStreamBatch<int> receivedBatch = null;
+
+            var aggregator = Aggregator.Create<int, int>((p, b) => { })
+                                       .Trace((i, b) =>
+                                       {
+                                           receivedProjection = i;
+                                           receivedBatch = b;
+                                       });
+
+            var sentBatch = new StreamBatch<int>(Enumerable.Range(1, 10).ToArray(), 0);
+            await aggregator.Aggregate(41, sentBatch);
+
+            receivedProjection.Should().Be(41);
+            receivedBatch.Should().BeSameAs(sentBatch);
+        }
+
+        [Test]
+        public async Task ProjectionStore_Trace_default_behavior_can_be_overridden()
+        {
+            var receivedGetKey = "";
+            var receivedPutKey = "";
+            int receivedPutProjection = 0;
+
+            var store = ProjectionStore.Create<string, int>(
+                get: async key =>
+                {
+                    receivedGetKey = key;
+                    return 41;
+                }, put: async (key, count) =>
+                {
+                    receivedPutKey = key;
+                    receivedPutProjection = count;
+                });
+
+            await store.Get("any key");
+
+            receivedGetKey.Should().Be("any key");
+
+            await store.Put("some other key", 57);
+
+            receivedPutKey.Should().Be("some other key");
+            receivedPutProjection.Should().Be(57);
+        }
+
+        [Test]
+        public async Task Stream_Trace_default_behavior_can_be_overridden()
+        {
+            IStreamQuery<int> receivedSendQuery = null;
+            IStreamQuery<int> receivedResultsQuery = null;
+            IStreamBatch<int> receivedBatch = null;
+
+            var stream = Enumerable.Range(1, 1000)
+                                   .AsStream()
+                                   .Trace(onSendQuery: q => { receivedSendQuery = q; },
+                                          onResults: (q, b) =>
+                                          {
+                                              receivedResultsQuery = q;
+                                              receivedBatch = b;
+                                          });
+
+            var sentQuery = stream.CreateQuery(Cursor.New(15), batchCount: 3);
+            await sentQuery.NextBatch();
+
+            receivedSendQuery.Should().BeSameAs(sentQuery);
+            receivedResultsQuery.Should().BeSameAs(sentQuery);
+            receivedBatch.Count().Should().Be(3);
+            receivedBatch.Should().ContainInOrder(16, 17, 18);
+        }
+
+        private static IStreamQueryDistributor CreateDistributor(Func<Lease, Task> onReceive = null)
+        {
+            var distributor = new InMemoryStreamQueryDistributor(new[]
+            {
+                new LeasableResource("1", TimeSpan.FromSeconds(1))
+            }, "").Trace();
+
+            distributor.OnReceive(onReceive ?? (async _ => { }));
+
+            return distributor;
         }
 
         private class TraceListener : System.Diagnostics.TraceListener

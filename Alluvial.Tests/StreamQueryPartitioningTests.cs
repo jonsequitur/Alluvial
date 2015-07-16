@@ -170,7 +170,6 @@ namespace Alluvial.Tests
                 var catchup = StreamCatchup.Create(stream, batchCount: int.MaxValue);
                 catchup.Subscribe(aggregator, store);
                 await catchup.RunSingleBatch();
-                await Task.Delay(500);
 
                 var projection = await store.Get(stream.Id);
                 Console.WriteLine(partition + ": " + projection.Value.Count);
@@ -178,12 +177,6 @@ namespace Alluvial.Tests
 
             var approximateGuidsPerPartition = totalNumberOfGuids/numberOfPartitions;
             var tolerance = (int) (totalNumberOfGuids*.12);
-
-            Console.WriteLine("\nMissing guids: ");
-            foreach (var guid in guids.Where(g => !store.Any(p => p.Value.Contains(g))))
-            {
-                Console.WriteLine("     " + guid);
-            }
 
             store.Sum(p => p.Value.Count).Should().Be(totalNumberOfGuids);
 

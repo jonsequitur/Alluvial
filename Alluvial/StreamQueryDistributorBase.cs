@@ -74,7 +74,15 @@ namespace Alluvial
 
             Debug.WriteLine("[Distribute] Polling");
 
-            var lease = await AcquireLease();
+            Lease lease = null;
+            try
+            {
+                lease = await AcquireLease();
+            }
+            catch (Exception exception)
+            {
+                 Debug.WriteLine("[Distribute] Exception during AcquireLease:\n" + exception);
+            }
 
             if (lease != null)
             {
@@ -90,7 +98,7 @@ namespace Alluvial
                 }
                 catch (Exception exception)
                 {
-                    Debug.WriteLine("[Distribute] Exception during AcquireLease:\n" + exception);
+                    Debug.WriteLine("[Distribute] Exception during OnReceive:\n" + exception);
                 }
 
                 try

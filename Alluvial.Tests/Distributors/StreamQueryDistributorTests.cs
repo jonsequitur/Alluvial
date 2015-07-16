@@ -52,7 +52,7 @@ namespace Alluvial.Tests.Distributors
         }
 
         [Test]
-        public async Task No_further_acquisitions_occur_after_Dispose_is_called()
+        public async Task No_further_acquisitions_occur_after_Stop_is_called()
         {
             var received = 0;
             var mre = new AsyncManualResetEvent();
