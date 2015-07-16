@@ -6,7 +6,10 @@ namespace Alluvial
 {
     public static class StreamQueryDistributor
     {
-        public static IStreamQueryDistributor Trace(this IStreamQueryDistributor distributor)
+        public static IStreamQueryDistributor Trace(
+            this IStreamQueryDistributor distributor,
+            Action<Lease> onLeaseAcquired = null,
+            Action<Lease> onLeaseReleasing = null)
         {
             return Create(
                 start: () =>
@@ -14,20 +17,33 @@ namespace Alluvial
                     System.Diagnostics.Trace.WriteLine("[Distribute] Start");
                     return distributor.Start();
                 },
-                onReceive: onReceive =>
+                onReceive: receive =>
                 {
+                    onLeaseAcquired = onLeaseAcquired ?? TraceOnLeaseAcquired;
+                    onLeaseReleasing = onLeaseReleasing ?? TraceOnLeaseReleasing;
+
                     // FIX: (Trace) this doesn't do anything if OnReceive was called before Trace, so a proper pipeline model may be better here.
                     distributor.OnReceive(async lease =>
                     {
-                        System.Diagnostics.Trace.WriteLine("[Distribute] OnReceive " + lease);
-                        await onReceive(lease);
-                        System.Diagnostics.Trace.WriteLine("[Distribute] OnReceive (done) " + lease);
+                        onLeaseAcquired(lease);
+                        await receive(lease);
+                        onLeaseReleasing(lease);
                     });
                 }, stop: () =>
                 {
                     System.Diagnostics.Trace.WriteLine("[Distribute] Stop");
                     return distributor.Stop();
                 }, distribute: distributor.Distribute);
+        }
+
+        private static void TraceOnLeaseReleasing(Lease lease)
+        {
+            System.Diagnostics.Trace.WriteLine("[Distribute] OnReceive (done) " + lease);
+        }
+
+        private static void TraceOnLeaseAcquired(Lease lease)
+        {
+            System.Diagnostics.Trace.WriteLine("[Distribute] OnReceive " + lease);
         }
 
         private static IStreamQueryDistributor Create(Func<Task> start, Action<Func<Lease, Task>> onReceive, Func<Task> stop, Func<int, Task> distribute)

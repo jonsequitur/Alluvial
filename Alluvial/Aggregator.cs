@@ -145,7 +145,7 @@ namespace Alluvial
             this AggregateAsync<TProjection, TData> aggregate,
             Action<TProjection, IStreamBatch<TData>> write = null)
         {
-            return Create(aggregate).Trace();
+            return Create(aggregate).Trace(write);
         }
 
         private static void TraceDefault<TProjection, TData>(TProjection projection, IStreamBatch<TData> batch)
