@@ -225,23 +225,31 @@ namespace Alluvial.Tests
         public async Task ProjectionStore_Trace_default_behavior_can_be_overridden()
         {
             var receivedGetKey = "";
+            var receivedGetProjection = 0;
             var receivedPutKey = "";
-            int receivedPutProjection = 0;
+            var receivedPutProjection = 0;
 
-            var store = ProjectionStore.Create<string, int>(
-                get: async key =>
-                {
-                    receivedGetKey = key;
-                    return 41;
-                }, put: async (key, count) =>
-                {
-                    receivedPutKey = key;
-                    receivedPutProjection = count;
-                });
+            var store = ProjectionStore
+                .Create<string, int>(
+                    get: async key => 41,
+                    put: async (key, count) => { })
+                .Trace(
+                    get: (key, count) =>
+                    {
+                        receivedGetKey = key;
+                        receivedGetProjection = count;
+                    },
+                    put: (key, count) =>
+                    {
+                        receivedPutKey = key;
+                        receivedPutProjection = count;
+                    }
+                );
 
             await store.Get("any key");
 
             receivedGetKey.Should().Be("any key");
+            receivedGetProjection.Should().Be(41);
 
             await store.Put("some other key", 57);
 
