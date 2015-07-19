@@ -43,7 +43,7 @@ namespace Alluvial.Tests
             var partition = StreamQuery.Partition(0, 100);
             var stream = await partitioner.GetStream(partition);
 
-            var aggregator = Aggregator.CreateFor<int, int>((p, i) => p.Value += i.Sum());
+            var aggregator = Aggregator.Create<Projection<int, int>, int>((p, i) => p.Value += i.Sum());
 
             var projection = await stream.Aggregate(aggregator, new Projection<int, int>());
 
@@ -62,7 +62,7 @@ namespace Alluvial.Tests
             };
 
             var store = new InMemoryProjectionStore<Projection<int, int>>();
-            var aggregator = Aggregator.CreateFor<int, int>((p, i) => p.Value += i.Sum());
+            var aggregator = Aggregator.Create<Projection<int, int>, int>((p, i) => p.Value += i.Sum());
 
             await Task.WhenAll(partitions.Select(async partition =>
             {
@@ -90,7 +90,7 @@ namespace Alluvial.Tests
 
             var store = new InMemoryProjectionStore<Projection<HashSet<int>, int>>();
 
-            var aggregator = Aggregator.CreateFor<HashSet<int>, int>((p, xs) =>
+            var aggregator = Aggregator.Create<Projection<HashSet<int>, int>, int>((p, xs) =>
             {
                 if (p.Value == null)
                 {

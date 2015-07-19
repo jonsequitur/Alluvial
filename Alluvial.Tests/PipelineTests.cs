@@ -100,7 +100,7 @@ namespace Alluvial.Tests
         [Test]
         public async Task Pipelines_affect_projections_in_reverse_order_relative_to_the_Pipeline_calls_when_next_is_called_after_modifying_the_projection()
         {
-            var aggregator = Aggregator.CreateFor<List<int>, string>(async (projection, events) => projection.Value.Add(1))
+            var aggregator = Aggregator.Create<Projection<List<int>, string>, string>(async (projection, events) => projection.Value.Add(1))
                                        .Pipeline(async (projection, batch, next) =>
                                        {
                                            projection.Value.Add(2);
@@ -122,7 +122,7 @@ namespace Alluvial.Tests
         [Test]
         public async Task Pipelines_affect_projections_in_the_same_order_as_the_Pipeline_calls_when_next_is_called_before_modifying_the_projection()
         {
-            var aggregator = Aggregator.CreateFor<List<int>, string>(async (projection, events) => projection.Value.Add(1))
+            var aggregator = Aggregator.Create<Projection<List<int>, string>, string>(async (projection, events) => projection.Value.Add(1))
                                        .Pipeline(async (projection, batch, next) =>
                                        {
                                            await next(projection, batch);
