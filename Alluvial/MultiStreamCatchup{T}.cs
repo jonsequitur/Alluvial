@@ -54,7 +54,7 @@ namespace Alluvial
             upstreamCatchup.Subscribe(
                 async (c, streams) =>
                 {
-                    await Task.WhenAll(streams.Select(RunSingleBatch));
+                    await Task.WhenAll(streams.Select(stream => RunSingleBatch(stream)));
 
                     return c;
                 },

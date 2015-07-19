@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,8 +14,7 @@ namespace Alluvial
     /// <typeparam name="TCursor">The type of the cursor.</typeparam>
     internal abstract class StreamCatchupBase<TData, TCursor> : IStreamCatchup<TData, TCursor>
     {
-        private int isRunning;
-        protected int? batchSize;
+        protected int? batchCount;
 
         protected readonly ConcurrentDictionary<Type, IAggregatorSubscription> aggregatorSubscriptions = new ConcurrentDictionary<Type, IAggregatorSubscription>();
 
@@ -48,30 +48,38 @@ namespace Alluvial
         /// </returns>
         public abstract Task<ICursor<TCursor>> RunSingleBatch();
 
-        protected async Task<ICursor<TCursor>> RunSingleBatch<TCursor>(IStream<TData, TCursor> stream)
+        private object tcs;
+
+        protected async Task<ICursor<T>> RunSingleBatch<T>(IStream<TData, T> stream)
         {
-            if (Interlocked.CompareExchange(ref isRunning, 1, 0) != 0)
+            TaskCompletionSource<AggregationBatch<T>> tcs = null;
+
+            tcs = new TaskCompletionSource<AggregationBatch<T>>();
+
+            var exchange = Interlocked.CompareExchange<object>(ref this.tcs, tcs, null);
+
+            if (exchange != null)
             {
-                // FIX: (RunSingleBatch): what would be a better behavior here? awaiting the running batch without triggering a new run might be best.
-                return new Cursor<TCursor>();
+                Debug.WriteLine("[Catchup] RunSingleBatch returning early");
+                var batch = await ((TaskCompletionSource<AggregationBatch<T>>) this.tcs).Task;
+                return batch.Cursor;
             }
 
-            ICursor<TCursor> upstreamCursor = null;
+            ICursor<T> upstreamCursor = null;
 
             var projections = new ConcurrentBag<object>();
-            var tcs = new TaskCompletionSource<AggregationBatch<TCursor>>();
 
             Action runQuery = async () =>
             {
-                var cursor = projections.OfType<ICursor<TCursor>>().Minimum();
+                var cursor = projections.OfType<ICursor<T>>().Minimum();
                 upstreamCursor = cursor;
-                var query = stream.CreateQuery(cursor, batchSize);
+                var query = stream.CreateQuery(cursor, batchCount);
 
                 try
                 {
                     var batch = await query.NextBatch();
 
-                    tcs.SetResult(new AggregationBatch<TCursor>
+                    tcs.SetResult(new AggregationBatch<T>
                     {
                         Cursor = query.Cursor,
                         Batch = batch
@@ -83,7 +91,7 @@ namespace Alluvial
                 }
             };
 
-            Func<object, Task<AggregationBatch<TCursor>>> awaitData = c =>
+            Func<object, Task<AggregationBatch<T>>> awaitData = c =>
             {
                 projections.Add(c);
 
@@ -101,7 +109,7 @@ namespace Alluvial
 
             await Task.WhenAll(aggregationTasks);
 
-            isRunning = 0;
+            this.tcs = null;
 
             return upstreamCursor;
         }

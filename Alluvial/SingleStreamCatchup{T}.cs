@@ -26,7 +26,7 @@ namespace Alluvial
             }
 
             this.stream = stream;
-            this.batchSize = batchSize;
+            this.batchCount = batchSize;
         }
 
         /// <summary>

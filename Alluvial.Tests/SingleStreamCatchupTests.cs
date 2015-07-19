@@ -70,6 +70,28 @@ namespace Alluvial.Tests
         }
 
         [Test]
+        public async Task When_one_batch_is_running_a_second_caller_to_RunSingleBatch_can_await_the_completion_of_the_same_batch()
+        {
+            var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
+
+            var catchup = StreamCatchup.Create(stream, batchSize: 1);
+            catchup.Subscribe(new BalanceProjector()
+                                  .Pipeline(async (projection, batch, next) =>
+                                  {
+                                      await Task.Delay(500);
+                                      await next(projection, batch);
+                                  }), projectionStore);
+
+            var cursor1 = catchup.RunSingleBatch();
+            var cursor2 = catchup.RunSingleBatch();
+
+            await Task.Delay(1000);
+
+            (await cursor1).Should()
+                               .BeSameAs(await cursor2);
+        }
+
+        [Test]
         public async Task Catchup_batch_size_can_be_specified()
         {
             var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
