@@ -16,34 +16,50 @@ namespace Alluvial
             return new AnonymousProjectionStore<TKey, TProjection>(get, put);
         }
 
-        public static IProjectionStore<TKey, TProjection> Trace<TKey, TProjection>(this IProjectionStore<TKey, TProjection> store)
+        public static IProjectionStore<TKey, TProjection> Trace<TKey, TProjection>(
+            this IProjectionStore<TKey, TProjection> store,
+            Action<TKey, TProjection> get = null,
+            Action<TKey, TProjection> put = null)
         {
+           var traceGet = get ?? TraceGet;
+           var tracePut = put ?? TracePut;
+
             return Create<TKey, TProjection>(
                 get: async key =>
                 {
                     var projection = await store.Get(key);
 
-                    if (projection == null)
-                    {
-                        trace.WriteLine("[Get] no projection for stream " + key);
-                    }
-                    else
-                    {
-                        trace.WriteLine(string.Format("[Get] {0} for stream {1}",
-                                                      projection,
-                                                      key));
-                    }
+                    traceGet(key, projection);
 
                     return projection;
                 },
                 put: async (key, projection) =>
                 {
-                    trace.WriteLine(string.Format("[Put] {0} for stream {1}",
-                                                  projection,
-                                                  key));
+                    tracePut(key, projection);
 
                     await store.Put(key, projection);
                 });
+        }
+
+        private static void TracePut<TKey, TProjection>(TKey key, TProjection projection)
+        {
+            trace.WriteLine(string.Format("[Put] {0} for stream {1}",
+                                          projection,
+                                          key));
+        }
+
+        private static void TraceGet<TKey, TProjection>(TKey key, TProjection projection)
+        {
+            if (projection == null)
+            {
+                trace.WriteLine("[Get] no projection for stream " + key);
+            }
+            else
+            {
+                trace.WriteLine(string.Format("[Get] {0} for stream {1}",
+                                              projection,
+                                              key));
+            }
         }
 
         public static FetchAndSaveProjection<TProjection> AsHandler<TProjection>(this IProjectionStore<string, TProjection> store)

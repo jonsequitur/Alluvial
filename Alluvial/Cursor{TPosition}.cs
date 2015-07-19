@@ -4,9 +4,10 @@ using System.Diagnostics;
 namespace Alluvial
 {
     [DebuggerDisplay("{ToString()}")]
-    internal class Cursor<T> : ICursor<T>
+    internal class Cursor<T> : ICursor<T>, ITrackCursorPosition
     {
         private static readonly Func<Cursor<T>, T, bool> hasCursorReached;
+        private readonly T originalPosition;
 
         static Cursor()
         {
@@ -37,6 +38,7 @@ namespace Alluvial
         public Cursor(T position = default(T))
         {
             Position = position;
+            originalPosition = position;
         }
 
         public virtual bool HasReached(T point)
@@ -54,6 +56,14 @@ namespace Alluvial
         public override string ToString()
         {
             return string.Format("@{0}", Position);
+        }
+
+        public bool CursorWasAdvanced
+        {
+            get
+            {
+                return originalPosition.Equals(Position);
+            }
         }
     }
 }
