@@ -33,29 +33,29 @@ namespace Alluvial
             }
         }
 
-        public int? BatchCount { get; set; }
+        public int? BatchSize { get; set; }
 
         public async Task<IStreamBatch<TData>> NextBatch()
         {
             return await stream.Fetch(this);
         }
 
-        private dynamic BatchCountDescription
+        private dynamic BatchSizeDescription
         {
             get
             {
-                if (BatchCount == null)
+                if (BatchSize == null)
                 {
                     return "all";
                 }
 
-                return BatchCount.Value;
+                return BatchSize.Value;
             }
         }
 
         public override string ToString()
         {
-            return string.Format("query:take {0} after {1} from {2}", BatchCountDescription, cursor.Position, stream);
+            return string.Format("query:take {0} after {1} from {2}", BatchSizeDescription, cursor.Position, stream);
         }
     }
 }

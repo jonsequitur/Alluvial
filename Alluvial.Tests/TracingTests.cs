@@ -79,7 +79,7 @@ namespace Alluvial.Tests
         {
             var stream = Stream.Create<int>(q => Enumerable.Range(1, 100)
                                                            .Skip(q.Cursor.Position)
-                                                           .Take(q.BatchCount ?? 100000))
+                                                           .Take(q.BatchSize ?? 100000))
                                .Trace();
 
             var iterator = stream.CreateQuery(Cursor.New(15), 10);
@@ -273,7 +273,7 @@ namespace Alluvial.Tests
                                               receivedBatch = b;
                                           });
 
-            var sentQuery = stream.CreateQuery(Cursor.New(15), batchCount: 3);
+            var sentQuery = stream.CreateQuery(Cursor.New(15), batchSize: 3);
             await sentQuery.NextBatch();
 
             receivedSendQuery.Should().BeSameAs(sentQuery);

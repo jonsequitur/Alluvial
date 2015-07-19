@@ -14,14 +14,14 @@ namespace Alluvial
         /// <typeparam name="TData">The type of the stream's data.</typeparam>
         /// <typeparam name="TCursor">The type of the cursor.</typeparam>
         /// <param name="stream">The stream.</param>
-        /// <param name="batchCount">The number of items to retrieve from the stream per batch.</param>
+        /// <param name="batchSize">The number of items to retrieve from the stream per batch.</param>
         public static IStreamCatchup<TData, TCursor> Create<TData, TCursor>(
             IStream<TData, TCursor> stream,
-            int? batchCount = null)
+            int? batchSize = null)
         {
             return new SingleStreamCatchup<TData, TCursor>(
                 stream,
-                batchCount);
+                batchSize);
         }
 
         /// <summary>
@@ -32,13 +32,13 @@ namespace Alluvial
         /// <typeparam name="TDownstreamCursor">The type of the downstream cursor.</typeparam>
         /// <param name="stream">The stream.</param>
         /// <param name="cursor">The initial cursor position for the catchup.</param>
-        /// <param name="batchCount">The number of items to retrieve from the stream per batch.</param>
+        /// <param name="batchSize">The number of items to retrieve from the stream per batch.</param>
         public static IStreamCatchup<TData, TUpstreamCursor> Distribute<TData, TUpstreamCursor, TDownstreamCursor>(
             IStream<IStream<TData, TDownstreamCursor>, TUpstreamCursor> stream,
             ICursor<TUpstreamCursor> cursor = null,
-            int? batchCount = null)
+            int? batchSize = null)
         {
-            var upstreamCatchup = new SingleStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor>(stream, batchCount);
+            var upstreamCatchup = new SingleStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor>(stream, batchSize);
 
             return new MultiStreamCatchup<TData, TUpstreamCursor, TDownstreamCursor>(
                 upstreamCatchup,
@@ -52,13 +52,13 @@ namespace Alluvial
         /// <typeparam name="TUpstreamCursor">The type of the upstream cursor.</typeparam>
         /// <typeparam name="TDownstreamCursor">The type of the downstream cursor.</typeparam>
         /// <param name="stream">The stream.</param>
-        /// <param name="batchCount">The number of items to retrieve from the stream per batch.</param>
+        /// <param name="batchSize">The number of items to retrieve from the stream per batch.</param>
         public static IStreamCatchup<TData, TUpstreamCursor> Distribute<TData, TUpstreamCursor, TDownstreamCursor>(
             IStream<IStream<TData, TDownstreamCursor>, TUpstreamCursor> stream,
             FetchAndSaveProjection<ICursor<TUpstreamCursor>> manageCursor,
-            int? batchCount = null)
+            int? batchSize = null)
         {
-            var upstreamCatchup = new SingleStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor>(stream, batchCount);
+            var upstreamCatchup = new SingleStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor>(stream, batchSize);
 
             return new MultiStreamCatchup<TData, TUpstreamCursor, TDownstreamCursor>(
                 upstreamCatchup,

@@ -18,7 +18,7 @@ namespace Alluvial
 
         public SingleStreamCatchup(
             IStream<TData, TCursor> stream,
-            int? batchCount = null)
+            int? batchSize = null)
         {
             if (stream == null)
             {
@@ -26,7 +26,7 @@ namespace Alluvial
             }
 
             this.stream = stream;
-            this.batchCount = batchCount;
+            this.batchSize = batchSize;
         }
 
         /// <summary>

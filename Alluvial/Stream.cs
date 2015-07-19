@@ -19,7 +19,7 @@ namespace Alluvial
         {
             return Create(string.Format("{0}({1})", typeof (TData), source.GetHashCode()),
                           query => source.SkipWhile(x => query.Cursor.HasReached(x))
-                                         .Take(query.BatchCount ?? StreamBatch.MaxBatchCount),
+                                         .Take(query.BatchSize ?? StreamBatch.MaxSize),
                           advanceCursor: (q, b) =>
                           {
                               var last = b.LastOrDefault();
@@ -49,7 +49,7 @@ namespace Alluvial
                 id: id ?? string.Format("{0}({1})", typeof (TData), source.GetHashCode()),
                 query: query => source.SkipWhile(x =>
                                                      query.Cursor.HasReached(cursorPosition(x)))
-                                      .Take(query.BatchCount ?? StreamBatch.MaxBatchCount),
+                                      .Take(query.BatchSize ?? StreamBatch.MaxSize),
                 advanceCursor: (q, b) =>
                 {
                     var last = b.LastOrDefault();
@@ -70,7 +70,7 @@ namespace Alluvial
         {
             return Create(string.Format("{0}({1})", typeof (TData), source.GetHashCode()),
                           query => source.Skip(query.Cursor.Position)
-                                         .Take(query.BatchCount ?? StreamBatch.MaxBatchCount),
+                                         .Take(query.BatchSize ?? StreamBatch.MaxSize),
                           newCursor: () => Cursor.New<int>());
         }
 
@@ -194,7 +194,7 @@ namespace Alluvial
                 id: id ?? sourceStream.Id + "->Map",
                 query: async q =>
                 {
-                    var query = sourceStream.CreateQuery(q.Cursor, q.BatchCount);
+                    var query = sourceStream.CreateQuery(q.Cursor, q.BatchSize);
 
                     var sourceBatch = await sourceStream.Fetch(query);
 
@@ -232,7 +232,7 @@ namespace Alluvial
                 {
                     var upstreamBatch = await upstream.Fetch(
                         upstream.CreateQuery(upstreamQuery.Cursor,
-                                             upstreamQuery.BatchCount));
+                                             upstreamQuery.BatchSize));
 
                     var streams = upstreamBatch.Select(
                         async x =>
@@ -284,7 +284,7 @@ namespace Alluvial
                 id: id ?? query.GetHashCode().ToString(), // TODO: (Partition) a better default id
                 fetch: async (q, partition) =>
                 {
-                    q.BatchCount = q.BatchCount ?? StreamBatch.MaxBatchCount;
+                    q.BatchSize = q.BatchSize ?? StreamBatch.MaxSize;
                     var batch = await query(q, partition);
                     return StreamBatch.Create(batch, q.Cursor);
                 },

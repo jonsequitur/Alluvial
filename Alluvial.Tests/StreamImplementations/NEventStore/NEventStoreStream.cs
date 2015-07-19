@@ -59,7 +59,7 @@ namespace Alluvial.Tests
 
                 checked
                 {
-                    maxRevisionToFetch = lastFetchedRevision + query.BatchCount ?? 100000;
+                    maxRevisionToFetch = lastFetchedRevision + query.BatchSize ?? 100000;
                 }
 
                 var maxExistingRevision = store.Advanced
@@ -149,7 +149,7 @@ namespace Alluvial.Tests
             {
                 var commits = store.Advanced.GetFrom(query.Cursor.Position);
 
-                var batchCount = query.BatchCount ?? 100;
+                var batchSize = query.BatchSize ?? 100;
                 var actualCount = 0;
 
                 var events = new List<EventMessage>();
@@ -159,7 +159,7 @@ namespace Alluvial.Tests
                 {
                     actualCount += commit.Events.Count;
 
-                    if (actualCount > batchCount)
+                    if (actualCount > batchSize)
                     {
                         break;
                     }

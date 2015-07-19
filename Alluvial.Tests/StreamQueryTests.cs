@@ -13,7 +13,7 @@ namespace Alluvial.Tests
         public async Task A_stream_can_be_queried_from_the_beginning()
         {
             var stream = Stream.Create<int, int>(async query =>
-                                                Enumerable.Range(query.Cursor.Position, query.BatchCount.Value));
+                                                Enumerable.Range(query.Cursor.Position, query.BatchSize.Value));
 
             var value = stream.CreateQuery(Cursor.New(0), 1).NextBatch().Result.Single();
 
@@ -24,7 +24,7 @@ namespace Alluvial.Tests
         public async Task Stream_items_can_be_batched_and_cursored()
         {
             var stream = Stream.Create<int, int>(async query =>
-                                                Enumerable.Range(query.Cursor.Position, query.BatchCount.Value));
+                                                Enumerable.Range(query.Cursor.Position, query.BatchSize.Value));
 
             var batch = stream.CreateQuery(Cursor.New(5), 3).NextBatch().Result;
 
@@ -120,7 +120,7 @@ namespace Alluvial.Tests
             var stream = Stream.Create(query: async q =>
                                            times.OrderBy(time => time)
                                                 .Where(time => time > q.Cursor.Position)
-                                                .Take(q.BatchCount ?? 100000),
+                                                .Take(q.BatchSize ?? 100000),
                                        advanceCursor: (q, batch) => q.Cursor.AdvanceTo(batch.Last()),
                                        newCursor: () => Cursor.New<DateTimeOffset>());
 

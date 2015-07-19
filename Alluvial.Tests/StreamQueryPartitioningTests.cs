@@ -27,7 +27,7 @@ namespace Alluvial.Tests
                                               .Where(i => i > p.LowerBoundExclusive &&
                                                           i <= p.UpperBoundInclusive)
                                               .Skip(q.Cursor.Position)
-                                              .Take(q.BatchCount.Value),
+                                              .Take(q.BatchSize.Value),
                                           advanceCursor: (query, batch) => { query.Cursor.AdvanceTo(batch.Last()); });
         }
 
@@ -167,7 +167,7 @@ namespace Alluvial.Tests
             {
                 var stream = await partitioner.GetStream(partition);
 
-                var catchup = StreamCatchup.Create(stream, batchCount: int.MaxValue);
+                var catchup = StreamCatchup.Create(stream, batchSize: int.MaxValue);
                 catchup.Subscribe(aggregator, store);
                 await catchup.RunSingleBatch();
 

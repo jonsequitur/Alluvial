@@ -62,7 +62,7 @@ namespace Alluvial.Tests
                                            CheckpointToken = c.Max(e => e.CheckpointToken),
                                            StreamRevision = c.Max(e => e.StreamRevision)
                                        })
-                                       .Take(q.BatchCount ?? 100000),
+                                       .Take(q.BatchSize ?? 100000),
                 advanceCursor: (query, batch) =>
                 {
                     var last = batch.LastOrDefault();

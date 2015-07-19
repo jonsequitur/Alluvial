@@ -13,6 +13,6 @@ namespace Alluvial
         /// <summary>
         /// Gets or sets the maximum number of items to retrieve in a single batch.
         /// </summary>
-        int? BatchCount { get; set; }
+        int? BatchSize { get; set; }
     }
 }

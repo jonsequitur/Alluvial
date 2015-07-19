@@ -14,7 +14,7 @@ namespace Alluvial
     internal abstract class StreamCatchupBase<TData, TCursor> : IStreamCatchup<TData, TCursor>
     {
         private int isRunning;
-        protected int? batchCount;
+        protected int? batchSize;
 
         protected readonly ConcurrentDictionary<Type, IAggregatorSubscription> aggregatorSubscriptions = new ConcurrentDictionary<Type, IAggregatorSubscription>();
 
@@ -65,7 +65,7 @@ namespace Alluvial
             {
                 var cursor = projections.OfType<ICursor<TCursor>>().Minimum();
                 upstreamCursor = cursor;
-                var query = stream.CreateQuery(cursor, batchCount);
+                var query = stream.CreateQuery(cursor, batchSize);
 
                 try
                 {

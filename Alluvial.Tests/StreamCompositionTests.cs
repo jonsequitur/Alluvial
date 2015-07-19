@@ -39,7 +39,7 @@ namespace Alluvial.Tests
                                                 .Trace()
                                                 .Map(ss => ss.Select(s => s.Trace()));
 
-            var indexCatchup = StreamCatchup.Distribute(eventsByAggregate, batchCount: 1);
+            var indexCatchup = StreamCatchup.Distribute(eventsByAggregate, batchSize: 1);
             var index = new Projection<ConcurrentBag<AccountOpened>, string>
             {
                 Value = new ConcurrentBag<AccountOpened>()
@@ -63,7 +63,7 @@ namespace Alluvial.Tests
             var savingsAccounts = Stream.Create<IDomainEvent, string>(
                 "Savings accounts",
                 async q => index.Value.SkipWhile(v => q.Cursor.HasReached(v.CheckpointToken))
-                                .Take(q.BatchCount ?? 1000));
+                                .Take(q.BatchSize ?? 1000));
             var savingsAccountsCatchup = StreamCatchup.Create(savingsAccounts);
 
             var numberOfSavingsAccounts = new Projection<int, int>();
@@ -100,7 +100,7 @@ namespace Alluvial.Tests
                     return batch;
                 });
 
-            var catchup = StreamCatchup.Create(dependentStream, batchCount: 50);
+            var catchup = StreamCatchup.Create(dependentStream, batchSize: 50);
 
             FetchAndSaveProjection<Projection<int, string>> manageProjection = async (id, aggregate) =>
             {
@@ -148,7 +148,7 @@ namespace Alluvial.Tests
                     return s;
                 });
 
-            var streams = await streamPerAggregate.CreateQuery(batchCount: 25).NextBatch();
+            var streams = await streamPerAggregate.CreateQuery(batchSize: 25).NextBatch();
 
             var count = 0;
             foreach (var stream in streams.SelectMany(s => s))
