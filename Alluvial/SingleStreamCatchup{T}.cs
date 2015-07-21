@@ -14,11 +14,13 @@ namespace Alluvial
     internal class SingleStreamCatchup<TData, TCursor> : StreamCatchupBase<TData, TCursor>
     {
         private readonly IStream<TData, TCursor> stream;
+        private readonly ICursor<TCursor> initialCursor;
         private static readonly string catchupTypeDescription = typeof (SingleStreamCatchup<TData, TCursor>).ReadableName();
 
         public SingleStreamCatchup(
             IStream<TData, TCursor> stream,
-            int? batchSize = null)
+            ICursor<TCursor> initialCursor = null,
+            int? batchSize = null) : base(batchSize)
         {
             if (stream == null)
             {
@@ -26,7 +28,7 @@ namespace Alluvial
             }
 
             this.stream = stream;
-            this.batchCount = batchSize;
+            this.initialCursor = initialCursor;
         }
 
         /// <summary>
@@ -37,7 +39,7 @@ namespace Alluvial
         /// </returns>
         public override async Task<ICursor<TCursor>> RunSingleBatch()
         {
-            return await RunSingleBatch(stream);
+            return await RunSingleBatch(stream, initialCursor);
         }
 
         /// <summary>

@@ -14,7 +14,13 @@ namespace Alluvial
     /// <typeparam name="TCursor">The type of the cursor.</typeparam>
     internal abstract class StreamCatchupBase<TData, TCursor> : IStreamCatchup<TData, TCursor>
     {
-        protected int? batchCount;
+        private readonly int? batchSize;
+        private object tcs;
+
+        protected StreamCatchupBase(int? batchSize = null)
+        {
+            this.batchSize = batchSize;
+        }
 
         protected readonly ConcurrentDictionary<Type, IAggregatorSubscription> aggregatorSubscriptions = new ConcurrentDictionary<Type, IAggregatorSubscription>();
 
@@ -48,38 +54,38 @@ namespace Alluvial
         /// </returns>
         public abstract Task<ICursor<TCursor>> RunSingleBatch();
 
-        private object tcs;
-
-        protected async Task<ICursor<T>> RunSingleBatch<T>(IStream<TData, T> stream)
+        protected async Task<ICursor<TCursor>> RunSingleBatch<TCursor>(
+            IStream<TData, TCursor> stream,
+            ICursor<TCursor> initialCursor = null)
         {
-            TaskCompletionSource<AggregationBatch<T>> tcs = null;
+            TaskCompletionSource<AggregationBatch<TCursor>> tcs = null;
 
-            tcs = new TaskCompletionSource<AggregationBatch<T>>();
+            tcs = new TaskCompletionSource<AggregationBatch<TCursor>>();
 
             var exchange = Interlocked.CompareExchange<object>(ref this.tcs, tcs, null);
 
             if (exchange != null)
             {
                 Debug.WriteLine("[Catchup] RunSingleBatch returning early");
-                var batch = await ((TaskCompletionSource<AggregationBatch<T>>) this.tcs).Task;
+                var batch = await ((TaskCompletionSource<AggregationBatch<TCursor>>) this.tcs).Task;
                 return batch.Cursor;
             }
 
-            ICursor<T> upstreamCursor = null;
+            ICursor<TCursor> upstreamCursor = null;
 
             var projections = new ConcurrentBag<object>();
 
             Action runQuery = async () =>
             {
-                var cursor = projections.OfType<ICursor<T>>().Minimum();
+                var cursor = initialCursor ?? projections.OfType<ICursor<TCursor>>().MinOrDefault();
                 upstreamCursor = cursor;
-                var query = stream.CreateQuery(cursor, batchCount);
+                var query = stream.CreateQuery(cursor, batchSize);
 
                 try
                 {
                     var batch = await query.NextBatch();
 
-                    tcs.SetResult(new AggregationBatch<T>
+                    tcs.SetResult(new AggregationBatch<TCursor>
                     {
                         Cursor = query.Cursor,
                         Batch = batch
@@ -91,7 +97,7 @@ namespace Alluvial
                 }
             };
 
-            Func<object, Task<AggregationBatch<T>>> awaitData = c =>
+            Func<object, Task<AggregationBatch<TCursor>>> awaitData = c =>
             {
                 projections.Add(c);
 

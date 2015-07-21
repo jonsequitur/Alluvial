@@ -25,7 +25,7 @@ namespace Alluvial
             return new ReadOnlyCursor<T>(cursor);
         }
 
-        internal static ICursor<TCursor> Minimum<TCursor>(this IEnumerable<ICursor<TCursor>> cursors)
+        internal static ICursor<TCursor> MinOrDefault<TCursor>(this IEnumerable<ICursor<TCursor>> cursors)
         {
             var cursorArray = cursors.ToArray();
 
@@ -42,7 +42,7 @@ namespace Alluvial
                 .Select(c => c.Clone())
                 .FirstOrDefault();
 
-            return firstOrDefault ?? New<TCursor>();
+            return firstOrDefault;
         }
 
         internal static ICursor<TCursor> Clone<TCursor>(this ICursor<TCursor> cursor)

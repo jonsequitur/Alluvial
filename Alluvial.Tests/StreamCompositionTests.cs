@@ -39,7 +39,7 @@ namespace Alluvial.Tests
                                                 .Trace()
                                                 .Map(ss => ss.Select(s => s.Trace()));
 
-            var indexCatchup = StreamCatchup.Distribute(eventsByAggregate, batchSize: 1);
+            var indexCatchup = StreamCatchup.All(eventsByAggregate, batchSize: 1);
             var index = new Projection<ConcurrentBag<AccountOpened>, string>
             {
                 Value = new ConcurrentBag<AccountOpened>()

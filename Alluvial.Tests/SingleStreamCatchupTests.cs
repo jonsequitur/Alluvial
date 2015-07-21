@@ -85,8 +85,6 @@ namespace Alluvial.Tests
             var cursor1 = catchup.RunSingleBatch();
             var cursor2 = catchup.RunSingleBatch();
 
-            await Task.Delay(1000);
-
             (await cursor1).Should()
                                .BeSameAs(await cursor2);
         }
@@ -128,6 +126,25 @@ namespace Alluvial.Tests
             projectionStore.Sum(b => b.Balance)
                            .Should()
                            .Be(1000);
+        }
+
+        [Test]
+        public async Task An_initial_cursor_can_be_specified()
+        {
+            var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
+
+            store.WriteEvents(streamId, howMany: 999);
+
+            var catchup = StreamCatchup.Create(stream,
+                                               initialCursor: Cursor.New(800),
+                                               batchSize: 1000);
+            catchup.Subscribe(new BalanceProjector(), projectionStore);
+
+            await catchup.RunSingleBatch();
+
+            projectionStore.Sum(b => b.Balance)
+                           .Should()
+                           .Be(200);
         }
 
         [Test]

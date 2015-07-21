@@ -52,11 +52,12 @@ namespace Alluvial
             this.upstreamCatchup = upstreamCatchup;
 
             upstreamCatchup.Subscribe(
-                async (c, streams) =>
+                async (cursor, streams) =>
                 {
+                    // ths upstream cursor is not passed here because the downstream streams have their own independent cursors
                     await Task.WhenAll(streams.Select(stream => RunSingleBatch(stream)));
 
-                    return c;
+                    return cursor;
                 },
                 manageCursor);
         }

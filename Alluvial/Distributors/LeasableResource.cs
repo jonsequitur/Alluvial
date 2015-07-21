@@ -18,7 +18,7 @@ namespace Alluvial.Distributors
             DefaultLeaseDuration = defaultLeaseDuration;
         }
 
-        public TimeSpan DefaultLeaseDuration { get; set; }
+        public TimeSpan DefaultLeaseDuration { get; private set; }
 
         public string Name { get; private set; }
 

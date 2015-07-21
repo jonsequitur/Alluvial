@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -66,7 +67,7 @@ namespace Alluvial.Distributors
 
         public async Task Extend(TimeSpan by)
         {
-            Console.WriteLine(string.Format("[Distribute] requesting extension: {0}: ", this) + duration);
+            Debug.WriteLine(string.Format("[Distribute] requesting extension: {0}: ", this) + duration);
 
             if (completed || cancellationTokenSource.IsCancellationRequested)
             {
@@ -81,7 +82,7 @@ namespace Alluvial.Distributors
             duration += by;
             cancellationTokenSource.CancelAfter(by);
 
-            Console.WriteLine(string.Format("[Distribute] extended: {0}: ", this) + duration);
+            Debug.WriteLine(string.Format("[Distribute] extended: {0}: ", this) + duration);
         }
 
         public override string ToString()

@@ -8,7 +8,7 @@ namespace Alluvial
     // FIX: rename QueryDownstream
 
     public delegate Task FetchAndSaveProjection<TProjection>(
-        string streamId,
+        string projectionId,
         CallAggregatorPipeline<TProjection> aggregate);
 
     public delegate Task<TProjection> CallAggregatorPipeline<TProjection>(TProjection projection);

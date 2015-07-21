@@ -191,7 +191,7 @@ namespace Alluvial
             string id = null)
         {
             return Create<TTo, TCursor>(
-                id: id ?? sourceStream.Id + "->Map",
+                id: id ?? string.Format("{0}->Map({1})", sourceStream.Id, typeof(TTo).ReadableName()),
                 query: async q =>
                 {
                     var query = sourceStream.CreateQuery(q.Cursor, q.BatchSize);
@@ -227,7 +227,7 @@ namespace Alluvial
             QueryDownstream< TUpstream, TDownstream,  TUpstreamCursor> queryDownstream)
         {
             return Create(
-                id: upstream.Id + "->IntoMany",
+                id: string.Format("{0}->IntoMany({1})", upstream.Id, typeof(TDownstream).ReadableName()),
                 query: async upstreamQuery =>
                 {
                     var upstreamBatch = await upstream.Fetch(
