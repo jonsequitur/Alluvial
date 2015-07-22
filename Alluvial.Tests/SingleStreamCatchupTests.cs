@@ -451,7 +451,7 @@ namespace Alluvial.Tests
             var pollCount = 0;
             var pollCountAtDispose = 0;
             var stream = Enumerable.Range(1, 1000).AsSequentialStream().Trace();
-            var catchup = StreamCatchup.Create(stream, 1);
+            var catchup = StreamCatchup.Create(stream, batchSize: 1);
             catchup.Subscribe<int, int, int>(async (p, b) =>
             {
                 pollCount++;
