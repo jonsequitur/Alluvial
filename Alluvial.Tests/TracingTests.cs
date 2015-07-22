@@ -164,7 +164,7 @@ namespace Alluvial.Tests
         [Test]
         public async Task By_default_Distributor_Trace_writes_onReceive_events_to_trace_output()
         {
-            Lease lease = null;
+            Lease<int> lease = null;
             using (var distributor = CreateDistributor(async l => lease = l))
             {
                 await distributor.Distribute(1);
@@ -182,12 +182,12 @@ namespace Alluvial.Tests
         [Test]
         public async Task Distributor_Trace_default_behavior_can_be_overridden()
         {
-            Lease leaseAcquired = null;
-            Lease leaseReleased = null;
+            Lease<int> leaseAcquired = null;
+            Lease<int> leaseReleased = null;
 
-            var distributor1 = new InMemoryDistributor(new[]
+            var distributor1 = new InMemoryDistributor<int>(new[]
             {
-                new LeasableResource("1", TimeSpan.FromSeconds(1))
+                new Leasable<int>(1, "1", TimeSpan.FromSeconds(1))
             }, "").Trace(
                 onLeaseAcquired: l => { leaseAcquired = l; },
                 onLeaseReleasing: l => { leaseReleased = l; });
@@ -282,11 +282,11 @@ namespace Alluvial.Tests
             receivedBatch.Should().ContainInOrder(16, 17, 18);
         }
 
-        private static IDistributor CreateDistributor(Func<Lease, Task> onReceive = null)
+        private static IDistributor<int> CreateDistributor(Func<Lease<int>, Task> onReceive = null)
         {
-            var distributor = new InMemoryDistributor(new[]
+            var distributor = new InMemoryDistributor<int>(new[]
             {
-                new LeasableResource("1", TimeSpan.FromSeconds(1))
+                new Leasable<int>(1, "1", TimeSpan.FromSeconds(1))
             }, "").Trace();
 
             distributor.OnReceive(onReceive ?? (async _ => { }));

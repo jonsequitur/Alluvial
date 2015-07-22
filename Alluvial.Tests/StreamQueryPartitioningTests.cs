@@ -5,7 +5,6 @@ using FluentAssertions;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
-using Alluvial.Distributors;
 using NUnit.Framework;
 
 namespace Alluvial.Tests
@@ -106,12 +105,12 @@ namespace Alluvial.Tests
             // set up 10 competing catchups
             for (var i = 0; i < 10; i++)
             {
-                var distributor = new InMemoryDistributor(partitions.ForDistribution(), "")
+                var distributor = new InMemoryDistributor<IStreamQueryPartition<int>>(partitions.ForDistribution(), "")
                     .Trace();
 
                 distributor.OnReceive(async lease =>
                 {
-                    var partition = partitions.Single(p => p.ToString() == lease.LeasableResource.Name);
+                    var partition = partitions.Single(p => p.ToString() == lease.Leasable.Name);
                     var catchup = StreamCatchup.Create(await partitioner.GetStream(partition));
                     catchup.Subscribe(aggregator, store.Trace());
                     await catchup.RunSingleBatch();
