@@ -162,7 +162,7 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task By_default_QueryStreamDistributor_Trace_writes_onReceive_events_to_trace_output()
+        public async Task By_default_Distributor_Trace_writes_onReceive_events_to_trace_output()
         {
             Lease lease = null;
             using (var distributor = CreateDistributor(async l => lease = l))
@@ -180,7 +180,7 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task StreamQueryDistributor_Trace_default_behavior_can_be_overridden()
+        public async Task Distributor_Trace_default_behavior_can_be_overridden()
         {
             Lease leaseAcquired = null;
             Lease leaseReleased = null;

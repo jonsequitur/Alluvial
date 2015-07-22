@@ -59,7 +59,7 @@
     <Compile Include="PartitionBuilders\Int32PartitionBuilder.cs" />
     <Compile Include="PartitionBuilders\Int64PartitionBuilder.cs" />
     <Compile Include="PartitionBuilders\SqlGuidPartitionBuilder.cs" />
-    <Compile Include="StreamQueryDistributor.cs" />
+    <Compile Include="Distributor.cs" />
     <Compile Include="DistributorBase.cs" />
     <Compile Include="IStreamQueryPartitioner{TData,TCursor,TPartition}.cs" />
     <Compile Include="IStreamQueryPartition{TData}.cs" />

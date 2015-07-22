@@ -41,7 +41,7 @@
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SqlBrokeredDistributor.cs" />
-    <Compile Include="SqlBrokeredStreamQueryDistributorDatabase.cs" />
+    <Compile Include="SqlBrokeredDistributorDatabase.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Alluvial\Alluvial.csproj">

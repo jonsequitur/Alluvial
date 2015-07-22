@@ -98,9 +98,9 @@
     <Compile Include="BankDomain\IDomainEvent.cs" />
     <Compile Include="BankDomain\ProjectionBase.cs" />
     <Compile Include="CursorTests.cs" />
-    <Compile Include="Distributors\InMemoryStreamQueryDistributorTests.cs" />
+    <Compile Include="Distributors\InMemoryDistributorTests.cs" />
     <Compile Include="PipelineTests.cs" />
-    <Compile Include="Distributors\SqlBrokeredStreamQueryDistributorTests.cs" />
+    <Compile Include="Distributors\SqlBrokeredDistributorTests.cs" />
     <Compile Include="StreamCompositionTests.cs" />
     <Compile Include="StreamCatchupErrorTests.cs" />
     <Compile Include="SingleStreamCatchupTests.cs" />
@@ -114,7 +114,7 @@
     <Compile Include="StreamImplementations\InMemoryProjectionStore.cs" />
     <Compile Include="ProjectionTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Distributors\StreamQueryDistributorTests.cs" />
+    <Compile Include="Distributors\DistributorTests.cs" />
     <Compile Include="StreamQueryPartitioningTests.cs" />
     <Compile Include="StreamQueryTests.cs" />
     <Compile Include="TracingTests.cs" />
