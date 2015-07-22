@@ -253,6 +253,17 @@ namespace Alluvial
                 newCursor: upstream.NewCursor);
         }
 
+        /// <summary>
+        /// Aggregates a single batch of data from a stream using the specified aggregator and projection.
+        /// </summary>
+        /// <typeparam name="TProjection">The type of the projection.</typeparam>
+        /// <typeparam name="TData">The type of the data.</typeparam>
+        /// <typeparam name="TCursor">The type of the cursor.</typeparam>
+        /// <param name="stream">The stream.</param>
+        /// <param name="aggregator">The aggregator.</param>
+        /// <param name="projection">The projection.</param>
+        /// <returns>The updated state of the projection.</returns>
+        /// <remarks>This method can be used to create on-demand projections. It does not do any projection persistence.</remarks>
         public static async Task<TProjection> Aggregate<TProjection, TData, TCursor>(
             this IStream<TData, TCursor> stream,
             IStreamAggregator<TProjection, TData> aggregator,

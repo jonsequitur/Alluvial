@@ -43,6 +43,7 @@
   <ItemGroup>
     <Compile Include="AggregateAsync{TProjection,TData}.cs" />
     <Compile Include="Aggregate{TProjection,TData}.cs" />
+    <Compile Include="Aggregate{TProjection}.cs" />
     <Compile Include="AggregatorSubscription.cs" />
     <Compile Include="AnonymousPartitionedStream{TData,TCursor,TPartition}.cs" />
     <Compile Include="AnonymousProjectionStore{TKey,TProjection}.cs" />
