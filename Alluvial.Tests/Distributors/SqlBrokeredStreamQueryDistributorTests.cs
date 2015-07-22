@@ -11,14 +11,14 @@ namespace Alluvial.Tests.Distributors
     [TestFixture]
     public class SqlBrokeredStreamQueryDistributorTests : StreamQueryDistributorTests
     {
-        private SqlBrokeredStreamQueryDistributor distributor;
+        private SqlBrokeredDistributor distributor;
 
         private static readonly SqlBrokeredStreamQueryDistributorDatabase settings = new SqlBrokeredStreamQueryDistributorDatabase
         {
             ConnectionString = @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=AlluvialSqlDistributor"
         };
 
-        protected override IStreamQueryDistributor CreateDistributor(
+        protected override IDistributor CreateDistributor(
             Func<Lease, Task> onReceive = null,
             LeasableResource[] leasableResources = null,
             int maxDegreesOfParallelism = 1,
@@ -29,7 +29,7 @@ namespace Alluvial.Tests.Distributors
             leasableResources = leasableResources ?? DefaultLeasableResources;
 
             scope = scope ?? DateTimeOffset.UtcNow.Ticks.ToString();
-            distributor = new SqlBrokeredStreamQueryDistributor(
+            distributor = new SqlBrokeredDistributor(
                 leasableResources,
                 settings,
                 scope,

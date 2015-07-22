@@ -15,7 +15,7 @@ namespace Alluvial.Tests.Distributors
     [TestFixture]
     public abstract class StreamQueryDistributorTests
     {
-        protected abstract IStreamQueryDistributor CreateDistributor(
+        protected abstract IDistributor CreateDistributor(
             Func<Lease, Task> onReceive = null,
             LeasableResource[] leasableResources = null,
             int maxDegreesOfParallelism = 5,

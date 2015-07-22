@@ -6,8 +6,8 @@ namespace Alluvial
 {
     public static class StreamQueryDistributor
     {
-        public static IStreamQueryDistributor Trace(
-            this IStreamQueryDistributor distributor,
+        public static IDistributor Trace(
+            this IDistributor distributor,
             Action<Lease> onLeaseAcquired = null,
             Action<Lease> onLeaseReleasing = null)
         {
@@ -36,6 +36,8 @@ namespace Alluvial
                 }, distribute: distributor.Distribute);
         }
 
+
+
         private static void TraceOnLeaseReleasing(Lease lease)
         {
             System.Diagnostics.Trace.WriteLine("[Distribute] OnReceive (done) " + lease);
@@ -46,9 +48,9 @@ namespace Alluvial
             System.Diagnostics.Trace.WriteLine("[Distribute] OnReceive " + lease);
         }
 
-        private static IStreamQueryDistributor Create(Func<Task> start, Action<Func<Lease, Task>> onReceive, Func<Task> stop, Func<int, Task> distribute)
+        private static IDistributor Create(Func<Task> start, Action<Func<Lease, Task>> onReceive, Func<Task> stop, Func<int, Task> distribute)
         {
-            return new AnonymousStreamQueryDistributor(start, onReceive, stop, distribute);
+            return new AnonymousDistributor(start, onReceive, stop, distribute);
         }
     }
 }

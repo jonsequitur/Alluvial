@@ -8,9 +8,9 @@ namespace Alluvial.Tests.Distributors
     [TestFixture]
     public class InMemoryStreamQueryDistributorTests : StreamQueryDistributorTests
     {
-        private InMemoryStreamQueryDistributor distributor;
+        private InMemoryDistributor distributor;
 
-        protected override IStreamQueryDistributor CreateDistributor(
+        protected override IDistributor CreateDistributor(
             Func<Lease, Task> onReceive = null,
             LeasableResource[] leasableResources = null,
             int maxDegreesOfParallelism = 5,
@@ -18,7 +18,7 @@ namespace Alluvial.Tests.Distributors
             TimeSpan? waitInterval = null,
             string scope = null)
         {
-            distributor = new InMemoryStreamQueryDistributor(
+            distributor = new InMemoryDistributor(
                 leasableResources ?? DefaultLeasableResources,
                 scope ?? DateTimeOffset.UtcNow.Ticks.ToString(),
                 maxDegreesOfParallelism,

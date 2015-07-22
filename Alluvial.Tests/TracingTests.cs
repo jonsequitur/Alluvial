@@ -185,7 +185,7 @@ namespace Alluvial.Tests
             Lease leaseAcquired = null;
             Lease leaseReleased = null;
 
-            var distributor1 = new InMemoryStreamQueryDistributor(new[]
+            var distributor1 = new InMemoryDistributor(new[]
             {
                 new LeasableResource("1", TimeSpan.FromSeconds(1))
             }, "").Trace(
@@ -282,9 +282,9 @@ namespace Alluvial.Tests
             receivedBatch.Should().ContainInOrder(16, 17, 18);
         }
 
-        private static IStreamQueryDistributor CreateDistributor(Func<Lease, Task> onReceive = null)
+        private static IDistributor CreateDistributor(Func<Lease, Task> onReceive = null)
         {
-            var distributor = new InMemoryStreamQueryDistributor(new[]
+            var distributor = new InMemoryDistributor(new[]
             {
                 new LeasableResource("1", TimeSpan.FromSeconds(1))
             }, "").Trace();
