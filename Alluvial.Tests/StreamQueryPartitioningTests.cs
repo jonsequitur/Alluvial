@@ -105,8 +105,7 @@ namespace Alluvial.Tests
             // set up 10 competing catchups
             for (var i = 0; i < 10; i++)
             {
-                var distributor = new InMemoryDistributor<IStreamQueryPartition<int>>(partitions.ForDistribution(), "")
-                    .Trace();
+                var distributor = partitions.DistributeQueriesInProcess().Trace();
 
                 distributor.OnReceive(async lease =>
                 {

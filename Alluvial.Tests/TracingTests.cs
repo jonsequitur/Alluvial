@@ -187,7 +187,7 @@ namespace Alluvial.Tests
 
             var distributor1 = new InMemoryDistributor<int>(new[]
             {
-                new Leasable<int>(1, "1", TimeSpan.FromSeconds(1))
+                new Leasable<int>(1, "1")
             }, "").Trace(
                 onLeaseAcquired: l => { leaseAcquired = l; },
                 onLeaseReleasing: l => { leaseReleased = l; });
@@ -286,7 +286,7 @@ namespace Alluvial.Tests
         {
             var distributor = new InMemoryDistributor<int>(new[]
             {
-                new Leasable<int>(1, "1", TimeSpan.FromSeconds(1))
+                new Leasable<int>(1, "1")
             }, "").Trace();
 
             distributor.OnReceive(onReceive ?? (async _ => { }));
