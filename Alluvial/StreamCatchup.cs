@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Alluvial
@@ -17,7 +18,10 @@ namespace Alluvial
         /// <param name="initialCursor">The initial cursor from which the catchup proceeds.</param>
         /// <param name="batchSize">The number of items to retrieve from the stream per batch.</param>
         /// <returns></returns>
-        public static IStreamCatchup<TData, TCursor> Create<TData, TCursor>(IStream<TData, TCursor> stream, ICursor<TCursor> initialCursor = null, int? batchSize = null)
+        public static IStreamCatchup<TData, TCursor> Create<TData, TCursor>(
+            IStream<TData, TCursor> stream, 
+            ICursor<TCursor> initialCursor = null, 
+            int? batchSize = null)
         {
             return new SingleStreamCatchup<TData, TCursor>(
                 stream,
@@ -44,6 +48,17 @@ namespace Alluvial
             return new MultiStreamCatchup<TData, TUpstreamCursor, TDownstreamCursor>(
                 upstreamCatchup,
                 cursor ?? stream.NewCursor());
+        }
+
+        public static IStreamCatchup<TData, TCursor> DistributeAmong<TData, TCursor, TPartition>(
+            this IPartitionedStream<TData, TCursor, TPartition> streams,
+            IEnumerable<IStreamQueryPartition<TPartition>> partitions, 
+            int? batchSize = null)
+        {
+            return new DistributedStreamCatchup<TData, TCursor, TPartition>(
+                streams, 
+                partitions, 
+                batchSize);
         }
 
         /// <summary>

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -20,7 +21,9 @@ namespace Alluvial
         public SingleStreamCatchup(
             IStream<TData, TCursor> stream,
             ICursor<TCursor> initialCursor = null,
-            int? batchSize = null) : base(batchSize)
+            int? batchSize = null,
+            ConcurrentDictionary<Type, IAggregatorSubscription> subscriptions = null) :
+                base(batchSize, subscriptions)
         {
             if (stream == null)
             {

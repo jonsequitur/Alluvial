@@ -285,13 +285,13 @@ namespace Alluvial
             return projection;
         }
 
-        public static IStreamQueryPartitioner<TData, TCursor, TPartition> Partition<TData, TCursor, TPartition>(
+        public static IPartitionedStream<TData, TCursor, TPartition> Partition<TData, TCursor, TPartition>(
             Func<IStreamQuery<TCursor>, IStreamQueryPartition<TPartition>, Task<IEnumerable<TData>>> query, 
             string id = null, 
             Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor = null, 
             Func<ICursor<TCursor>> newCursor = null)
         {
-            return new AnonymousStreamQueryPartitioner<TData, TCursor, TPartition>(
+            return new AnonymousPartitionedStream<TData, TCursor, TPartition>(
                 id: id ?? query.GetHashCode().ToString(), // TODO: (Partition) a better default id
                 fetch: async (q, partition) =>
                 {
