@@ -33,8 +33,8 @@ namespace Alluvial.Tests.Distributors
         public void SetUp()
         {
             DefaultLeasable = Enumerable.Range(1, 10)
-                                                 .Select(i => new Leasable<int>(i, i.ToString()))
-                                                 .ToArray();
+                                        .Select(i => new Leasable<int>(i, i.ToString()))
+                                        .ToArray();
         }
 
         [Test]
@@ -254,7 +254,7 @@ namespace Alluvial.Tests.Distributors
             distributor2.OnReceive(onReceive);
             await distributor1.Start();
             await distributor2.Start();
-            await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds * 2.5));
+            await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*2.5));
             await distributor1.Stop();
             await distributor2.Stop();
 
@@ -362,10 +362,10 @@ namespace Alluvial.Tests.Distributors
             await distributor.Distribute(1);
 
             leasable.LeaseLastGranted
-                            .ToUniversalTime()
-                            .Should()
-                            .BeCloseTo(received,
-                                       precision: (int) ClockDriftTolerance.TotalMilliseconds);
+                    .ToUniversalTime()
+                    .Should()
+                    .BeCloseTo(received,
+                               precision: (int) ClockDriftTolerance.TotalMilliseconds);
         }
 
         [Test]
@@ -382,10 +382,21 @@ namespace Alluvial.Tests.Distributors
             await distributor.Distribute(1);
 
             leasable.LeaseLastReleased
-                            .ToUniversalTime()
-                            .Should()
-                            .BeCloseTo(received,
-                                       precision: (int) ClockDriftTolerance.TotalMilliseconds);
+                    .ToUniversalTime()
+                    .Should()
+                    .BeCloseTo(received,
+                               precision: (int) ClockDriftTolerance.TotalMilliseconds);
+        }
+
+        [Ignore("Scenario under development")]
+        [Test]
+        public async Task Distributor_can_be_slowed_when_there_is_no_incoming_data()
+        {
+            var stream = Enumerable.Range(1, 100).AsStream();
+
+            var distributor = CreateDistributor();
+
+            Assert.Fail("Test not written yet.");
         }
     }
 }

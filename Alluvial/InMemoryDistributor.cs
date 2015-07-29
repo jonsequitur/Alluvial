@@ -13,7 +13,7 @@ namespace Alluvial
             new ConcurrentDictionary<string, ConcurrentDictionary<Leasable<T>, Lease<T>>>();
 
         private readonly ConcurrentDictionary<Leasable<T>, Lease<T>> workInProgress;
-        private TimeSpan defaultLeaseDuration;
+        private readonly TimeSpan defaultLeaseDuration;
 
         public InMemoryDistributor(
             Leasable<T>[] leasables,
@@ -60,8 +60,6 @@ namespace Alluvial
 
         protected override async Task ReleaseLease(Lease<T> lease)
         {
-            lease.NotifyCompleted();
-
             if (!workInProgress.Values.Any(l => l.GetHashCode().Equals(lease.GetHashCode())))
             {
                 Debug.WriteLine("[Distribute] ReleaseLease (failed): " + lease);
@@ -75,6 +73,8 @@ namespace Alluvial
                 lease.NotifyReleased();
                 Debug.WriteLine("[Distribute] ReleaseLease: " + lease);
             }
+
+            lease.NotifyCompleted();
         }
     }
 }

@@ -15,14 +15,17 @@ namespace Alluvial
     internal abstract class StreamCatchupBase<TData, TCursor> : IStreamCatchup<TData, TCursor>
     {
         private readonly int? batchSize;
-        private object tcs;
+        private object batchTaskCompletionSource;
+        protected readonly ConcurrentDictionary<Type, IAggregatorSubscription> aggregatorSubscriptions;
 
-        protected StreamCatchupBase(int? batchSize = null)
+        protected StreamCatchupBase(
+            int? batchSize = null,
+            ConcurrentDictionary<Type, IAggregatorSubscription> aggregatorSubscriptions = null)
         {
             this.batchSize = batchSize;
+            this.aggregatorSubscriptions = aggregatorSubscriptions ??
+                                           new ConcurrentDictionary<Type, IAggregatorSubscription>();
         }
-
-        protected readonly ConcurrentDictionary<Type, IAggregatorSubscription> aggregatorSubscriptions = new ConcurrentDictionary<Type, IAggregatorSubscription>();
 
         public IDisposable SubscribeAggregator<TProjection>(
             IStreamAggregator<TProjection, TData> aggregator,
@@ -62,12 +65,12 @@ namespace Alluvial
 
             tcs = new TaskCompletionSource<AggregationBatch<TCursor>>();
 
-            var exchange = Interlocked.CompareExchange<object>(ref this.tcs, tcs, null);
+            var exchange = Interlocked.CompareExchange<object>(ref batchTaskCompletionSource, tcs, null);
 
             if (exchange != null)
             {
                 Debug.WriteLine("[Catchup] RunSingleBatch returning early");
-                var batch = await ((TaskCompletionSource<AggregationBatch<TCursor>>) this.tcs).Task;
+                var batch = await ((TaskCompletionSource<AggregationBatch<TCursor>>) batchTaskCompletionSource).Task;
                 return batch.Cursor;
             }
 
@@ -115,7 +118,7 @@ namespace Alluvial
 
             await Task.WhenAll(aggregationTasks);
 
-            this.tcs = null;
+            this.batchTaskCompletionSource = null;
 
             return upstreamCursor;
         }

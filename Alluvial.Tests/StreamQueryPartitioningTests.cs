@@ -5,6 +5,7 @@ using FluentAssertions;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
+using Its.Log.Instrumentation;
 using NUnit.Framework;
 
 namespace Alluvial.Tests
@@ -13,7 +14,7 @@ namespace Alluvial.Tests
     public class StreamQueryPartitioningTests
     {
         private int[] ints;
-        private IStreamQueryPartitioner<int, int, int> partitioner;
+        private IPartitionedStream<int, int, int> partitionedStream;
         private CompositeDisposable disposables;
 
         [SetUp]
@@ -21,13 +22,19 @@ namespace Alluvial.Tests
         {
             ints = Enumerable.Range(1, 1000).ToArray();
             disposables = new CompositeDisposable();
-            partitioner = Stream
+            partitionedStream = Stream
                 .Partition<int, int, int>(async (q, p) => ints
                                               .Where(i => i > p.LowerBoundExclusive &&
                                                           i <= p.UpperBoundInclusive)
                                               .Skip(q.Cursor.Position)
                                               .Take(q.BatchSize.Value),
-                                          advanceCursor: (query, batch) => { query.Cursor.AdvanceTo(batch.Last()); });
+                                          advanceCursor: (query, batch) =>
+                                          {
+                                              if (batch.Any())
+                                              {
+                                                  query.Cursor.AdvanceTo(batch.Last());
+                                              }
+                                          });
         }
 
         [TearDown]
@@ -40,7 +47,7 @@ namespace Alluvial.Tests
         public async Task A_stream_can_be_partitioned_through_query_parameterization()
         {
             var partition = StreamQuery.Partition(0, 100);
-            var stream = await partitioner.GetStream(partition);
+            var stream = await partitionedStream.GetStream(partition);
 
             var aggregator = Aggregator.Create<Projection<int, int>, int>((p, i) => p.Value += i.Sum());
 
@@ -54,18 +61,14 @@ namespace Alluvial.Tests
         [Test]
         public async Task When_a_partition_is_queried_then_the_cursor_is_updated()
         {
-            var partitions = new[]
-            {
-                StreamQuery.Partition(0, 500),
-                StreamQuery.Partition(500, 1000)
-            };
+            var partitions = StreamQuery.Partition(0, 1000).Among(2);
 
             var store = new InMemoryProjectionStore<Projection<int, int>>();
             var aggregator = Aggregator.Create<Projection<int, int>, int>((p, i) => p.Value += i.Sum());
 
             await Task.WhenAll(partitions.Select(async partition =>
             {
-                var stream = await partitioner.GetStream(partition);
+                var stream = await partitionedStream.GetStream(partition);
 
                 Console.WriteLine(stream);
 
@@ -83,9 +86,7 @@ namespace Alluvial.Tests
         [Test]
         public async Task Competing_catchups_can_lease_a_partition_using_a_distributor()
         {
-            var partitions = Enumerable.Range(0, 9)
-                                       .Select(i => StreamQuery.Partition(i*100, (i + 1)*100))
-                                       .ToArray();
+            var partitions = StreamQuery.Partition(0, 1000).Among(10);
 
             var store = new InMemoryProjectionStore<Projection<HashSet<int>, int>>();
 
@@ -109,8 +110,7 @@ namespace Alluvial.Tests
 
                 distributor.OnReceive(async lease =>
                 {
-                    var partition = partitions.Single(p => p.ToString() == lease.Leasable.Name);
-                    var catchup = StreamCatchup.Create(await partitioner.GetStream(partition));
+                    var catchup = StreamCatchup.Create(await partitionedStream.GetStream(lease.Resource));
                     catchup.Subscribe(aggregator, store.Trace());
                     await catchup.RunSingleBatch();
                 });
@@ -119,6 +119,43 @@ namespace Alluvial.Tests
 
                 disposables.Add(distributor);
             }
+
+            partitions.ToList()
+                      .ForEach(partition =>
+                                   store.Should()
+                                        .ContainSingle(p =>
+                                                           p.Value.Count() == 100 &&
+                                                           p.Value.OrderBy(i => i).Last() == partition.UpperBoundInclusive));
+        }
+
+        [Test]
+        public async Task Competing_catchups_can_lease_a_partition_using_a_distributor_catchup()
+        {
+            var store = new InMemoryProjectionStore<Projection<HashSet<int>, int>>();
+
+            var aggregator = Aggregator.Create<Projection<HashSet<int>, int>, int>((p, xs) =>
+            {
+                if (p.Value == null)
+                {
+                    p.Value = new HashSet<int>();
+                }
+
+                foreach (var x in xs)
+                {
+                    p.Value.Add(x);
+                }
+            }).Trace();
+
+            var partitions = StreamQuery.Partition(0, 1000).Among(10).ToArray();
+            var catchup = partitionedStream.DistributeAmong(partitions);
+
+            catchup.Subscribe(aggregator, store);
+
+            await catchup.RunUntilCaughtUp();
+
+            Formatter.ListExpansionLimit = 100;
+            Formatter<Projection<HashSet<int>, int>>.RegisterForAllMembers();
+            Console.WriteLine(new { store }.ToLogString());
 
             partitions.ToList()
                       .ForEach(partition =>
@@ -141,7 +178,7 @@ namespace Alluvial.Tests
 
             var guids = Enumerable.Range(1, totalNumberOfGuids).Select(_ => Guid.NewGuid()).ToArray();
 
-            var partitioner = Stream.Partition<Guid, int, Guid>(
+            var partitioned = Stream.Partition<Guid, int, Guid>(
                 async (q, p) =>
                     guids.Where(g => new SqlGuid(g).CompareTo(new SqlGuid(p.LowerBoundExclusive)) > 0 &&
                                      new SqlGuid(g).CompareTo(new SqlGuid(p.UpperBoundInclusive)) <= 0),
@@ -162,7 +199,7 @@ namespace Alluvial.Tests
 
             await Task.WhenAll(partitions.Select(async partition =>
             {
-                var stream = await partitioner.GetStream(partition);
+                var stream = await partitioned.GetStream(partition);
 
                 var catchup = StreamCatchup.Create(stream, batchSize: int.MaxValue);
                 catchup.Subscribe(aggregator, store);
