@@ -17,7 +17,7 @@ namespace Alluvial.Tests.Distributors
     {
         protected abstract IDistributor<int> CreateDistributor(
             Func<Lease<int>, Task> onReceive = null,
-            Leasable<int>[] leasable = null,
+            Leasable<int>[] leasables = null,
             int maxDegreesOfParallelism = 5,
             [CallerMemberName] string name = null,
             TimeSpan? waitInterval = null,
@@ -203,7 +203,7 @@ namespace Alluvial.Tests.Distributors
             var receiveCount = 0;
             var mre = new AsyncManualResetEvent();
             var distributor = CreateDistributor(
-                leasable: DefaultLeasable.Take(1).ToArray())
+                leasables: DefaultLeasable.Take(1).ToArray())
                 .Trace();
 
             distributor.OnReceive(async lease =>
@@ -386,6 +386,46 @@ namespace Alluvial.Tests.Distributors
                     .Should()
                     .BeCloseTo(received,
                                precision: (int) ClockDriftTolerance.TotalMilliseconds);
+        }
+
+        [Test]
+        public async Task Distribute_returns_a_sequence_containing_the_leases_granted()
+        {
+            var received = new ConcurrentBag<int>();
+
+            var distributor = CreateDistributor(async l => { received.Add(l.Leasable.Resource); });
+
+            var returned = await distributor.Distribute(3);
+
+            returned.Count().Should().Be(3);
+
+            foreach (var leasable in received)
+            {
+                returned.Should().Contain(leasable);
+            }
+        }
+
+        [Test]
+        public async Task Distribute_completes_only_after_the_requested_number_of_leases_has_been_acquired()
+        {
+            var acquireCount = 0;
+            var distributor = CreateDistributor(
+                onReceive: async lease =>
+                {
+                    Interlocked.Increment(ref acquireCount);
+                },
+                leasables: new[]
+                {
+                    new Leasable<int>(1, "one")
+                    {
+                        LeaseLastGranted = DateTimeOffset.UtcNow,
+                        LeaseLastReleased = DateTimeOffset.UtcNow.Add(DefaultLeaseDuration),
+                    }
+                }, maxDegreesOfParallelism: 1);
+
+            await distributor.Distribute(6);
+
+            acquireCount.Should().Be(6);
         }
 
         [Ignore("Scenario under development")]

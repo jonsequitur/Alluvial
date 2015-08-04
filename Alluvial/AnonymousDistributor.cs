@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Alluvial.Distributors;
 
@@ -9,12 +10,12 @@ namespace Alluvial
         private readonly Func<Task> start;
         private readonly Action<Func<Lease<T>, Task>> onReceived;
         private readonly Func<Task> stop;
-        private readonly Func<int, Task> distribute;
+        private readonly Func<int, Task<IEnumerable<T>>> distribute;
 
         public AnonymousDistributor(
             Func<Task> start,
             Action<Func<Lease<T>, Task>> onReceived,
-            Func<Task> stop, Func<int, Task> distribute)
+            Func<Task> stop, Func<int, Task<IEnumerable<T>>> distribute)
         {
             if (start == null)
             {
@@ -48,7 +49,7 @@ namespace Alluvial
             return start();
         }
 
-        public Task Distribute(int count)
+        public Task<IEnumerable<T>> Distribute(int count)
         {
             return distribute(count);
         }

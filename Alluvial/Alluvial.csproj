@@ -54,6 +54,8 @@
     <Compile Include="Distributors\Lease{T}.cs" />
     <Compile Include="InMemoryDistributor.cs" />
     <Compile Include="IDistributor{T}.cs" />
+    <Compile Include="IStreamQueryRangePartition{T}.cs" />
+    <Compile Include="Partition.cs" />
     <Compile Include="PartitionBuilders\BigIntegerPartitionBuilder.cs" />
     <Compile Include="PartitionBuilders\Int32PartitionBuilder.cs" />
     <Compile Include="PartitionBuilders\Int64PartitionBuilder.cs" />
@@ -71,6 +73,8 @@
     <Compile Include="AnonymousStreamSource{TKey,TData}.cs" />
     <Compile Include="AnonymousDisposable.cs" />
     <Compile Include="Cursor.cs" />
+    <Compile Include="PartitionBuilders\SqlGuidRangePartition.cs" />
+    <Compile Include="PartitionBuilders\StringRangePartition.cs" />
     <Compile Include="ProjectionStore.cs" />
     <Compile Include="Projection{TValue,TCursor}.cs" />
     <Compile Include="Projection{TValue}.cs" />
@@ -81,6 +85,7 @@
     <Compile Include="PipeAsync{TProjection,TData}.cs" />
     <Compile Include="StreamCatchupError.cs" />
     <Compile Include="StreamQueryPartition{T}.cs" />
+    <Compile Include="StreamQueryRangePartition{T}.cs" />
     <Compile Include="StreamSource.cs" />
     <Compile Include="StreamCatchup.cs" />
     <Compile Include="Stream.cs" />
@@ -105,6 +110,7 @@
     <Compile Include="StreamQuery{T}.cs" />
     <Compile Include="TaskExtensions.cs" />
     <Compile Include="TypeExtensions.cs" />
+    <Compile Include="Unit.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Alluvial.nuspec" />

@@ -18,6 +18,8 @@ namespace Alluvial
         private static readonly string catchupTypeDescription = typeof (DistributedStreamCatchup<TData, TCursor, TPartition>).ReadableName();
 
         private readonly IPartitionedStream<TData, TCursor, TPartition> partitionedStream;
+
+        // FIX: (DistributedStreamCatchup) need a way to dispose this distributor
         private readonly IDistributor<IStreamQueryPartition<TPartition>> distributor;
 
         public DistributedStreamCatchup(
@@ -35,16 +37,21 @@ namespace Alluvial
             }
 
             this.partitionedStream = partitionedStream;
+
             distributor = partitions.DistributeQueriesInProcess();
 
-            distributor.OnReceive(async lease =>
-            {
-                var catchup = new SingleStreamCatchup<TData, TCursor>(
-                    await partitionedStream.GetStream(lease.Resource),
-                    batchSize: batchSize,
-                    subscriptions: new ConcurrentDictionary<Type, IAggregatorSubscription>(aggregatorSubscriptions));
-                await catchup.RunSingleBatch();
-            });
+            distributor
+#if DEBUG
+                .Trace() // TODO: (DistributedStreamCatchup) figure out a way to let people Trace this distributor
+#endif
+                .OnReceive(async lease =>
+                {
+                    var catchup = new SingleStreamCatchup<TData, TCursor>(
+                        await partitionedStream.GetStream(lease.Resource),
+                        batchSize: batchSize,
+                        subscriptions: new ConcurrentDictionary<Type, IAggregatorSubscription>(aggregatorSubscriptions));
+                    await catchup.RunSingleBatch();
+                });
         }
 
         /// <summary>
@@ -55,9 +62,27 @@ namespace Alluvial
         /// </returns>
         public override async Task<ICursor<TCursor>> RunSingleBatch()
         {
-            await distributor.Distribute(1);
+            // FIX: (RunSingleBatch) need to acquire each partition once
+            var resources = distributor as IEnumerable<IStreamQueryPartition<TPartition>>;
+            if (resources != null)
+            {
+                var partitions = new ConcurrentDictionary<IStreamQueryPartition<TPartition>, Unit>(
+                    resources.Select(r => new KeyValuePair<IStreamQueryPartition<TPartition>, Unit>(r, Unit.Default)));
 
-            // FIX: (RunSingleBatch) this is weird. there isn't really a sensible cursor to return since each partition will have a different cursor.
+                while (partitions.Any())
+                {
+                    var acquired = await distributor.Distribute(1);
+
+                    Unit _;
+                    partitions.TryRemove(acquired.Single(), out _);
+                }
+            }
+            else
+            {
+                // not all distributors have a finite set of known leasable resources
+                await distributor.Distribute(1);
+            }
+
             return Cursor.New<TCursor>();
         }
 

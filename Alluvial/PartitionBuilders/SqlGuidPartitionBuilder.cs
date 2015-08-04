@@ -161,34 +161,31 @@ namespace Alluvial.PartitionBuilders
             return value;
         }
 
-        internal class Builder
+        public static IEnumerable<IStreamQueryRangePartition<Guid>> ByRange(
+            Guid lowerBoundExclusive,
+            Guid upperBoundInclusive,
+            int numberOfPartitions)
         {
-            public IEnumerable<IStreamQueryPartition<Guid>> Build(
-                Guid lowerBoundExclusive,
-                Guid upperBoundInclusive,
-                int numberOfPartitions)
+            var upperBigIntInclusive = upperBoundInclusive.ToBigInteger();
+            var lowerBigIntExclusive = lowerBoundExclusive.ToBigInteger();
+            var space = upperBigIntInclusive - lowerBigIntExclusive;
+
+            foreach (var i in Enumerable.Range(0, numberOfPartitions))
             {
-                var upperBigIntInclusive = upperBoundInclusive.ToBigInteger();
-                var lowerBigIntExclusive = lowerBoundExclusive.ToBigInteger();
-                var space = upperBigIntInclusive - lowerBigIntExclusive;
+                var lower = lowerBigIntExclusive + (i*(space/numberOfPartitions));
 
-                foreach (var i in Enumerable.Range(0, numberOfPartitions))
+                var upper = lowerBigIntExclusive + ((i + 1)*(space/numberOfPartitions));
+
+                if (i == numberOfPartitions - 1)
                 {
-                    var lower = lowerBigIntExclusive + (i*(space/numberOfPartitions));
-
-                    var upper = lowerBigIntExclusive + ((i + 1)*(space/numberOfPartitions));
-
-                    if (i == numberOfPartitions - 1)
-                    {
-                        upper = upperBigIntInclusive;
-                    }
-
-                    yield return new StreamQueryPartition<Guid>
-                    {
-                        LowerBoundExclusive = lower.ToGuid(),
-                        UpperBoundInclusive = upper.ToGuid()
-                    };
+                    upper = upperBigIntInclusive;
                 }
+
+                yield return new SqlGuidRangePartition
+                {
+                    LowerBoundExclusive = lower.ToGuid(),
+                    UpperBoundInclusive = upper.ToGuid()
+                };
             }
         }
     }

@@ -115,6 +115,7 @@
     <Compile Include="ProjectionTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Distributors\DistributorTests.cs" />
+    <Compile Include="StreamQueryDistributionTests.cs" />
     <Compile Include="StreamQueryPartitioningTests.cs" />
     <Compile Include="StreamQueryTests.cs" />
     <Compile Include="TracingTests.cs" />

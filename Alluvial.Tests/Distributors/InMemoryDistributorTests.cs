@@ -12,14 +12,14 @@ namespace Alluvial.Tests.Distributors
 
         protected override IDistributor<int> CreateDistributor(
             Func<Lease<int>, Task> onReceive = null,
-            Leasable<int>[] leasable = null,
+            Leasable<int>[] leasables = null,
             int maxDegreesOfParallelism = 5,
             string name = null,
             TimeSpan? waitInterval = null,
             string scope = null)
         {
             distributor = new InMemoryDistributor<int>(
-                leasable ?? DefaultLeasable,
+                leasables ?? DefaultLeasable,
                 scope ?? DateTimeOffset.UtcNow.Ticks.ToString(),
                 maxDegreesOfParallelism,
                 waitInterval,

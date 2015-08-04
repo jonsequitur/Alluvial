@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using trace = System.Diagnostics.Trace;
@@ -285,10 +286,10 @@ namespace Alluvial
             return projection;
         }
 
-        public static IPartitionedStream<TData, TCursor, TPartition> Partition<TData, TCursor, TPartition>(
-            Func<IStreamQuery<TCursor>, IStreamQueryPartition<TPartition>, Task<IEnumerable<TData>>> query, 
-            string id = null, 
-            Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor = null, 
+        public static IPartitionedStream<TData, TCursor, TPartition> PartitionByRanges<TData, TCursor, TPartition>(
+            Func<IStreamQuery<TCursor>, IStreamQueryPartition<TPartition>, Task<IEnumerable<TData>>> query,
+            string id = null,
+            Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor = null,
             Func<ICursor<TCursor>> newCursor = null)
         {
             return new AnonymousPartitionedStream<TData, TCursor, TPartition>(
@@ -346,6 +347,12 @@ namespace Alluvial
                 },
                 advanceCursor: (q, b) => { },
                 newCursor: stream.NewCursor);
+        }
+
+        public static IPartitionedStream<TData, TCursor, TPartition> Trace<TData, TCursor, TPartition>(
+            this IPartitionedStream<TData, TCursor, TPartition> stream)
+        {
+            return new AnonymousPartitionedStream<TData, TCursor, TPartition>(async p => (await stream.GetStream(p)).Trace());
         }
     }
 }

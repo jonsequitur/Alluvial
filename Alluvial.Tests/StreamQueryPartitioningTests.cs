@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Data.SqlTypes;
 using FluentAssertions;
+using Its.Log.Instrumentation;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
-using Its.Log.Instrumentation;
 using NUnit.Framework;
 
 namespace Alluvial.Tests
@@ -23,18 +23,25 @@ namespace Alluvial.Tests
             ints = Enumerable.Range(1, 1000).ToArray();
             disposables = new CompositeDisposable();
             partitionedStream = Stream
-                .Partition<int, int, int>(async (q, p) => ints
-                                              .Where(i => i > p.LowerBoundExclusive &&
-                                                          i <= p.UpperBoundInclusive)
-                                              .Skip(q.Cursor.Position)
-                                              .Take(q.BatchSize.Value),
-                                          advanceCursor: (query, batch) =>
-                                          {
-                                              if (batch.Any())
-                                              {
-                                                  query.Cursor.AdvanceTo(batch.Last());
-                                              }
-                                          });
+                .PartitionByRanges<int, int, int>(
+                    query: async (q, p) =>
+                    {
+                        return ints
+                            .Where(i => i.IsWithinPartition(p))
+                            .Skip(q.Cursor.Position)
+                            .Take(q.BatchSize.Value);
+                    },
+                    advanceCursor: (query, batch) =>
+                    {
+                        // putting the cursor and the partition on the same field is a little weird because a batch of zero doesn't necessarily signify the end of the batch
+                        if (batch.Any())
+                        {
+                            query.Cursor.AdvanceTo(batch.Last());
+                        }
+                    });
+
+            Formatter.ListExpansionLimit = 100;
+            Formatter<Projection<HashSet<int>, int>>.RegisterForAllMembers();
         }
 
         [TearDown]
@@ -46,7 +53,7 @@ namespace Alluvial.Tests
         [Test]
         public async Task A_stream_can_be_partitioned_through_query_parameterization()
         {
-            var partition = StreamQuery.Partition(0, 100);
+            var partition = Partition.ByRange(0, 100);
             var stream = await partitionedStream.GetStream(partition);
 
             var aggregator = Aggregator.Create<Projection<int, int>, int>((p, i) => p.Value += i.Sum());
@@ -61,7 +68,7 @@ namespace Alluvial.Tests
         [Test]
         public async Task When_a_partition_is_queried_then_the_cursor_is_updated()
         {
-            var partitions = StreamQuery.Partition(0, 1000).Among(2);
+            var partitions = Partition.ByRange(0, 1000).Among(2);
 
             var store = new InMemoryProjectionStore<Projection<int, int>>();
             var aggregator = Aggregator.Create<Projection<int, int>, int>((p, i) => p.Value += i.Sum());
@@ -84,104 +91,21 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task Competing_catchups_can_lease_a_partition_using_a_distributor()
-        {
-            var partitions = StreamQuery.Partition(0, 1000).Among(10);
-
-            var store = new InMemoryProjectionStore<Projection<HashSet<int>, int>>();
-
-            var aggregator = Aggregator.Create<Projection<HashSet<int>, int>, int>((p, xs) =>
-            {
-                if (p.Value == null)
-                {
-                    p.Value = new HashSet<int>();
-                }
-
-                foreach (var x in xs)
-                {
-                    p.Value.Add(x);
-                }
-            }).Trace();
-
-            // set up 10 competing catchups
-            for (var i = 0; i < 10; i++)
-            {
-                var distributor = partitions.DistributeQueriesInProcess().Trace();
-
-                distributor.OnReceive(async lease =>
-                {
-                    var catchup = StreamCatchup.Create(await partitionedStream.GetStream(lease.Resource));
-                    catchup.Subscribe(aggregator, store.Trace());
-                    await catchup.RunSingleBatch();
-                });
-
-                distributor.Start();
-
-                disposables.Add(distributor);
-            }
-
-            partitions.ToList()
-                      .ForEach(partition =>
-                                   store.Should()
-                                        .ContainSingle(p =>
-                                                           p.Value.Count() == 100 &&
-                                                           p.Value.OrderBy(i => i).Last() == partition.UpperBoundInclusive));
-        }
-
-        [Test]
-        public async Task Competing_catchups_can_lease_a_partition_using_a_distributor_catchup()
-        {
-            var store = new InMemoryProjectionStore<Projection<HashSet<int>, int>>();
-
-            var aggregator = Aggregator.Create<Projection<HashSet<int>, int>, int>((p, xs) =>
-            {
-                if (p.Value == null)
-                {
-                    p.Value = new HashSet<int>();
-                }
-
-                foreach (var x in xs)
-                {
-                    p.Value.Add(x);
-                }
-            }).Trace();
-
-            var partitions = StreamQuery.Partition(0, 1000).Among(10).ToArray();
-            var catchup = partitionedStream.DistributeAmong(partitions);
-
-            catchup.Subscribe(aggregator, store);
-
-            await catchup.RunUntilCaughtUp();
-
-            Formatter.ListExpansionLimit = 100;
-            Formatter<Projection<HashSet<int>, int>>.RegisterForAllMembers();
-            Console.WriteLine(new { store }.ToLogString());
-
-            partitions.ToList()
-                      .ForEach(partition =>
-                                   store.Should()
-                                        .ContainSingle(p =>
-                                                           p.Value.Count() == 100 &&
-                                                           p.Value.OrderBy(i => i).Last() == partition.UpperBoundInclusive));
-        }
-
-        [Test]
         public async Task GuidQueryPartitioner_partitions_guids_fairly()
         {
             var totalNumberOfGuids = 1000;
             var numberOfPartitions = 50;
 
-            var partitions = StreamQuery.Partition(
+            var partitions = Partition.ByRange(
                 Guid.Empty,
                 Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff"))
                                         .Among(numberOfPartitions);
 
             var guids = Enumerable.Range(1, totalNumberOfGuids).Select(_ => Guid.NewGuid()).ToArray();
 
-            var partitioned = Stream.Partition<Guid, int, Guid>(
+            var partitioned = Stream.PartitionByRanges<Guid, int, Guid>(
                 async (q, p) =>
-                    guids.Where(g => new SqlGuid(g).CompareTo(new SqlGuid(p.LowerBoundExclusive)) > 0 &&
-                                     new SqlGuid(g).CompareTo(new SqlGuid(p.UpperBoundInclusive)) <= 0),
+                    guids.Where(g => g.IsWithinPartition(p)),
                 advanceCursor: (q, b) => q.Cursor.AdvanceTo(totalNumberOfGuids));
 
             var aggregator = Aggregator.Create<Projection<HashSet<Guid>, int>, Guid>((p, b) =>
@@ -227,7 +151,7 @@ namespace Alluvial.Tests
         [Test]
         public async Task IntPartitionBuilder_creates_the_even_partitions_when_possible()
         {
-            var partitions = StreamQuery.Partition(
+            var partitions = Partition.ByRange(
                 lowerBoundExclusive: 0,
                 upperBoundInclusive: 100)
                                         .Among(10)
@@ -267,7 +191,7 @@ namespace Alluvial.Tests
         [Test]
         public async Task When_even_partitions_are_not_possible_among_int_partitions_then_Among_creates_gapless_and_non_overlapping_partitions()
         {
-            var partitions = StreamQuery.Partition(
+            var partitions = Partition.ByRange(
                 lowerBoundExclusive: 0,
                 upperBoundInclusive: 11)
                                         .Among(3)
@@ -281,6 +205,29 @@ namespace Alluvial.Tests
 
             partitions[2].LowerBoundExclusive.Should().Be(6);
             partitions[2].UpperBoundInclusive.Should().Be(11);
+        }
+
+        [Test]
+        public async Task String_partitions_correctly_evaluate_values()
+        {
+            var AtoJ = Partition.ByRange(
+                lowerBoundExclusive: "",
+                upperBoundInclusive: "j");
+
+            var KtoZ = Partition.ByRange(
+                lowerBoundExclusive: "j",
+                upperBoundInclusive: "z");
+
+            "a".IsWithinPartition(AtoJ).Should().BeTrue();
+            "b".IsWithinPartition(AtoJ).Should().BeTrue();
+            "j".IsWithinPartition(AtoJ).Should().BeTrue();
+            "k".IsWithinPartition(AtoJ).Should().BeFalse();
+            "z".IsWithinPartition(AtoJ).Should().BeFalse();
+            
+            "a".IsWithinPartition(KtoZ).Should().BeFalse();
+            "j".IsWithinPartition(KtoZ).Should().BeFalse();
+            "k".IsWithinPartition(KtoZ).Should().BeTrue();
+            "z".IsWithinPartition(KtoZ).Should().BeTrue();
         }
     }
 }

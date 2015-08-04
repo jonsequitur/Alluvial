@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Alluvial.Distributors;
 
@@ -25,7 +26,7 @@ namespace Alluvial
         /// Distributes the specified number of leases.
         /// </summary>
         /// <param name="count">The number of leases to distribute.</param>
-        Task Distribute(int count);
+        Task<IEnumerable<T>> Distribute(int count);
 
         /// <summary>
         /// Completes all currently leased work and stops distributing further work.

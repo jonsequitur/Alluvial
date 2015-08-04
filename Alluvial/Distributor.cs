@@ -12,7 +12,7 @@ namespace Alluvial
             Func<Task> start,
             Action<Func<Lease<T>, Task>> onReceive,
             Func<Task> stop,
-            Func<int, Task> distribute)
+            Func<int, Task<IEnumerable<T>>> distribute)
         {
             return new AnonymousDistributor<T>(start, onReceive, stop, distribute);
         }

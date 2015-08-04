@@ -1,19 +1,15 @@
 namespace Alluvial
 {
     /// <summary>
-    /// A set of boundaries used to partition a query across multiple independent processes.
+    /// Used to partition a query across multiple independent processes.
     /// </summary>
     /// <typeparam name="TPartition">The type of the partition.</typeparam>
-    public interface IStreamQueryPartition<out TPartition>
+    public interface IStreamQueryPartition<in TPartition>
     {
         /// <summary>
-        /// Gets the lower, exclusive, bound.
+        /// Determines whether the partition should contain the specified value.
         /// </summary>
-        TPartition LowerBoundExclusive { get; }
-
-        /// <summary>
-        /// Gets the upper, inclusive, bound.
-        /// </summary>
-        TPartition UpperBoundInclusive { get; }
+        /// <param name="value">The value.</param>
+        bool Contains(TPartition value);
     }
 }
