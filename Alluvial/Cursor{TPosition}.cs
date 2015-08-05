@@ -35,7 +35,11 @@ namespace Alluvial
             }
         }
 
-        public Cursor(T position = default(T))
+        public Cursor() : this(default(T))
+        {
+        }
+
+        public Cursor(T position)
         {
             Position = position;
             originalPosition = position;

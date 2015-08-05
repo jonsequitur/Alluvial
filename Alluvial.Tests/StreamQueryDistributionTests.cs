@@ -8,7 +8,6 @@ using NUnit.Framework;
 
 namespace Alluvial.Tests
 {
-    [Ignore("Test not finished")]
     [TestFixture]
     public class StreamQueryDistributionTests
     {
@@ -68,23 +67,6 @@ namespace Alluvial.Tests
                 }
             }).Trace();
 
-            //            // set up 10 competing catchups
-            //            for (var i = 0; i < 10; i++)
-            //            {
-            //                var distributor = partitions.DistributeQueriesInProcess().Trace();
-            //
-            //                distributor.OnReceive(async lease =>
-            //                {
-            //                    var catchup = StreamCatchup.Create(await partitionedStream.GetStream(lease.Resource));
-            //                    catchup.Subscribe(aggregator, store.Trace());
-            //                    await catchup.RunSingleBatch();
-            //                });
-            //
-            //                distributor.Start();
-            //
-            //                disposables.Add(distributor);
-            //            }
-
             var catchup = partitionedStream
                 .Trace()
                 .DistributeAmong(partitions, batchSize: 15);
@@ -103,11 +85,10 @@ namespace Alluvial.Tests
                                                            projection.Value.All(p => p.IsWithinPartition(partition))));
         }
 
-        [Ignore("Test not finished")]
         [Test]
         public async Task Distributed_catchups_can_store_a_cursor_per_partition()
         {
-            var store = new InMemoryProjectionStore<Projection<HashSet<string>, IStreamQueryPartition<string>>>();
+            var cursorStore = new InMemoryProjectionStore<ICursor<int>>(_ => Cursor.New<int>());
 
             var aggregator = Aggregator.Create<Projection<HashSet<string>, int>, string>((p, xs) =>
             {
@@ -122,20 +103,22 @@ namespace Alluvial.Tests
                 }
             }).Trace();
 
-            var catchup = partitionedStream.DistributeAmong(partitions, batchSize: 15);
+            var catchup = partitionedStream
+                .DistributeAmong(partitions,
+                                 batchSize: 73,
+                                 manageCursor: cursorStore.Trace().AsHandler() );
 
             catchup.Subscribe(aggregator);
 
             await catchup.RunUntilCaughtUp();
 
-            Console.WriteLine(new { store }.ToLogString());
+            Console.WriteLine(new { store = cursorStore }.ToLogString());
 
-            partitions.ToList()
-                      .ForEach(partition =>
-                                   store.Should()
-                                        .ContainSingle(projection =>
-                                                           projection.Value.Count() == 100 &&
-                                                           projection.Value.All(p => p.IsWithinPartition(partition))));
+            cursorStore.Count().Should().Be(26);
+            Enumerable.Range(1, 26).ToList().ForEach(i =>
+            {
+                cursorStore.Should().Contain(c => c.Position == i*100);
+            });
         }
     }
 }

@@ -52,13 +52,15 @@ namespace Alluvial
 
         public static IStreamCatchup<TData, TCursor> DistributeAmong<TData, TCursor, TPartition>(
             this IPartitionedStream<TData, TCursor, TPartition> streams,
-            IEnumerable<IStreamQueryPartition<TPartition>> partitions, 
-            int? batchSize = null)
+            IEnumerable<IStreamQueryPartition<TPartition>> partitions,
+            int? batchSize = null,
+            FetchAndSaveProjection<ICursor<TCursor>> manageCursor = null)
         {
             return new DistributedStreamCatchup<TData, TCursor, TPartition>(
-                streams, 
-                partitions, 
-                batchSize);
+                streams,
+                partitions,
+                batchSize,
+                manageCursor);
         }
 
         /// <summary>

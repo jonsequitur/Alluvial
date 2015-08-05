@@ -12,6 +12,7 @@ namespace Alluvial
     /// </summary>
     /// <typeparam name="TData">The type of the data that the catchup pushes to the aggregators.</typeparam>
     /// <typeparam name="TCursor">The type of the cursor.</typeparam>
+    /// <typeparam name="TPartition">The type of the partition.</typeparam>
     [DebuggerDisplay("{ToString()}")]
     internal class DistributedStreamCatchup<TData, TCursor, TPartition> : StreamCatchupBase<TData, TCursor>
     {
@@ -25,7 +26,8 @@ namespace Alluvial
         public DistributedStreamCatchup(
             IPartitionedStream<TData, TCursor, TPartition> partitionedStream,
             IEnumerable<IStreamQueryPartition<TPartition>> partitions,
-            int? batchSize = null) : base(batchSize)
+            int? batchSize = null,
+            FetchAndSaveProjection<ICursor<TCursor>> manageCursor = null ) : base(batchSize)
         {
             if (partitionedStream == null)
             {
@@ -40,17 +42,24 @@ namespace Alluvial
 
             distributor = partitions.DistributeQueriesInProcess();
 
+            manageCursor = manageCursor ?? ((id, aggregate) => aggregate(null));
+
             distributor
 #if DEBUG
                 .Trace() // TODO: (DistributedStreamCatchup) figure out a way to let people Trace this distributor
 #endif
                 .OnReceive(async lease =>
                 {
-                    var catchup = new SingleStreamCatchup<TData, TCursor>(
-                        await partitionedStream.GetStream(lease.Resource),
-                        batchSize: batchSize,
-                        subscriptions: new ConcurrentDictionary<Type, IAggregatorSubscription>(aggregatorSubscriptions));
-                    await catchup.RunSingleBatch();
+                    await manageCursor(lease.ResourceName, async cursor =>
+                    {
+                        var catchup = new SingleStreamCatchup<TData, TCursor>(
+                            await partitionedStream.GetStream(lease.Resource),
+                            initialCursor: cursor,
+                            batchSize: batchSize,
+                            subscriptions: new ConcurrentDictionary<Type, IAggregatorSubscription>(aggregatorSubscriptions));
+
+                        return await catchup.RunSingleBatch();
+                    });
                 });
         }
 
