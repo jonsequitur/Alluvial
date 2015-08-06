@@ -67,6 +67,14 @@ namespace Alluvial
                 });
         }
 
+        /// <summary>
+        /// Wraps a stream aggregator in a decorator function having the same signature.
+        /// </summary>
+        /// <typeparam name="TProjection">The type of the projection.</typeparam>
+        /// <typeparam name="TData">The type of the data.</typeparam>
+        /// <param name="aggregator">The aggregator.</param>
+        /// <param name="initial">The prior state of the projection.</param>
+        /// <returns>A new aggregator that wraps calls to the specified aggregator.</returns>
         public static IStreamAggregator<TProjection, TData> Pipeline<TProjection, TData>(
             this IStreamAggregator<TProjection, TData> aggregator,
             Func<TProjection, IStreamBatch<TData>, AggregateAsync<TProjection, TData>, Task> initial)
@@ -76,6 +84,14 @@ namespace Alluvial
                                                                              aggregator.Aggregate));
         }
 
+        /// <summary>
+        /// Wraps a stream aggregator in a decorator function having the same signature.
+        /// </summary>
+        /// <typeparam name="TProjection">The type of the projection.</typeparam>
+        /// <typeparam name="TData">The type of the data.</typeparam>
+        /// <param name="aggregator">The aggregator.</param>
+        /// <param name="initial">The prior state of the projection.</param>
+        /// <returns>A new aggregator that wraps calls to the specified aggregator.</returns>
         public static IStreamAggregator<TProjection, TData> Pipeline<TProjection, TData>(
             this IStreamAggregator<TProjection, TData> aggregator,
             PipeAsync<TProjection, TData> initial)
@@ -86,6 +102,14 @@ namespace Alluvial
                                                           aggregator.Aggregate));
         }
 
+        /// <summary>
+        /// Traces calls to the specified aggregator.
+        /// </summary>
+        /// <typeparam name="TProjection">The type of the projection.</typeparam>
+        /// <typeparam name="TData">The type of the data.</typeparam>
+        /// <param name="aggregator">The aggregator.</param>
+        /// <param name="write">A delegate that can be used to specify how the arguments should be traced. If this is not provided, output is sent to <see cref="System.Diagnostics.Trace" />.</param>
+        /// <returns>The original aggregator wrapped in a tracing decorator.</returns>
         public static IStreamAggregator<TProjection, TData> Trace<TProjection, TData>(
             this IStreamAggregator<TProjection, TData> aggregator,
             Action<TProjection, IStreamBatch<TData>> write = null)
@@ -107,6 +131,14 @@ namespace Alluvial
             });
         }
 
+        /// <summary>
+        /// Traces calls to the specified aggregator function.
+        /// </summary>
+        /// <typeparam name="TProjection">The type of the projection.</typeparam>
+        /// <typeparam name="TData">The type of the data.</typeparam>
+        /// <param name="aggregate">The aggregator function.</param>
+        /// <param name="write">A delegate that can be used to specify how the arguments should be traced. If this is not provided, output is sent to <see cref="System.Diagnostics.Trace" />.</param>
+        /// <returns>The original aggregator wrapped in a tracing decorator.</returns>
         public static IStreamAggregator<TProjection, TData> Trace<TProjection, TData>(
             this AggregateAsync<TProjection, TData> aggregate,
             Action<TProjection, IStreamBatch<TData>> write = null)
