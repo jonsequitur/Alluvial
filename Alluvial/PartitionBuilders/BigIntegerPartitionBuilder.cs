@@ -4,9 +4,9 @@ using System.Numerics;
 
 namespace Alluvial.PartitionBuilders
 {
-    internal class BigIntegerPartitionBuilder
+    internal static class BigIntegerPartitionBuilder
     {
-        public IEnumerable<IStreamQueryPartition<BigInteger>> Build(
+        public static IEnumerable<IStreamQueryRangePartition<BigInteger>> ByRange(
             BigInteger lowerBoundExclusive,
             BigInteger upperBoundInclusive,
             int numberOfPartitions)
@@ -24,7 +24,7 @@ namespace Alluvial.PartitionBuilders
                     upper = upperBoundInclusive;
                 }
 
-                yield return new StreamQueryPartition<BigInteger>
+                yield return new StreamQueryRangePartition<BigInteger>
                 {
                     LowerBoundExclusive = lower,
                     UpperBoundInclusive = upper

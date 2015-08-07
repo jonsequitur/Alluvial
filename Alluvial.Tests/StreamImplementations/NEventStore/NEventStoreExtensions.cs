@@ -35,11 +35,12 @@ namespace Alluvial.Tests
             this IStoreEvents store,
             Func<int, string> streamId,
             decimal amount = 1,
-            int howMany = 1)
+            int howMany = 1, 
+            string bucketId = null)
         {
             for (var i = 0; i < howMany; i++)
             {
-                store.WriteEvents(streamId(i), amount);
+                store.WriteEvents(streamId(i), amount, bucketId: bucketId);
             }
         }
 
@@ -47,11 +48,12 @@ namespace Alluvial.Tests
             this IStoreEvents store, 
             string streamId, 
             decimal amount = 1, 
-            int howMany = 1)
+            int howMany = 1, 
+            string bucketId = "default")
         {
             for (var i = 0; i < howMany; i++)
             {
-                using (var eventStream = store.OpenStream(streamId, 0))
+                using (var eventStream = store.OpenStream(bucketId, streamId, 0, int.MaxValue))
                 {
                     if (amount > 0)
                     {

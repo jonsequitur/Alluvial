@@ -68,55 +68,6 @@ namespace Alluvial.Tests
                                                  "the projection cursor is past the end of the event stream so no events should be applied");
         }
 
-        [Test]
-        public async Task A_data_stream_can_be_mapped_at_query_time()
-        {
-            var domainEvents = stream.Map(es => es.Select(e => e.Body).OfType<IDomainEvent>());
-
-            var query = domainEvents.CreateQuery();
-
-            var batch = await domainEvents.Fetch(query);
-
-            batch.Count()
-                 .Should()
-                 .Be(4);
-        }
-
-        [Test]
-        public async Task A_mapped_data_stream_can_be_traversed_using_the_outer_query_cursor()
-        {
-            using (var nEventStoreStream = store.OpenStream(streamId))
-            {
-                for (var i = 0; i < 5; i++)
-                {
-                    nEventStoreStream.Add(new EventMessage
-                    {
-                        Body = new FundsWithdrawn
-                        {
-                            AggregateId = streamId,
-                            Amount = 1m
-                        }
-                    });
-                }
-                nEventStoreStream.CommitChanges(Guid.NewGuid());
-            }
-
-            var domainEvents = stream.Map(es => es.Select(e => e.Body)
-                                                  .OfType<FundsWithdrawn>());
-
-            var query = domainEvents.CreateQuery();
-
-            var batch = await query.NextBatch();
-
-            batch.Count()
-                 .Should()
-                 .Be(5);
-            query.Cursor
-                 .Position
-                 .Should()
-                 .Be(9);
-        }
-
         private static IStreamAggregator<BalanceProjection, EventMessage> AccountBalanceProjector()
         {
             return Aggregator.Create<BalanceProjection, EventMessage>(

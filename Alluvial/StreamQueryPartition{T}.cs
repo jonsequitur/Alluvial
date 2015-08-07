@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 
 namespace Alluvial
@@ -6,14 +7,33 @@ namespace Alluvial
     [DebuggerDisplay("{ToString()}")]
     internal class StreamQueryPartition<TPartition> : IStreamQueryPartition<TPartition>
     {
-        public TPartition LowerBoundExclusive { get; set; }
-        public TPartition UpperBoundInclusive { get; set; }
+        private readonly Func<TPartition, bool> contains;
+        private readonly string name;
+
+        public StreamQueryPartition(
+            Func<TPartition, bool> contains,
+            string name)
+        {
+            if (contains == null)
+            {
+                throw new ArgumentNullException("contains");
+            }
+            if (name == null)
+            {
+                throw new ArgumentNullException("name");
+            }
+            this.contains = contains;
+            this.name = name;
+        }
+
+        public bool Contains(TPartition value)
+        {
+            return contains(value);
+        }
 
         public override string ToString()
         {
-            return string.Format("partition:{0}-{1}",
-                                 LowerBoundExclusive,
-                                 UpperBoundInclusive);
+            return string.Format("partition:{0}", name);
         }
     }
 }

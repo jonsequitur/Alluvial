@@ -9,6 +9,14 @@ namespace Alluvial
     /// </summary>
     public static class ProjectionStore
     {
+        /// <summary>
+        /// Creates a projection store.
+        /// </summary>
+        /// <typeparam name="TKey">The type of the key.</typeparam>
+        /// <typeparam name="TProjection">The type of the projection.</typeparam>
+        /// <param name="get">The operation specifying how to persist a projection to storage.</param>
+        /// <param name="put">The operation specifying how to retrieve a projection from storage.</param>
+        /// <returns></returns>
         public static IProjectionStore<TKey, TProjection> Create<TKey, TProjection>(
             Func<TKey, Task<TProjection>> get,
             Func<TKey, TProjection, Task> put)
@@ -64,7 +72,7 @@ namespace Alluvial
 
         public static FetchAndSaveProjection<TProjection> AsHandler<TProjection>(this IProjectionStore<string, TProjection> store)
         {
-            store = store ?? new SingleInstanceProjectionCache<string, TProjection>();
+            store = store ?? new InMemoryProjectionStore<TProjection>();
 
             return async (key, update) =>
             {

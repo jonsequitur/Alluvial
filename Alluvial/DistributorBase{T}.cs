@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -7,7 +9,7 @@ using Alluvial.Distributors;
 
 namespace Alluvial
 {
-    public abstract class DistributorBase<T> : IDistributor<T>
+    public abstract class DistributorBase<T> : IDistributor<T>, IEnumerable<T>
     {
         private Func<Lease<T>, Task> onReceive;
         private readonly int maxDegreesOfParallelism;
@@ -24,6 +26,10 @@ namespace Alluvial
             if (leasables == null)
             {
                 throw new ArgumentNullException("leasables");
+            }
+            if (leasables.Length ==0)
+            {
+                throw new ArgumentException("There must be at least one leasable.");
             }
             if (maxDegreesOfParallelism <= 0)
             {
@@ -43,12 +49,27 @@ namespace Alluvial
             this.onReceive = onReceive;
         }
 
-        public async Task Distribute(int count)
+        public virtual async Task<IEnumerable<T>> Distribute(int count)
         {
-            await RunOne(loop: false);
+            var acquired = new List<T>();
+
+            while (acquired.Count < count)
+            {
+                var acquisition = await TryRunOne(loop: false);
+                if (acquisition.Acquired)
+                {
+                    acquired.Add(acquisition.Value);
+                }
+                else
+                {
+                    await Task.Delay((int) (waitInterval.TotalMilliseconds/leasables.Length));
+                }
+            }
+
+            return acquired;
         }
 
-        public async Task Start()
+        public virtual async Task Start()
         {
             if (onReceive == null)
             {
@@ -59,20 +80,20 @@ namespace Alluvial
             {
 #pragma warning disable 4014
                 // deliberately fire and forget so that the tasks can run in parallel
-                RunOne(loop: true);
+                TryRunOne(loop: true);
 #pragma warning restore 4014
             }
         }
 
-        private async Task RunOne(bool loop)
+        private async Task<LeaseAcquisitionAttempt> TryRunOne(bool loop)
         {
             if (stopped)
             {
                 Debug.WriteLine("[Distribute] Aborting");
-                return;
+                return LeaseAcquisitionAttempt.Failed();
             }
 
-            Debug.WriteLine("[Distribute] Polling");
+            Debug.WriteLine("[Distribute] Trying to acquire lease");
 
             Lease<T> lease = null;
             try
@@ -115,9 +136,15 @@ namespace Alluvial
             }
             else
             {
+                Debug.WriteLine("[Distribute] Did not acquire lease");
+
                 if (loop)
                 {
                     await Task.Delay(waitInterval);
+                }
+                else
+                {
+                    return LeaseAcquisitionAttempt.Failed();
                 }
             }
 
@@ -125,9 +152,11 @@ namespace Alluvial
             {
 #pragma warning disable 4014
                 // async recursion. we don't await in order to truncate the call stack.
-                Task.Run(() => RunOne(loop));
+                Task.Run(() => TryRunOne(loop));
 #pragma warning restore 4014
             }
+            
+            return LeaseAcquisitionAttempt.Succeeded(lease.Resource);
         }
 
         protected abstract Task ReleaseLease(Lease<T> lease);
@@ -148,6 +177,40 @@ namespace Alluvial
         public void Dispose()
         {
             Stop();
+        }
+
+        private struct LeaseAcquisitionAttempt
+        {
+            public T Value { get; private set; }
+
+            public bool Acquired { get; private set; }
+
+            public static LeaseAcquisitionAttempt Failed()
+            {
+                return new LeaseAcquisitionAttempt
+                {
+                    Acquired = false
+                };
+            }
+
+            public static LeaseAcquisitionAttempt Succeeded(T value)
+            {
+                return new LeaseAcquisitionAttempt
+                {
+                    Acquired = true,
+                    Value = value
+                };
+            }
+        }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            return leasables.Select(l => l.Resource).GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }

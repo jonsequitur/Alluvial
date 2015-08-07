@@ -33,8 +33,4 @@ namespace Alluvial
             }
         }
     }
-
-    internal struct Unit
-    {
-    }
 }

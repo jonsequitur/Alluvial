@@ -52,13 +52,15 @@ namespace Alluvial
 
         public static IStreamCatchup<TData, TCursor> DistributeAmong<TData, TCursor, TPartition>(
             this IPartitionedStream<TData, TCursor, TPartition> streams,
-            IEnumerable<IStreamQueryPartition<TPartition>> partitions, 
-            int? batchSize = null)
+            IEnumerable<IStreamQueryPartition<TPartition>> partitions,
+            int? batchSize = null,
+            FetchAndSaveProjection<ICursor<TCursor>> manageCursor = null)
         {
             return new DistributedStreamCatchup<TData, TCursor, TPartition>(
-                streams, 
-                partitions, 
-                batchSize);
+                streams,
+                partitions,
+                batchSize,
+                manageCursor);
         }
 
         /// <summary>
@@ -201,6 +203,19 @@ namespace Alluvial
             HandleAggregatorError<TProjection> onError = null)
         {
             return catchup.SubscribeAggregator(aggregator, manageProjection, onError);
+        }
+
+        public static IDisposable Subscribe<TData, TCursor>(
+            this IStreamCatchup<TData, TCursor> catchup,
+            Func<IStreamBatch<TData>, Task> aggregate)
+        {
+            return catchup.Subscribe(
+                Aggregator.Create<Projection<Unit, TCursor>, TData>(async (p, b) =>
+                {
+                    await aggregate(b);
+                    return p;
+                }),
+                new InMemoryProjectionStore<Projection<Unit, TCursor>>());
         }
 
         private static FetchAndSaveProjection<TProjection> NoCursor<TProjection>(TProjection projection)

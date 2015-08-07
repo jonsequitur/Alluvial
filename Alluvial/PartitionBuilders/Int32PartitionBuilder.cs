@@ -4,9 +4,9 @@ using System.Linq;
 
 namespace Alluvial.PartitionBuilders
 {
-    internal class Int32PartitionBuilder
+    internal static class Int32PartitionBuilder
     {
-        public IEnumerable<IStreamQueryPartition<int>> Build(
+        public static IEnumerable<IStreamQueryRangePartition<int>> ByRange(
             Int32 lowerBoundExclusive,
             Int32 upperBoundInclusive,
             int numberOfPartitions)
@@ -24,7 +24,7 @@ namespace Alluvial.PartitionBuilders
                     upper = upperBoundInclusive;
                 }
 
-                yield return new StreamQueryPartition<Int32>
+                yield return new StreamQueryRangePartition<int>
                 {
                     LowerBoundExclusive = lower,
                     UpperBoundInclusive = upper

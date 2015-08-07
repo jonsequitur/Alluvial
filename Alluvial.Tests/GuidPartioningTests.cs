@@ -218,13 +218,13 @@ namespace Alluvial.Tests
         {
             int numberOfPartitions = 1000;
 
-            var partitions = StreamQuery.Partition(
+            var partitions = Partition.ByRange(
                 Guid.Empty,
                 Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff"))
                                         .Among(numberOfPartitions)
                                         .ToArray();
 
-            for (int i = 0; i < numberOfPartitions - 1; i++)
+            for (var i = 0; i < numberOfPartitions - 1; i++)
             {
                 var firstPartition = partitions[i];
                 var secondPartition = partitions[i + 1];

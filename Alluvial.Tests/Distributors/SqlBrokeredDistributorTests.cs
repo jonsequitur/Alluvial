@@ -20,17 +20,17 @@ namespace Alluvial.Tests.Distributors
 
         protected override IDistributor<int> CreateDistributor(
             Func<Lease<int>, Task> onReceive = null,
-            Leasable<int>[] leasable = null,
+            Leasable<int>[] leasables = null,
             int maxDegreesOfParallelism = 1,
             string name = null,
             TimeSpan? waitInterval = null,
             string scope = null)
         {
-            leasable = leasable ?? DefaultLeasable;
+            leasables = leasables ?? DefaultLeasable;
 
             scope = scope ?? DateTimeOffset.UtcNow.Ticks.ToString();
             distributor = new SqlBrokeredDistributor<int>(
-                leasable,
+                leasables,
                 settings,
                 scope,
                 maxDegreesOfParallelism,
@@ -42,7 +42,7 @@ namespace Alluvial.Tests.Distributors
                 distributor.OnReceive(onReceive);
             }
 
-            ProvisionLeasableResources(leasable, scope);
+            ProvisionLeasableResources(leasables, scope);
 
             return distributor;
         }

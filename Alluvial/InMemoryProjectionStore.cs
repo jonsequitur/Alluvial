@@ -1,19 +1,33 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Alluvial.Tests
+namespace Alluvial
 {
-    public class InMemoryProjectionStore<TProjection> :
+    internal class InMemoryProjectionStore<TProjection> :
         IProjectionStore<string, TProjection>,
         IEnumerable<TProjection>
-        where TProjection : new()
     {
         private readonly ConcurrentDictionary<string, TProjection> store = new ConcurrentDictionary<string, TProjection>();
+        private readonly Func<string, TProjection> createProjection;
+
+        public InMemoryProjectionStore(Func<string, TProjection> createProjection = null)
+        {
+            this.createProjection = createProjection ?? (_ => Activator.CreateInstance<TProjection>());
+        }
 
         public async Task Put(string streamId, TProjection projection)
         {
+            if (streamId == null)
+            {
+                throw new ArgumentNullException("streamId");
+            }
+            if (projection == null)
+            {
+                throw new ArgumentNullException("projection");
+            }
             store[streamId] = projection;
         }
 
@@ -24,7 +38,7 @@ namespace Alluvial.Tests
             {
                 return projection;
             }
-            projection = new TProjection();
+            projection = createProjection(streamId);
             return projection;
         }
 
