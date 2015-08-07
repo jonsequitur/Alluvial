@@ -6,6 +6,13 @@ namespace Alluvial
     internal class AnonymousPartitionedStream<TData, TCursor, TPartition> : IPartitionedStream<TData, TCursor, TPartition>
     {
         private readonly Func<IStreamQueryPartition<TPartition>, Task<IStream<TData, TCursor>>> getStream;
+        private readonly string id;
+
+        public AnonymousPartitionedStream(
+            string id,
+            Func<IStreamQueryPartition<TPartition>, Task<IStream<TData, TCursor>>> getStream) : this(id, fetch: async (q, p) => await (await getStream(p)).Fetch(q))
+        {
+        }
 
         public AnonymousPartitionedStream(
             string id,
@@ -14,26 +21,32 @@ namespace Alluvial
             Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor = null,
             Func<ICursor<TCursor>> newCursor = null)
         {
+            this.id = id ?? string.Format(@"{0}({1} c:{2} p:{3})", typeof (TData).ReadableName(), typeof (TCursor).ReadableName(), typeof(TPartition).ReadableName(), fetch.GetHashCode());
+
             getStream = async partition => new StreamPartition(
-                string.Format("{0}[{1}]", id, partition),
+                PartitionIdFor(partition),
                 fetch,
                 partition,
                 advanceCursor,
                 newCursor);
         }
 
-        public AnonymousPartitionedStream(Func<IStreamQueryPartition<TPartition>, Task<IStream<TData, TCursor>>> getStream)
+        public string Id
         {
-            if (getStream == null)
+            get
             {
-                throw new ArgumentNullException("getStream");
+                return id;
             }
-            this.getStream = getStream;
         }
 
         public async Task<IStream<TData, TCursor>> GetStream(IStreamQueryPartition<TPartition> partition)
         {
             return await getStream(partition);
+        }
+
+        private string PartitionIdFor(IStreamQueryPartition<TPartition> partition)
+        {
+            return string.Format("{0}[{1}]", id, partition);
         }
 
         private class StreamPartition : AnonymousStreamBase<TData, TCursor>

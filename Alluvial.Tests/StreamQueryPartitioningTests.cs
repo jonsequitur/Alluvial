@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Data.SqlTypes;
 using FluentAssertions;
 using Its.Log.Instrumentation;
 using System.Linq;
@@ -23,7 +22,7 @@ namespace Alluvial.Tests
             ints = Enumerable.Range(1, 1000).ToArray();
             disposables = new CompositeDisposable();
             partitionedStream = Stream
-                .PartitionByRanges<int, int, int>(
+                .Partitioned<int, int, int>(
                     query: async (q, p) =>
                     {
                         return ints
@@ -103,7 +102,7 @@ namespace Alluvial.Tests
 
             var guids = Enumerable.Range(1, totalNumberOfGuids).Select(_ => Guid.NewGuid()).ToArray();
 
-            var partitioned = Stream.PartitionByRanges<Guid, int, Guid>(
+            var partitioned = Stream.Partitioned<Guid, int, Guid>(
                 async (q, p) =>
                     guids.Where(g => g.IsWithinPartition(p)),
                 advanceCursor: (q, b) => q.Cursor.AdvanceTo(totalNumberOfGuids));

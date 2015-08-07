@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using trace = System.Diagnostics.Trace;
@@ -88,7 +87,7 @@ namespace Alluvial
             Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor = null,
             Func<ICursor<TCursor>> newCursor = null)
         {
-            return Create(string.Format("{0}({1} by {2})", typeof (TData).Name, typeof (TCursor).Name, query.GetHashCode()),
+            return Create(string.Format("{0}({1} c:{2})", typeof (TData).ReadableName(), typeof (TCursor).ReadableName(), query.GetHashCode()),
                           query,
                           advanceCursor,
                           newCursor);
@@ -187,17 +186,17 @@ namespace Alluvial
         /// Maps data from a stream into a new form.
         /// </summary>
         public static IStream<TTo, TCursor> Map<TFrom, TTo, TCursor>(
-            this IStream<TFrom, TCursor> sourceStream,
+            this IStream<TFrom, TCursor> source,
             Func<IEnumerable<TFrom>, IEnumerable<TTo>> map,
             string id = null)
         {
             return Create<TTo, TCursor>(
-                id: id ?? string.Format("{0}->Map({1})", sourceStream.Id, typeof(TTo).ReadableName()),
+                id: id ?? string.Format("{0}->Map({1})", source.Id, typeof(TTo).ReadableName()),
                 query: async q =>
                 {
-                    var query = sourceStream.CreateQuery(q.Cursor, q.BatchSize);
+                    var query = source.CreateQuery(q.Cursor, q.BatchSize);
 
-                    var sourceBatch = await sourceStream.Fetch(query);
+                    var sourceBatch = await source.Fetch(query);
 
                     var mappedItems = map(sourceBatch);
 
@@ -211,7 +210,24 @@ namespace Alluvial
                 {
                     // don't advance the cursor in the map operation, since sourceStream.Fetch will already have done it
                 },
-                newCursor: sourceStream.NewCursor);
+                newCursor: source.NewCursor);
+        }
+
+        /// <summary>
+        /// Maps data from a stream into a new form.
+        /// </summary>
+        public static IPartitionedStream<TTo, TCursor, TPartition> Map<TFrom, TTo, TCursor, TPartition>(
+            this IPartitionedStream<TFrom, TCursor, TPartition> source,
+            Func<IEnumerable<TFrom>, IEnumerable<TTo>> map,
+            string id = null)
+        {
+            return new AnonymousPartitionedStream<TTo, TCursor, TPartition>(
+                id: id,
+                getStream: async partition =>
+                {
+                    var stream = await source.GetStream(partition);
+                    return stream.Map(map);
+                });
         }
 
         /// <summary>
@@ -286,14 +302,24 @@ namespace Alluvial
             return projection;
         }
 
-        public static IPartitionedStream<TData, TCursor, TPartition> PartitionByRanges<TData, TCursor, TPartition>(
+        /// <summary>
+        /// Creates a partitioned stream.
+        /// </summary>
+        /// <typeparam name="TData">The type of the data.</typeparam>
+        /// <typeparam name="TCursor">The type of the cursor.</typeparam>
+        /// <typeparam name="TPartition">The type of the partition.</typeparam>
+        /// <param name="query">The query.</param>
+        /// <param name="id">The base identifier for the partitioned stream.</param>
+        /// <param name="advanceCursor">A delegate that advances the cursor after a batch is pulled from the stream.</param>
+        /// <param name="newCursor">A delegate that returns a new cursor.</param>
+        public static IPartitionedStream<TData, TCursor, TPartition> Partitioned<TData, TCursor, TPartition>(
             Func<IStreamQuery<TCursor>, IStreamQueryPartition<TPartition>, Task<IEnumerable<TData>>> query,
             string id = null,
             Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor = null,
             Func<ICursor<TCursor>> newCursor = null)
         {
             return new AnonymousPartitionedStream<TData, TCursor, TPartition>(
-                id: id ?? query.GetHashCode().ToString(), // TODO: (Partition) a better default id
+                id: id,
                 fetch: async (q, partition) =>
                 {
                     q.BatchSize = q.BatchSize ?? StreamBatch.MaxSize;
@@ -352,7 +378,9 @@ namespace Alluvial
         public static IPartitionedStream<TData, TCursor, TPartition> Trace<TData, TCursor, TPartition>(
             this IPartitionedStream<TData, TCursor, TPartition> stream)
         {
-            return new AnonymousPartitionedStream<TData, TCursor, TPartition>(async p => (await stream.GetStream(p)).Trace());
+            return new AnonymousPartitionedStream<TData, TCursor, TPartition>(
+                stream.Id,
+                async p => (await stream.GetStream(p)).Trace());
         }
     }
 }

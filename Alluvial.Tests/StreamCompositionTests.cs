@@ -154,9 +154,7 @@ namespace Alluvial.Tests
             foreach (var stream in streams.SelectMany(s => s))
             {
                 count++;
-                Console.WriteLine("{0}: {1} [{2}]", count, stream, stream.Id);
-                IStreamBatch<IDomainEvent> batch = await stream.CreateQuery().NextBatch();
-                Console.WriteLine(batch);
+                var batch = await stream.CreateQuery().NextBatch();
                 batch.Count.Should().Be(25);
             }
         }

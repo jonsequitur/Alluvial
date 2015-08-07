@@ -17,7 +17,7 @@ namespace Alluvial
             return new AnonymousDistributor<T>(start, onReceive, stop, distribute);
         }
 
-        public static IDistributor<IStreamQueryPartition<TPartition>> DistributeQueriesInProcess<TPartition>(
+        internal static IDistributor<IStreamQueryPartition<TPartition>> DistributeQueriesInProcess<TPartition>(
             this IEnumerable<IStreamQueryPartition<TPartition>> partitions,
             int maxDegreesOfParallelism = 5,
             Func<IStreamQueryPartition<TPartition>, string> named = null,

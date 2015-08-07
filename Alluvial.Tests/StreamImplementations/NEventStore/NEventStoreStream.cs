@@ -9,9 +9,9 @@ namespace Alluvial.Tests
 {
     public static class NEventStoreStream
     {
-        public static IStream<EventMessage, int> ByAggregate(IStoreEvents store, string streamId)
+        public static IStream<EventMessage, int> ByAggregate(IStoreEvents store, string streamId, string bucketId = "default")
         {
-            return new NEventStoreAggregateStream(store, streamId);
+            return new NEventStoreAggregateStream(store, streamId, bucketId);
         }
 
         public static IStream<EventMessage, string> AllEvents(IStoreEvents store)
@@ -28,8 +28,12 @@ namespace Alluvial.Tests
         {
             private readonly IStoreEvents store;
             private readonly string streamId;
+            private readonly string bucketId;
 
-            public NEventStoreAggregateStream(IStoreEvents store, string streamId)
+            public NEventStoreAggregateStream(
+                IStoreEvents store, 
+                string streamId,
+                string bucketId = "default")
             {
                 if (store == null)
                 {
@@ -39,8 +43,13 @@ namespace Alluvial.Tests
                 {
                     throw new ArgumentNullException("streamId");
                 }
+                if (bucketId == null)
+                {
+                    throw new ArgumentNullException("bucketId");
+                }
                 this.store = store;
                 this.streamId = streamId;
+                this.bucketId = bucketId;
             }
 
             public string Id
@@ -51,26 +60,31 @@ namespace Alluvial.Tests
                 }
             }
 
+            /// <summary>
+            /// Fetches a batch of data from the stream.
+            /// </summary>
+            /// <param name="query">The query to apply to the stream.</param>
+            /// <returns></returns>
             public async Task<IStreamBatch<EventMessage>> Fetch(IStreamQuery<int> query)
             {
-                var lastFetchedRevision = Math.Max(query.Cursor.Position, 0);
+                var minRevisionToFetch = Math.Max(query.Cursor.Position, 0);
 
                 int maxRevisionToFetch;
 
                 checked
                 {
-                    maxRevisionToFetch = lastFetchedRevision + query.BatchSize ?? 100000;
+                    maxRevisionToFetch = minRevisionToFetch + query.BatchSize ?? 100000;
                 }
 
                 var maxExistingRevision = store.Advanced
-                                               .GetFrom("default",
+                                               .GetFrom(bucketId,
                                                         streamId,
-                                                        lastFetchedRevision,
+                                                        minRevisionToFetch,
                                                         int.MaxValue)
                                                .Select(c => c.StreamRevision)
                                                .LastOrDefault();
 
-                if (maxExistingRevision <= lastFetchedRevision)
+                if (maxExistingRevision <= minRevisionToFetch)
                 {
                     return query.Cursor.EmptyBatch<EventMessage, int>();
                 }
@@ -79,13 +93,14 @@ namespace Alluvial.Tests
 
                 checked
                 {
-                    for (var i = lastFetchedRevision + 1; i <= maxRevisionToFetch; i++)
+                    for (var i = minRevisionToFetch + 1; i <= maxRevisionToFetch; i++)
                     {
                         try
                         {
-                            using (var stream = store.OpenStream(streamId,
+                            using (var stream = store.OpenStream(streamId: streamId,
                                                                  minRevision: i,
-                                                                 maxRevision: i))
+                                                                 maxRevision: i,
+                                                                 bucketId: bucketId))
                             {
                                 if (stream.CommittedEvents.Count == 0)
                                 {
@@ -119,9 +134,8 @@ namespace Alluvial.Tests
 
             public ICursor<int> NewCursor()
             {
-                return Cursor.New<int>(-1);
+                return Cursor.New(-1);
             }
-
         }
 
         private class NEventStoreAllEventsStream : IStream<EventMessage, string>

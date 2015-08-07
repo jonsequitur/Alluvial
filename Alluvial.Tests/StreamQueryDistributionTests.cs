@@ -23,7 +23,7 @@ namespace Alluvial.Tests
             partitions = AtoZ().Select(c => Partition.Where<string>(s => s.StartsWith(c), named: c));
 
             partitionedStream = Stream
-                .PartitionByRanges<string, int, string>(
+                .Partitioned<string, int, string>(
                     query: async (q, partition) =>
                     {
                         var wordsInPartition = words

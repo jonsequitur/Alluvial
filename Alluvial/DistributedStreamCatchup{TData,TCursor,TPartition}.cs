@@ -71,7 +71,6 @@ namespace Alluvial
         /// </returns>
         public override async Task<ICursor<TCursor>> RunSingleBatch()
         {
-            // FIX: (RunSingleBatch) need to acquire each partition once
             var resources = distributor as IEnumerable<IStreamQueryPartition<TPartition>>;
             if (resources != null)
             {

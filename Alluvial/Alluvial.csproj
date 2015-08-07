@@ -55,6 +55,7 @@
     <Compile Include="InMemoryDistributor.cs" />
     <Compile Include="IDistributor{T}.cs" />
     <Compile Include="IStreamQueryRangePartition{T}.cs" />
+    <Compile Include="IStreamQueryValuePartition{T}.cs" />
     <Compile Include="Partition.cs" />
     <Compile Include="PartitionBuilders\BigIntegerPartitionBuilder.cs" />
     <Compile Include="PartitionBuilders\Int32PartitionBuilder.cs" />
@@ -86,6 +87,7 @@
     <Compile Include="StreamCatchupError.cs" />
     <Compile Include="StreamQueryPartition{T}.cs" />
     <Compile Include="StreamQueryRangePartition{T}.cs" />
+    <Compile Include="StreamQueryValuePartition{T}.cs" />
     <Compile Include="StreamSource.cs" />
     <Compile Include="StreamCatchup.cs" />
     <Compile Include="Stream.cs" />

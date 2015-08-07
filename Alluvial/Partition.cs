@@ -60,6 +60,11 @@ namespace Alluvial
             };
         }
 
+        public static IStreamQueryPartition<TPartition> ByValue<TPartition>(TPartition value)
+        {
+            return new StreamQueryValuePartition<TPartition>(value);
+        }
+
         /// <summary>
         /// Splits a query partition into several smaller, non-overlapping, gapless partitions.
         /// </summary>
