@@ -69,7 +69,7 @@ namespace Alluvial.Tests.Distributors
 
             var receivedAsOfStop = received;
 
-            await Task.Delay(((int) DefaultLeaseDuration.TotalMilliseconds*3));
+            await Task.Delay(((int) DefaultLeaseDuration.TotalMilliseconds*4));
 
             received.Should().Be(receivedAsOfStop);
         }

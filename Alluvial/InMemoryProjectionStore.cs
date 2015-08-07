@@ -4,9 +4,9 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Alluvial.Tests
+namespace Alluvial
 {
-    public class InMemoryProjectionStore<TProjection> :
+    internal class InMemoryProjectionStore<TProjection> :
         IProjectionStore<string, TProjection>,
         IEnumerable<TProjection>
     {
@@ -20,6 +20,14 @@ namespace Alluvial.Tests
 
         public async Task Put(string streamId, TProjection projection)
         {
+            if (streamId == null)
+            {
+                throw new ArgumentNullException("streamId");
+            }
+            if (projection == null)
+            {
+                throw new ArgumentNullException("projection");
+            }
             store[streamId] = projection;
         }
 

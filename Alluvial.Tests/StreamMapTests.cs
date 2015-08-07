@@ -69,17 +69,13 @@ namespace Alluvial.Tests
 
             var receivedEvents = new ConcurrentBag<IDomainEvent>();
 
-            var projectionStore = new InMemoryProjectionStore<Projection<Unit, int>>();
-
-            catchup.Subscribe(async (p, b) =>
+            catchup.Subscribe(async b =>
             {
                 foreach (var e in b)
                 {
                     receivedEvents.Add(e);
                 }
-
-                return p;
-            }, projectionStore.Trace());
+            });
 
             await catchup.RunUntilCaughtUp().Timeout();
 

@@ -111,7 +111,6 @@
     <Compile Include="StreamImplementations\NEventStore\NEventStoreStreamSource.cs" />
     <Compile Include="StreamImplementations\NEventStore\NEventStoreStreamUpdate.cs" />
     <Compile Include="StreamImplementations\NEventStore\TestEventStore.cs" />
-    <Compile Include="StreamImplementations\InMemoryProjectionStore.cs" />
     <Compile Include="ProjectionTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Distributors\DistributorTests.cs" />

@@ -205,6 +205,19 @@ namespace Alluvial
             return catchup.SubscribeAggregator(aggregator, manageProjection, onError);
         }
 
+        public static IDisposable Subscribe<TData, TCursor>(
+            this IStreamCatchup<TData, TCursor> catchup,
+            Func<IStreamBatch<TData>, Task> aggregate)
+        {
+            return catchup.Subscribe(
+                Aggregator.Create<Projection<Unit, TCursor>, TData>(async (p, b) =>
+                {
+                    await aggregate(b);
+                    return p;
+                }),
+                new InMemoryProjectionStore<Projection<Unit, TCursor>>());
+        }
+
         private static FetchAndSaveProjection<TProjection> NoCursor<TProjection>(TProjection projection)
         {
             return (streamId, aggregate) => aggregate(projection);
