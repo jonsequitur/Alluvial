@@ -31,20 +31,29 @@ namespace Alluvial
         /// <typeparam name="TPartition">The type of the partition.</typeparam>
         /// <param name="value">The value.</param>
         /// <param name="partition">The partition.</param>
-        public static bool IsWithinPartition<TPartition>(this TPartition value, IStreamQueryPartition<TPartition> partition)
+        public static bool IsWithinPartition<TPartition>(
+            this TPartition value, IStreamQueryPartition<TPartition> partition)
         {
             return partition.Contains(value);
         }
 
-        public static IQueryable<T> WithinPartition<T, TValue>(
-            this IQueryable<T> source,
-            Expression<Func<T, TValue>> key,
-            IStreamQueryRangePartition<TValue> partition)
+        /// <summary>
+        /// Filters a queryable to the data within a specified range partition.
+        /// </summary>
+        /// <typeparam name="TData">The type of the data.</typeparam>
+        /// <typeparam name="TPartition">The type of the partition value.</typeparam>
+        /// <param name="source">The source queryable.</param>
+        /// <param name="key">A selector for the partitioned value.</param>
+        /// <param name="partition">The partition.</param>
+        public static IQueryable<TData> WithinPartition<TData, TPartition>(
+            this IQueryable<TData> source,
+            Expression<Func<TData, TPartition>> key,
+            IStreamQueryRangePartition<TPartition> partition)
         {
             var lower = Expression.Constant(partition.LowerBoundExclusive);
             var upper = Expression.Constant(partition.UpperBoundInclusive);
 
-            var compareTo = MethodInfoFor<TValue>.CompareTo;
+            var compareTo = MethodInfoFor<TPartition>.CompareTo;
 
             var selectLeft = Expression.GreaterThan(
                 Expression.Call(key.Body,
@@ -59,7 +68,7 @@ namespace Alluvial
             var filterExpression = Expression.AndAlso(selectLeft, selectRight);
 
             return source.Where(
-                Expression.Lambda<Func<T, bool>>(filterExpression, key.Parameters.Single()));
+                Expression.Lambda<Func<TData, bool>>(filterExpression, key.Parameters.Single()));
         }
 
         /// <summary>

@@ -186,7 +186,7 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task When_even_partitions_are_not_possible_among_int_partitions_then_Among_creates_gapless_and_non_overlapping_partitions()
+        public async Task When_even_partitions_are_not_possible_among_int_range_partitions_then_Among_creates_gapless_and_non_overlapping_partitions()
         {
             var partitions = Partition.ByRange(
                 lowerBoundExclusive: 0,
@@ -205,7 +205,7 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task String_partitions_correctly_evaluate_values()
+        public async Task String_range_partitions_correctly_evaluate_values()
         {
             var AtoJ = Partition.ByRange(
                 lowerBoundExclusive: "",
@@ -225,6 +225,15 @@ namespace Alluvial.Tests
             "j".IsWithinPartition(KtoZ).Should().BeFalse();
             "k".IsWithinPartition(KtoZ).Should().BeTrue();
             "z".IsWithinPartition(KtoZ).Should().BeTrue();
+        }
+
+        [Test]
+        public async Task String_value_partitions_correctly_evaluate_values()
+        {
+            var thisPartition = Partition.ByValue("this");
+
+            "this".IsWithinPartition(thisPartition).Should().BeTrue();
+            "that".IsWithinPartition(thisPartition).Should().BeFalse();
         }
     }
 }

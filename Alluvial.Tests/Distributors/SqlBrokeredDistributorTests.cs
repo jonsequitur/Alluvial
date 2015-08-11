@@ -13,7 +13,7 @@ namespace Alluvial.Tests.Distributors
     {
         private SqlBrokeredDistributor<int> distributor;
 
-        private static readonly SqlBrokeredDistributorDatabase settings = new SqlBrokeredDistributorDatabase
+        public static readonly SqlBrokeredDistributorDatabase Database = new SqlBrokeredDistributorDatabase
         {
             ConnectionString = @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=AlluvialSqlDistributor"
         };
@@ -31,7 +31,7 @@ namespace Alluvial.Tests.Distributors
             scope = scope ?? DateTimeOffset.UtcNow.Ticks.ToString();
             distributor = new SqlBrokeredDistributor<int>(
                 leasables,
-                settings,
+                Database,
                 scope,
                 maxDegreesOfParallelism,
                 waitInterval,
@@ -49,7 +49,7 @@ namespace Alluvial.Tests.Distributors
 
         private void ProvisionLeasableResources(Leasable<int>[] leasable, string scope)
         {
-            using (var connection = new SqlConnection(settings.ConnectionString))
+            using (var connection = new SqlConnection(Database.ConnectionString))
             {
                 connection.Open();
 
@@ -104,8 +104,8 @@ IF NOT EXISTS (SELECT * FROM [Alluvial].[Leases]
         [TestFixtureSetUp]
         public void TestFixtureSetUp()
         {
-            settings.CreateDatabase().Wait();
-            settings.InitializeSchema().Wait();
+            Database.CreateDatabase().Wait();
+            Database.InitializeSchema().Wait();
         }
 
         [TearDown]

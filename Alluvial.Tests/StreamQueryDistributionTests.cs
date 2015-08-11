@@ -18,9 +18,9 @@ namespace Alluvial.Tests
         [SetUp]
         public void SetUp()
         {
-            words = AtoZ().SelectMany(c => Enumerable.Range(1, 100).Select(i => c + i)).ToList();
+            words = Values.AtoZ().SelectMany(c => Enumerable.Range(1, 100).Select(i => c + i)).ToList();
 
-            partitions = AtoZ().Select(c => Partition.Where<string>(s => s.StartsWith(c), named: c));
+            partitions = Values.AtoZ().Select(c => Partition.Where<string>(s => s.StartsWith(c), named: c));
 
             partitionedStream = Stream
                 .Partitioned<string, int, string>(
@@ -39,14 +39,6 @@ namespace Alluvial.Tests
 
             Formatter.ListExpansionLimit = 100;
             Formatter<Projection<HashSet<int>, int>>.RegisterForAllMembers();
-        }
-
-        private IEnumerable<string> AtoZ()
-        {
-            for (var c = 'a'; c <= 'z'; c++)
-            {
-                yield return new string(c, 1);
-            }
         }
 
         [Test]

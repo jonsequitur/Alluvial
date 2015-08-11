@@ -108,6 +108,7 @@
     <Compile Include="CursorTests.cs" />
     <Compile Include="Distributors\InMemoryDistributorTests.cs" />
     <Compile Include="Infrastructure\Event.cs" />
+    <Compile Include="Infrastructure\Values.cs" />
     <Compile Include="PipelineTests.cs" />
     <Compile Include="Distributors\SqlBrokeredDistributorTests.cs" />
     <Compile Include="QueryableTests.cs" />
