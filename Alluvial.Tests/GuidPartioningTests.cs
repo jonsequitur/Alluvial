@@ -218,11 +218,9 @@ namespace Alluvial.Tests
         {
             int numberOfPartitions = 1000;
 
-            var partitions = Partition.ByRange(
-                Guid.Empty,
-                Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff"))
-                                        .Among(numberOfPartitions)
-                                        .ToArray();
+            var partitions = Partition.AllGuids()
+                                      .Among(numberOfPartitions)
+                                      .ToArray();
 
             for (var i = 0; i < numberOfPartitions - 1; i++)
             {

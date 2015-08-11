@@ -25,7 +25,7 @@ namespace Alluvial
             TimeSpan? waitInterval = null,
             TimeSpan? defaultLeaseDuration = null)
         {
-            var leasables = partitions.Distributable(named, defaultLeaseDuration);
+            var leasables = partitions.Leasable(named, defaultLeaseDuration);
 
             return new InMemoryDistributor<IStreamQueryPartition<TPartition>>(
                 leasables,
@@ -35,7 +35,7 @@ namespace Alluvial
                 defaultLeaseDuration);
         }
 
-        private static Leasable<IStreamQueryPartition<TPartition>>[] Distributable<TPartition>(
+        private static Leasable<IStreamQueryPartition<TPartition>>[] Leasable<TPartition>(
             this IEnumerable<IStreamQueryPartition<TPartition>> partitions,
             Func<IStreamQueryPartition<TPartition>, string> named = null,
             TimeSpan? defaultLeaseDuration = null)
@@ -56,7 +56,12 @@ namespace Alluvial
             Action<Lease<T>> onLeaseAcquired = null,
             Action<Lease<T>> onLeaseReleasing = null)
         {
-            return Create<T>(
+            if (distributor == null)
+            {
+                throw new ArgumentNullException("distributor");
+            }
+
+            return Create(
                 start: () =>
                 {
                     System.Diagnostics.Trace.WriteLine("[Distribute] Start");

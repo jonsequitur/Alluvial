@@ -75,8 +75,6 @@ namespace Alluvial.Tests
 
             await catchup.RunUntilCaughtUp();
 
-            Console.WriteLine(new { store }.ToLogString());
-
             partitions.ToList()
                       .ForEach(partition =>
                                    store.Should()
@@ -106,13 +104,11 @@ namespace Alluvial.Tests
             var catchup = partitionedStream
                 .DistributeAmong(partitions,
                                  batchSize: 73,
-                                 manageCursor: cursorStore.Trace().AsHandler() );
+                                 cursorPerPartition: cursorStore.Trace().AsHandler());
 
             catchup.Subscribe(aggregator);
 
             await catchup.RunUntilCaughtUp();
-
-            Console.WriteLine(new { store = cursorStore }.ToLogString());
 
             cursorStore.Count().Should().Be(26);
             Enumerable.Range(1, 26).ToList().ForEach(i =>

@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Alluvial.Tests", "Alluvial.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Alluvial.Distributors.Sql", "Alluvial.Distributors.Sql\Alluvial.Distributors.Sql.csproj", "{199FDA52-CB10-4B05-B39E-AF79EC56B3C9}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "source", "source", "{3F716C70-3A3F-49E6-8796-5A6BAF14D173}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{CE3EDE6E-21A0-4D4A-B9DB-630EF1243E19}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +34,10 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{04E9B45A-0459-491F-A812-31FE37237770} = {3F716C70-3A3F-49E6-8796-5A6BAF14D173}
+		{1B232E18-21DD-4DCD-8262-CC0FDAFBA7D1} = {CE3EDE6E-21A0-4D4A-B9DB-630EF1243E19}
+		{199FDA52-CB10-4B05-B39E-AF79EC56B3C9} = {3F716C70-3A3F-49E6-8796-5A6BAF14D173}
 	EndGlobalSection
 EndGlobal

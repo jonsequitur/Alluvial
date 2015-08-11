@@ -191,7 +191,7 @@ namespace Alluvial
             string id = null)
         {
             return Create<TTo, TCursor>(
-                id: id ?? string.Format("{0}->Map({1})", source.Id, typeof(TTo).ReadableName()),
+                id: id ?? string.Format("{0}->Map({1})", source.Id, typeof (TTo).ReadableName()),
                 query: async q =>
                 {
                     var query = source.CreateQuery(q.Cursor, q.BatchSize);
@@ -241,10 +241,10 @@ namespace Alluvial
         /// <returns></returns>
         public static IStream<TDownstream, TUpstreamCursor> IntoMany<TUpstream, TDownstream, TUpstreamCursor>(
             this IStream<TUpstream, TUpstreamCursor> upstream,
-            QueryDownstream< TUpstream, TDownstream,  TUpstreamCursor> queryDownstream)
+            QueryDownstream<TUpstream, TDownstream, TUpstreamCursor> queryDownstream)
         {
             return Create(
-                id: string.Format("{0}->IntoMany({1})", upstream.Id, typeof(TDownstream).ReadableName()),
+                id: string.Format("{0}->IntoMany({1})", upstream.Id, typeof (TDownstream).ReadableName()),
                 query: async upstreamQuery =>
                 {
                     var upstreamBatch = await upstream.Fetch(
@@ -324,6 +324,62 @@ namespace Alluvial
                 {
                     q.BatchSize = q.BatchSize ?? StreamBatch.MaxSize;
                     var batch = await query(q, partition);
+                    return StreamBatch.Create(batch, q.Cursor);
+                },
+                advanceCursor: advanceCursor,
+                newCursor: newCursor);
+        }
+
+        /// <summary>
+        /// Creates a partitioned stream, partitioned by query ranges.
+        /// </summary>
+        /// <typeparam name="TData">The type of the data.</typeparam>
+        /// <typeparam name="TCursor">The type of the cursor.</typeparam>
+        /// <typeparam name="TPartition">The type of the partition.</typeparam>
+        /// <param name="query">The query.</param>
+        /// <param name="id">The base identifier for the partitioned stream.</param>
+        /// <param name="advanceCursor">A delegate that advances the cursor after a batch is pulled from the stream.</param>
+        /// <param name="newCursor">A delegate that returns a new cursor.</param>
+        public static IPartitionedStream<TData, TCursor, TPartition> PartitionedByRange<TData, TCursor, TPartition>(
+            Func<IStreamQuery<TCursor>, IStreamQueryRangePartition<TPartition>, Task<IEnumerable<TData>>> query,
+            string id = null,
+            Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor = null,
+            Func<ICursor<TCursor>> newCursor = null)
+        {
+            return new AnonymousPartitionedStream<TData, TCursor, TPartition>(
+                id: id,
+                fetch: async (q, partition) =>
+                {
+                    q.BatchSize = q.BatchSize ?? StreamBatch.MaxSize;
+                    var batch = await query(q, (IStreamQueryRangePartition<TPartition>) partition);
+                    return StreamBatch.Create(batch, q.Cursor);
+                },
+                advanceCursor: advanceCursor,
+                newCursor: newCursor);
+        }
+
+        /// <summary>
+        /// Creates a partitioned stream.
+        /// </summary>
+        /// <typeparam name="TData">The type of the data.</typeparam>
+        /// <typeparam name="TCursor">The type of the cursor.</typeparam>
+        /// <typeparam name="TPartition">The type of the partition.</typeparam>
+        /// <param name="query">The query.</param>
+        /// <param name="id">The base identifier for the partitioned stream.</param>
+        /// <param name="advanceCursor">A delegate that advances the cursor after a batch is pulled from the stream.</param>
+        /// <param name="newCursor">A delegate that returns a new cursor.</param>
+        public static IPartitionedStream<TData, TCursor, TPartition> PartitionedByValue<TData, TCursor, TPartition>(
+            Func<IStreamQuery<TCursor>, IStreamQueryValuePartition<TPartition>, Task<IEnumerable<TData>>> query,
+            string id = null,
+            Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor = null,
+            Func<ICursor<TCursor>> newCursor = null)
+        {
+            return new AnonymousPartitionedStream<TData, TCursor, TPartition>(
+                id: id,
+                fetch: async (q, partition) =>
+                {
+                    q.BatchSize = q.BatchSize ?? StreamBatch.MaxSize;
+                    var batch = await query(q, (IStreamQueryValuePartition<TPartition>) partition);
                     return StreamBatch.Create(batch, q.Cursor);
                 },
                 advanceCursor: advanceCursor,

@@ -19,8 +19,8 @@ namespace Alluvial
         /// <param name="batchSize">The number of items to retrieve from the stream per batch.</param>
         /// <returns></returns>
         public static IStreamCatchup<TData, TCursor> Create<TData, TCursor>(
-            IStream<TData, TCursor> stream, 
-            ICursor<TCursor> initialCursor = null, 
+            IStream<TData, TCursor> stream,
+            ICursor<TCursor> initialCursor = null,
             int? batchSize = null)
         {
             return new SingleStreamCatchup<TData, TCursor>(
@@ -54,13 +54,15 @@ namespace Alluvial
             this IPartitionedStream<TData, TCursor, TPartition> streams,
             IEnumerable<IStreamQueryPartition<TPartition>> partitions,
             int? batchSize = null,
-            FetchAndSaveProjection<ICursor<TCursor>> manageCursor = null)
+            FetchAndSaveProjection<ICursor<TCursor>> cursorPerPartition = null,
+            IDistributor<IStreamQueryPartition<TPartition>> distributor = null)
         {
             return new DistributedStreamCatchup<TData, TCursor, TPartition>(
                 streams,
                 partitions,
                 batchSize,
-                manageCursor);
+                cursorPerPartition,
+                distributor);
         }
 
         /// <summary>

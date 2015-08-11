@@ -95,10 +95,8 @@ namespace Alluvial.Tests
             var totalNumberOfGuids = 1000;
             var numberOfPartitions = 50;
 
-            var partitions = Partition.ByRange(
-                Guid.Empty,
-                Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff"))
-                                        .Among(numberOfPartitions);
+            var partitions = Partition.AllGuids()
+                                      .Among(numberOfPartitions);
 
             var guids = Enumerable.Range(1, totalNumberOfGuids).Select(_ => Guid.NewGuid()).ToArray();
 

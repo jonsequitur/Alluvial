@@ -27,7 +27,8 @@ namespace Alluvial
             IPartitionedStream<TData, TCursor, TPartition> partitionedStream,
             IEnumerable<IStreamQueryPartition<TPartition>> partitions,
             int? batchSize = null,
-            FetchAndSaveProjection<ICursor<TCursor>> manageCursor = null ) : base(batchSize)
+            FetchAndSaveProjection<ICursor<TCursor>> manageCursor = null,
+            IDistributor<IStreamQueryPartition<TPartition>> distributor = null) : base(batchSize)
         {
             if (partitionedStream == null)
             {
@@ -40,11 +41,11 @@ namespace Alluvial
 
             this.partitionedStream = partitionedStream;
 
-            distributor = partitions.DistributeQueriesInProcess();
+            this.distributor = distributor ?? partitions.DistributeQueriesInProcess();
 
             manageCursor = manageCursor ?? ((id, aggregate) => aggregate(null));
 
-            distributor
+            this.distributor
 #if DEBUG
                 .Trace() // TODO: (DistributedStreamCatchup) figure out a way to let people Trace this distributor
 #endif
