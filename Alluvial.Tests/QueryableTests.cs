@@ -83,8 +83,8 @@ namespace Alluvial.Tests
 
             var partitions = new[]
             {
-                Partition.ByRange("", "m"),
-                Partition.ByRange("m", "z")
+                Partition.ByRange("", "mm"),
+                Partition.ByRange("mm", "zz")
             };
 
             Values.AtoZ()
@@ -94,7 +94,7 @@ namespace Alluvial.Tests
                                {
                                    SequenceNumber = i,
                                    Guid = guid,
-                                   Id = c
+                                   Id = c + "  " + Guid.NewGuid()
                                }, 10).Wait());
 
             var stream = Stream.PartitionedByRange<Event, int, string>(async (q, p) =>

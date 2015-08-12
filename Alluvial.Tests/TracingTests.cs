@@ -305,6 +305,7 @@ namespace Alluvial.Tests
 
             public override void WriteLine(string message)
             {
+                Console.WriteLine(message);
                 messages.Add(message);
             }
 

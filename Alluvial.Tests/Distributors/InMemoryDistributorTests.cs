@@ -16,11 +16,11 @@ namespace Alluvial.Tests.Distributors
             int maxDegreesOfParallelism = 5,
             string name = null,
             TimeSpan? waitInterval = null,
-            string scope = null)
+            string pool = null)
         {
             distributor = new InMemoryDistributor<int>(
                 leasables ?? DefaultLeasable,
-                scope ?? DateTimeOffset.UtcNow.Ticks.ToString(),
+                pool ?? DateTimeOffset.UtcNow.Ticks.ToString(),
                 maxDegreesOfParallelism,
                 waitInterval,
                 DefaultLeaseDuration);

@@ -21,7 +21,12 @@ namespace Alluvial
             Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor = null,
             Func<ICursor<TCursor>> newCursor = null)
         {
-            this.id = id ?? string.Format(@"{0}({1} c:{2} p:{3})", typeof (TData).ReadableName(), typeof (TCursor).ReadableName(), typeof(TPartition).ReadableName(), fetch.GetHashCode());
+            this.id = id ??
+                      string.Format(@"{0}(d:{1} / c:{2} / p:{3})",
+                                    fetch.GetHashCode(),
+                                    typeof (TData).ReadableName(),
+                                    typeof (TCursor).ReadableName(),
+                                    typeof (TPartition).ReadableName());
 
             getStream = async partition => new StreamPartition(
                 PartitionIdFor(partition),
@@ -46,13 +51,14 @@ namespace Alluvial
 
         private string PartitionIdFor(IStreamQueryPartition<TPartition> partition)
         {
-            return string.Format("{0}[{1}]", id, partition);
+            return string.Format("{0}/{1}", id, partition);
         }
 
         private class StreamPartition : AnonymousStreamBase<TData, TCursor>
         {
             private readonly Func<IStreamQuery<TCursor>, IStreamQueryPartition<TPartition>, Task<IStreamBatch<TData>>> fetch;
             private readonly IStreamQueryPartition<TPartition> partition;
+            private readonly string id;
 
             public StreamPartition(
                 string id,
@@ -60,8 +66,13 @@ namespace Alluvial
                     Task<IStreamBatch<TData>>> fetch,
                 IStreamQueryPartition<TPartition> partition,
                 Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor = null,
-                Func<ICursor<TCursor>> newCursor = null) : base(id, advanceCursor, newCursor)
+                Func<ICursor<TCursor>> newCursor = null) : base(advanceCursor, newCursor)
             {
+                if (id == null)
+                {
+                    throw new ArgumentNullException("id");
+                }
+             
                 if (fetch == null)
                 {
                     throw new ArgumentNullException("fetch");
@@ -69,9 +80,19 @@ namespace Alluvial
                 if (partition == null)
                 {
                     throw new ArgumentNullException("partition");
-                }
+                }   
+                
+                this.id = id;
                 this.fetch = fetch;
                 this.partition = partition;
+            }
+
+            public override string Id
+            {
+                get
+                {
+                    return id;
+                }
             }
 
             public override async Task<IStreamBatch<TData>> Fetch(IStreamQuery<TCursor> query)

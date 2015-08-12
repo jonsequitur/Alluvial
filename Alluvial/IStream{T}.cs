@@ -2,6 +2,9 @@
 
 namespace Alluvial
 {
+    /// <summary>
+    /// A cursorable stream of data.
+    /// </summary>
     public interface IStream<TData, TCursor>
     {
         /// <summary>
@@ -15,6 +18,9 @@ namespace Alluvial
         /// <param name="query">The query to apply to the stream.</param>
         Task<IStreamBatch<TData>> Fetch(IStreamQuery<TCursor> query);
 
+        /// <summary>
+        /// Creates a new cursor at the start of the stream.
+        /// </summary>
         ICursor<TCursor> NewCursor();
     }
 }

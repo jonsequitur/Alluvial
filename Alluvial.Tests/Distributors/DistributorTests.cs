@@ -21,7 +21,7 @@ namespace Alluvial.Tests.Distributors
             int maxDegreesOfParallelism = 5,
             [CallerMemberName] string name = null,
             TimeSpan? waitInterval = null,
-            string scope = null);
+            string pool = null);
 
         protected abstract TimeSpan DefaultLeaseDuration { get; }
 
@@ -61,7 +61,7 @@ namespace Alluvial.Tests.Distributors
             {
                 Interlocked.Increment(ref received);
                 mre.Set();
-            });
+            }, waitInterval: TimeSpan.FromMilliseconds( DefaultLeaseDuration.TotalMilliseconds * 4));
 
             await distributor.Start();
             await mre.WaitAsync().Timeout();
@@ -230,9 +230,9 @@ namespace Alluvial.Tests.Distributors
         public virtual async Task A_lease_can_be_extended()
         {
             var tally = new ConcurrentDictionary<string, int>();
-            var scope = DateTimeOffset.UtcNow.Ticks.ToString();
-            var distributor1 = CreateDistributor(scope: scope).Trace();
-            var distributor2 = CreateDistributor(scope: scope).Trace();
+            var pool = DateTimeOffset.UtcNow.Ticks.ToString();
+            var distributor1 = CreateDistributor(pool: pool).Trace();
+            var distributor2 = CreateDistributor(pool: pool).Trace();
 
             Func<Lease<int>, Task> onReceive = async lease =>
             {

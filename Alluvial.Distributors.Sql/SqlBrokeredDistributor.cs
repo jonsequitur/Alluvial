@@ -7,37 +7,55 @@ using System.Threading.Tasks;
 
 namespace Alluvial.Distributors.Sql
 {
+    /// <summary>
+    /// Distributes time-bound work across machines using leases stored in a SQL database.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public class SqlBrokeredDistributor<T> : DistributorBase<T>
     {
-        private readonly SqlBrokeredDistributorDatabase settings;
-        private readonly string scope;
+        private readonly SqlBrokeredDistributorDatabase database;
+        private readonly string pool;
         private readonly TimeSpan defaultLeaseDuration;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SqlBrokeredDistributor{T}"/> class.
+        /// </summary>
+        /// <param name="leasables">The leasable resources.</param>
+        /// <param name="database">The database.</param>
+        /// <param name="pool">The name of the pool of leasable resources from which leases are acquired.</param>
+        /// <param name="maxDegreesOfParallelism">The maximum degrees of parallelism per machine.</param>
+        /// <param name="waitInterval">The interval to wait before a released lease can be reacquired.</param>
+        /// <param name="defaultLeaseDuration">The default duration of a lease.</param>
+        /// <exception cref="System.ArgumentNullException">
+        /// database
+        /// or
+        /// pool
+        /// </exception>
         public SqlBrokeredDistributor(
             Leasable<T>[] leasables,
-            SqlBrokeredDistributorDatabase settings,
-            string scope,
+            SqlBrokeredDistributorDatabase database,
+            string pool,
             int maxDegreesOfParallelism = 5,
             TimeSpan? waitInterval = null,
             TimeSpan? defaultLeaseDuration = null)
             : base(leasables, maxDegreesOfParallelism, waitInterval)
         {
-            if (settings == null)
+            if (database == null)
             {
-                throw new ArgumentNullException("settings");
+                throw new ArgumentNullException("database");
             }
-            if (scope == null)
+            if (pool == null)
             {
-                throw new ArgumentNullException("scope");
+                throw new ArgumentNullException("pool");
             }
-            this.settings = settings;
-            this.scope = scope;
+            this.database = database;
+            this.pool = pool;
             this.defaultLeaseDuration = defaultLeaseDuration ?? TimeSpan.FromMinutes(5);
         }
 
         protected override async Task<Lease<T>> AcquireLease()
         {
-            using (var connection = new SqlConnection(settings.ConnectionString))
+            using (var connection = new SqlConnection(database.ConnectionString))
             {
                 await connection.OpenAsync();
 
@@ -46,7 +64,7 @@ namespace Alluvial.Distributors.Sql
                 cmd.CommandText = @"Alluvial.AcquireLease";
                 cmd.Parameters.AddWithValue(@"@waitIntervalMilliseconds", waitInterval.TotalMilliseconds);
                 cmd.Parameters.AddWithValue(@"@leaseDurationMilliseconds", defaultLeaseDuration.TotalMilliseconds);
-                cmd.Parameters.AddWithValue(@"@scope", scope);
+                cmd.Parameters.AddWithValue(@"@pool", pool);
 
                 using (var reader = await cmd.ExecuteReaderAsync())
                 {
@@ -81,7 +99,7 @@ namespace Alluvial.Distributors.Sql
 
         private async Task ExtendLease<T>(Lease<T> lease, TimeSpan by)
         {
-            using (var connection = new SqlConnection(settings.ConnectionString))
+            using (var connection = new SqlConnection(database.ConnectionString))
             {
                 await connection.OpenAsync();
 
@@ -98,7 +116,7 @@ namespace Alluvial.Distributors.Sql
 
         protected override async Task ReleaseLease(Lease<T> lease)
         {
-            using (var connection = new SqlConnection(settings.ConnectionString))
+            using (var connection = new SqlConnection(database.ConnectionString))
             {
                 await connection.OpenAsync();
 

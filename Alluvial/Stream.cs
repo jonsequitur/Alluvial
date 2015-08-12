@@ -17,8 +17,7 @@ namespace Alluvial
         public static IStream<TData, TData> AsStream<TData>(
             this IEnumerable<TData> source)
         {
-            return Create(string.Format("{0}({1})", typeof (TData), source.GetHashCode()),
-                          query => source.SkipWhile(x => query.Cursor.HasReached(x))
+            return Create(query => source.SkipWhile(x => query.Cursor.HasReached(x))
                                          .Take(query.BatchSize ?? StreamBatch.MaxSize),
                           advanceCursor: (q, b) =>
                           {
@@ -28,8 +27,7 @@ namespace Alluvial
                                   q.Cursor.AdvanceTo(last);
                               }
                           },
-                          newCursor: () => Cursor.New<TData>(),
-                          source: source);
+                          newCursor: () => Cursor.New<TData>(), source: source);
         }
 
         /// <summary>
@@ -45,21 +43,19 @@ namespace Alluvial
                 throw new ArgumentNullException("cursorPosition");
             }
 
-            return Create(
-                id: id ?? string.Format("{0}({1})", typeof (TData), source.GetHashCode()),
-                query: query => source.SkipWhile(x =>
-                                                     query.Cursor.HasReached(cursorPosition(x)))
-                                      .Take(query.BatchSize ?? StreamBatch.MaxSize),
+            return Create(query: query => source.SkipWhile(x =>
+                                                               query.Cursor.HasReached(cursorPosition(x)))
+                                                .Take(query.BatchSize ?? StreamBatch.MaxSize),
+                id: id,
                 advanceCursor: (q, b) =>
                 {
-                    var last = b.LastOrDefault();
+                    var last = b.LastOrDefault<TData>();
                     if (last != null)
                     {
                         q.Cursor.AdvanceTo(cursorPosition(last));
                     }
                 },
-                newCursor: () => Cursor.New<TCursor>(),
-                source: source);
+                newCursor: () => Cursor.New<TCursor>(), source: source);
         }
 
         /// <summary>
@@ -68,10 +64,9 @@ namespace Alluvial
         public static IStream<TData, int> AsSequentialStream<TData>(
             this IEnumerable<TData> source)
         {
-            return Create(string.Format("{0}({1})", typeof (TData), source.GetHashCode()),
-                          query => source.Skip(query.Cursor.Position)
+            return Create(query => source.Skip(query.Cursor.Position)
                                          .Take(query.BatchSize ?? StreamBatch.MaxSize),
-                          newCursor: () => Cursor.New<int>());
+                          string.Format("{0}({1})", typeof (TData), source.GetHashCode()), newCursor: () => Cursor.New<int>());
         }
 
         /// <summary>
@@ -87,7 +82,7 @@ namespace Alluvial
             Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor = null,
             Func<ICursor<TCursor>> newCursor = null)
         {
-            return Create(string.Format("{0}({1} c:{2})", typeof (TData).ReadableName(), typeof (TCursor).ReadableName(), query.GetHashCode()),
+            return Create(null,
                           query,
                           advanceCursor,
                           newCursor);
@@ -134,11 +129,10 @@ namespace Alluvial
             Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor,
             Func<ICursor<TCursor>> newCursor = null)
         {
-            return Create(
-                string.Format("{0}({1})", typeof (TData), query.GetHashCode()),
-                query,
-                advanceCursor,
-                newCursor);
+            return Create(query,
+                          null,
+                          advanceCursor,
+                          newCursor);
         }
 
         /// <summary>
@@ -153,8 +147,7 @@ namespace Alluvial
             Action<IStreamQuery<TData>, IStreamBatch<TData>> advanceCursor = null,
             Func<ICursor<TData>> newCursor = null)
         {
-            return Create(
-                string.Format("{0}({1})", typeof (TData), query.GetHashCode()),
+            return Create<TData, TData>(
                 query,
                 advanceCursor ?? ((q, batch) =>
                 {
@@ -163,16 +156,14 @@ namespace Alluvial
                     {
                         q.Cursor.AdvanceTo(last);
                     }
-                }),
-                newCursor);
+                }), newCursor);
         }
 
-        internal static IStream<TData, TCursor> Create<TData, TCursor>(
-            string id,
-            Func<IStreamQuery<TCursor>, IEnumerable<TData>> query,
+        private static IStream<TData, TCursor> Create<TData, TCursor>(
+            Func<IStreamQuery<TCursor>, IEnumerable<TData>> query, 
+            string id = null,
             Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor = null,
-            Func<ICursor<TCursor>> newCursor = null,
-            IEnumerable<TData> source = null)
+            Func<ICursor<TCursor>> newCursor = null, IEnumerable<TData> source = null)
         {
             return new AnonymousStream<TData, TCursor>(
                 id,
@@ -191,7 +182,7 @@ namespace Alluvial
             string id = null)
         {
             return Create<TTo, TCursor>(
-                id: id ?? string.Format("{0}->Map({1})", source.Id, typeof (TTo).ReadableName()),
+                id: id ?? string.Format("{0}->Map(d:{1})", source.Id, typeof (TTo).ReadableName()),
                 query: async q =>
                 {
                     var query = source.CreateQuery(q.Cursor, q.BatchSize);
@@ -244,7 +235,7 @@ namespace Alluvial
             QueryDownstream<TUpstream, TDownstream, TUpstreamCursor> queryDownstream)
         {
             return Create(
-                id: string.Format("{0}->IntoMany({1})", upstream.Id, typeof (TDownstream).ReadableName()),
+                id: string.Format("{0}->IntoMany(d:{1})", upstream.Id, typeof (TDownstream).ReadableName()),
                 query: async upstreamQuery =>
                 {
                     var upstreamBatch = await upstream.Fetch(

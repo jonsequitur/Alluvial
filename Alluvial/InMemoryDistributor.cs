@@ -17,7 +17,7 @@ namespace Alluvial
 
         public InMemoryDistributor(
             Leasable<T>[] leasables,
-            string scope,
+            string pool,
             int maxDegreesOfParallelism = 5,
             TimeSpan? waitInterval = null,
             TimeSpan? defaultLeaseDuration = null) :
@@ -25,12 +25,12 @@ namespace Alluvial
                      maxDegreesOfParallelism,
                      waitInterval)
         {
-            if (scope == null)
+            if (pool == null)
             {
-                throw new ArgumentNullException("scope");
+                throw new ArgumentNullException("pool");
             }
 
-            workInProgress = workInProgressGlobal.GetOrAdd(scope, s => new ConcurrentDictionary<Leasable<T>, Lease<T>>());
+            workInProgress = workInProgressGlobal.GetOrAdd(pool, s => new ConcurrentDictionary<Leasable<T>, Lease<T>>());
             this.defaultLeaseDuration = defaultLeaseDuration ?? TimeSpan.FromMinutes(1);
         }
 

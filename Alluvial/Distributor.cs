@@ -21,15 +21,15 @@ namespace Alluvial
             this IEnumerable<IStreamQueryPartition<TPartition>> partitions,
             int maxDegreesOfParallelism = 5,
             Func<IStreamQueryPartition<TPartition>, string> named = null,
-            string scope = "",
+            string pool = "",
             TimeSpan? waitInterval = null,
             TimeSpan? defaultLeaseDuration = null)
         {
-            var leasables = partitions.Leasable(named, defaultLeaseDuration);
+            var leasables = partitions.Leasable(named);
 
             return new InMemoryDistributor<IStreamQueryPartition<TPartition>>(
                 leasables,
-                scope,
+                pool,
                 maxDegreesOfParallelism,
                 waitInterval,
                 defaultLeaseDuration);
@@ -37,8 +37,7 @@ namespace Alluvial
 
         private static Leasable<IStreamQueryPartition<TPartition>>[] Leasable<TPartition>(
             this IEnumerable<IStreamQueryPartition<TPartition>> partitions,
-            Func<IStreamQueryPartition<TPartition>, string> named = null,
-            TimeSpan? defaultLeaseDuration = null)
+            Func<IStreamQueryPartition<TPartition>, string> named = null)
         {
             if (partitions == null)
             {
