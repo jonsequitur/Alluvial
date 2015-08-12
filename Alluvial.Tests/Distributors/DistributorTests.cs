@@ -61,7 +61,7 @@ namespace Alluvial.Tests.Distributors
             {
                 Interlocked.Increment(ref received);
                 mre.Set();
-            }, waitInterval: TimeSpan.FromMilliseconds( DefaultLeaseDuration.TotalMilliseconds * 4));
+            }, waitInterval: TimeSpan.FromMilliseconds(DefaultLeaseDuration.TotalMilliseconds*4));
 
             await distributor.Start();
             await mre.WaitAsync().Timeout();
