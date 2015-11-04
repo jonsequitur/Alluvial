@@ -25,7 +25,7 @@ namespace Alluvial.ForItsCqrs.Tests
 
         }
     }
-    partial class AggregateB : EventSourcedAggregate<AggregateB>
+    public partial class AggregateB : EventSourcedAggregate<AggregateB>
     {
         public AggregateB(Guid id, IEnumerable<IEvent> eventHistory)
             : base(id, eventHistory)
@@ -41,21 +41,51 @@ namespace Alluvial.ForItsCqrs.Tests
         }
     }
 
-    public partial class AggregateA { public class EventType1 : Event { } }
-    public partial class AggregateA { public class EventType2 : Event { } }
-    public partial class AggregateA { public class EventType3 : Event { } }
-    public partial class AggregateA { public class EventType4 : Event { } }
-    public partial class AggregateA { public class EventType5 : Event { } }
-    public partial class AggregateA { public class EventType6 : Event { } }
-    public partial class AggregateA { public class EventType7 : Event { } }
-    public partial class AggregateA { public class EventType8 : Event { } }
-    public partial class AggregateB { public class EventType1 : Event { } }
-    public partial class AggregateB { public class EventType9 : Event { } }
-    public partial class AggregateB { public class EventType10 : Event { } }
-    public partial class AggregateB { public class EventType11 : Event { } }
-    public partial class AggregateB { public class EventType12 : Event { } }
-    public partial class AggregateB { public class EventType13 : Event { } }
-    public partial class AggregateB { public class EventType14 : Event { } }
+    public partial class AggregateA { public class EventType1 : Event<AggregateA> {
+        public override void Update(AggregateA aggregate) { }
+     } }
+    public partial class AggregateA { public class EventType2 : Event<AggregateA> {
+        public override void Update(AggregateA aggregate) { }
+     } }
+    public partial class AggregateA { public class EventType3 : Event<AggregateA> {
+        public override void Update(AggregateA aggregate) { }
+     } }
+    public partial class AggregateA { public class EventType4 : Event<AggregateA> {
+        public override void Update(AggregateA aggregate) { }
+     } }
+    public partial class AggregateA { public class EventType5 : Event<AggregateA> {
+        public override void Update(AggregateA aggregate) { }
+     } }
+    public partial class AggregateA { public class EventType6 : Event<AggregateA> {
+        public override void Update(AggregateA aggregate) { }
+     } }
+    public partial class AggregateA { public class EventType7 : Event<AggregateA> {
+        public override void Update(AggregateA aggregate) { }
+     } }
+    public partial class AggregateA { public class EventType8 : Event<AggregateA> {
+        public override void Update(AggregateA aggregate) { }
+     } }
+    public partial class AggregateB { public class EventType1 : Event<AggregateB> {
+        public override void Update(AggregateB aggregate) { }
+     } }
+    public partial class AggregateB { public class EventType9 : Event<AggregateB> {
+        public override void Update(AggregateB aggregate) { }
+     } }
+    public partial class AggregateB { public class EventType10 : Event<AggregateB> {
+        public override void Update(AggregateB aggregate) { }
+     } }
+    public partial class AggregateB { public class EventType11 : Event<AggregateB> {
+        public override void Update(AggregateB aggregate) { }
+     } }
+    public partial class AggregateB { public class EventType12 : Event<AggregateB> {
+        public override void Update(AggregateB aggregate) { }
+     } }
+    public partial class AggregateB { public class EventType13 : Event<AggregateB> {
+        public override void Update(AggregateB aggregate) { }
+     } }
+    public partial class AggregateB { public class EventType14 : Event<AggregateB> {
+        public override void Update(AggregateB aggregate) { }
+     } }
 
         [TestFixture]
         public class EventStreamTests
@@ -135,7 +165,8 @@ new StorableEvent { StreamName = typeof(AggregateA).Name, Type=typeof(AggregateA
             //}
 
             {
-                var allChanges = EventStream.PerAggregate("Snarf", () => storableEvents);
+                var allChanges = EventStream.PerAggregate("Snarf", () => new DisposableQueryable<StorableEvent>(
+                    () => { }, storableEvents));
 
                 var aggregator = Aggregator.Create<int, IEvent>((oldCount, batch) =>
                 {
@@ -157,10 +188,12 @@ new StorableEvent { StreamName = typeof(AggregateA).Name, Type=typeof(AggregateA
         [Test]
         public void Trivial()
         {
-            var stream = EventStream.AllChanges("My Stream ID", () => new[]
+            var stream = EventStream.AllChanges("My Stream ID", 
+                () => new DisposableQueryable<StorableEvent>(() => { }, 
+                new[]
             {
                 new StorableEvent {Id = 1}
-            }.AsQueryable());
+            }.AsQueryable()));
 
             var results = stream.CreateQuery().NextBatch().Result;
 
