@@ -62,7 +62,7 @@ namespace Alluvial.Tests.Distributors
         [TestFixtureSetUp]
         public void TestFixtureSetUp()
         {
-            Database.CreateDatabase().Wait();
+            Database.CreateDatabase().Timeout().Wait();
         }
 
         [TearDown]
@@ -70,7 +70,7 @@ namespace Alluvial.Tests.Distributors
         {
             if (distributor != null)
             {
-                distributor.Stop().Wait();
+                distributor.Stop().Timeout().Wait();
             }
         }
     }

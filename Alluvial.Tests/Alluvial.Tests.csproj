@@ -99,12 +99,12 @@
     <Compile Include="Infrastructure\AsyncCountdownEvent.cs" />
     <Compile Include="Infrastructure\AsyncManualResetEvent.cs" />
     <Compile Include="Infrastructure\Background.cs" />
-    <Compile Include="BankDomain\AccountHistoryProjection.cs" />
-    <Compile Include="BankDomain\BalanceProjection.cs" />
-    <Compile Include="BankDomain\BalanceProjector.cs" />
+    <Compile Include="BankDomain\Projections\AccountHistoryProjection.cs" />
+    <Compile Include="BankDomain\Projections\BalanceProjection.cs" />
+    <Compile Include="BankDomain\Projections\BalanceProjector.cs" />
     <Compile Include="BankDomain\FundsDeposited.cs" />
     <Compile Include="BankDomain\IDomainEvent.cs" />
-    <Compile Include="BankDomain\ProjectionBase.cs" />
+    <Compile Include="BankDomain\Projections\ProjectionBase.cs" />
     <Compile Include="CursorTests.cs" />
     <Compile Include="Distributors\InMemoryDistributorTests.cs" />
     <Compile Include="Infrastructure\Event.cs" />

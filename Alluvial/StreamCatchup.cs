@@ -50,6 +50,10 @@ namespace Alluvial
                 cursor ?? stream.NewCursor());
         }
 
+        /// <summary>
+        /// Distributes a stream catchup the among one or more partitions using a specified distributor.
+        /// </summary>
+        /// <remarks>If no distributor is provided, then distribution is done in-process.</remarks>
         public static IStreamCatchup<TData, TCursor> DistributeAmong<TData, TCursor, TPartition>(
             this IPartitionedStream<TData, TCursor, TPartition> streams,
             IEnumerable<IStreamQueryPartition<TPartition>> partitions,
