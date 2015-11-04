@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Entity;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -55,14 +54,14 @@ namespace Alluvial.ForItsCqrs
             return eventStreamChanges;
         }
 
-        public static IStream<IStream<IEvent, long>, long> PerAggregate(string streamId, Func<IQueryable<StorableEvent>, IQueryable<StorableEvent>> filter, Func<IQueryable<StorableEvent>> getStorableEvents)
+        public static IStream<IStream<IEvent, long>, long> PerAggregate(string streamId, Func<IQueryable<StorableEvent>> getStorableEvents)
         {
             return AllChanges(streamId, getStorableEvents).Trace()
                 .IntoMany(
                     async (update, fromCursor, toCursor) =>
                     {
                         return Stream.Create<IEvent, long>(update.AggregateId.ToString(),
-                            q => QueryAsync(filter, q, update, fromCursor, toCursor),
+                            q => QueryAsync(getStorableEvents, q, update, fromCursor, toCursor),
                             (query, batch) => AdvanceCursor(batch, query, toCursor));
                     });
         }
@@ -75,22 +74,21 @@ namespace Alluvial.ForItsCqrs
         }
 
         private static async Task<IEnumerable<IEvent>> QueryAsync(
-            Func<IQueryable<StorableEvent>, IQueryable<StorableEvent>> filter,
+            Func<IQueryable<StorableEvent>> getStorableEvents,
             IStreamQuery<long> q,
             EventStreamChange update,
             long fromCursor,
             long toCursor)
         {
-            using (var db = new EventStoreDbContext())
             {
-                var query = db.Events
+                var query = getStorableEvents()
                     .Where(e => e.AggregateId == update.AggregateId)
                     .Where(e => e.Id >= fromCursor && e.Id <= toCursor);
 
-                query = filter(query).OrderBy(e => e.Id)
+                query = query.OrderBy(e => e.Id)
                     .Take(q.BatchSize ?? 1000);
 
-                var events = (await query.ToArrayAsync())
+                var events = query
                     .ToArray();
 
                 foreach (var e in events)
