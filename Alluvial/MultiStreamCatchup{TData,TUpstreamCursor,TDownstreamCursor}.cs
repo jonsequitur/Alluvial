@@ -55,7 +55,10 @@ namespace Alluvial
                 async (cursor, streams) =>
                 {
                     // ths upstream cursor is not passed here because the downstream streams have their own independent cursors
-                    await Task.WhenAll(streams.Select(stream => RunSingleBatch(stream)));
+                    foreach (var stream in streams)
+                    {
+                        await RunSingleBatch(stream);
+                    }
 
                     return cursor;
                 },

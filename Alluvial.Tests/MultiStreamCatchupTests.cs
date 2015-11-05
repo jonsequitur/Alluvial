@@ -205,8 +205,8 @@ namespace Alluvial.Tests
 
             var catchup = StreamCatchup.All(streamSource.StreamPerAggregate(),
                                             batchSize: 5);
-            catchup.Subscribe(new BalanceProjector(), projectionStore);
 
+            using (catchup.Subscribe(new BalanceProjector(), projectionStore))
             using (catchup.Poll(TimeSpan.FromMilliseconds(10)))
             {
                 // write more events
@@ -234,9 +234,9 @@ namespace Alluvial.Tests
         {
             var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
 
-            var catchup = StreamCatchup.All(streamSource.StreamPerAggregate(), batchSize: 5);
-            catchup.Subscribe(new BalanceProjector(), projectionStore);
+            var catchup = StreamCatchup.All(streamSource.StreamPerAggregate().Trace(), batchSize: 5);
 
+            using (catchup.Subscribe(new BalanceProjector().Trace(), projectionStore.Trace()))
             using (catchup.Poll(TimeSpan.FromMilliseconds(10)))
             {
                 // write more events
