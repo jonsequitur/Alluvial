@@ -62,16 +62,12 @@ namespace Alluvial.ForItsCqrs
             }
         }
 
-        public static IStream<IStream<IEvent, long>, long> PerAggregate(string streamId, Func<DisposableQueryable<StorableEvent>> getStorableEvents)
+        public static IStream<IStream<IEvent, long>, long> PerAggregate(string streamId, Func<DisposableQueryable<StorableEvent>> getStorableEventsQueryable)
         {
-            return AllChanges(streamId, getStorableEvents).Trace()
-                .IntoMany(
-                    async (update, fromCursor, toCursor) =>
-                    {
-                        return Stream.Create<IEvent, long>(update.AggregateId.ToString(),
-                            q => QueryAsync(getStorableEvents, q, update, fromCursor, toCursor),
-                            (query, batch) => AdvanceCursor(batch, query, toCursor));
-                    });
+            return AllChanges(streamId, getStorableEventsQueryable).Trace()
+                .IntoMany(async (update, fromCursor, toCursor) => Stream.Create<IEvent, long>(update.AggregateId.ToString(),
+                        q => QueryAsync(getStorableEventsQueryable, q, update, fromCursor, toCursor),
+                        (query, batch) => AdvanceCursor(batch, query, toCursor)));
         }
 
         private static Maybe<Unit> AdvanceCursor(IStreamBatch<IEvent> batch, IStreamQuery<long> query, long toCursor)

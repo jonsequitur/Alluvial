@@ -81,6 +81,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DisposableQueryable.cs" />
     <Compile Include="EventStream.cs" />
     <Compile Include="EventStreamChange.cs" />
     <Compile Include="MaybeExtensions.cs" />
