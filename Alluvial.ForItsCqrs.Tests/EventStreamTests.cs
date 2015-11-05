@@ -150,7 +150,7 @@ namespace Alluvial.ForItsCqrs.Tests
                 var count = 0;
                 var store = ProjectionStore.Create<string, int>(async _ =>
                 {
-                    await Task.Delay(TimeSpan.FromMilliseconds(1));
+                    //await Task.Delay(TimeSpan.FromMilliseconds(1));
                     return count;
                 }, async (_, newCount) => count = newCount);
                 catchup.Subscribe(aggregator, store);
