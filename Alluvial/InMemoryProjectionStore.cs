@@ -22,7 +22,7 @@ namespace Alluvial
 
         public async Task Put(string streamId, TProjection projection)
         {
-            await Task.Delay(1);
+            await Task.Yield();
 
             if (streamId == null)
             {
@@ -37,7 +37,7 @@ namespace Alluvial
 
         public async Task<TProjection> Get(string streamId)
         {
-            await Task.Delay(1);
+            await Task.Yield();
 
             TProjection projection;
             if (store.TryGetValue(streamId, out projection))
