@@ -460,11 +460,13 @@ namespace Alluvial.Tests
 
             using (catchup.Poll(TimeSpan.FromMilliseconds(100)))
             {
-                Thread.Sleep(300);
+                await Task.Delay(50);
                 pollCountAtDispose = pollCount;
             }
 
-            Thread.Sleep(300);
+            await Task.Delay(300);
+
+            Console.WriteLine(new { pollCount });
 
             pollCount.Should().Be(pollCountAtDispose);
         }

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+
 #pragma warning disable 1998
 
 namespace Alluvial
@@ -21,6 +22,8 @@ namespace Alluvial
 
         public async Task Put(string streamId, TProjection projection)
         {
+            await Task.Yield();
+
             if (streamId == null)
             {
                 throw new ArgumentNullException("streamId");
@@ -34,6 +37,8 @@ namespace Alluvial
 
         public async Task<TProjection> Get(string streamId)
         {
+            await Task.Yield();
+
             TProjection projection;
             if (store.TryGetValue(streamId, out projection))
             {
