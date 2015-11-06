@@ -59,19 +59,23 @@ namespace Alluvial
 
         protected async Task<ICursor<TCursor>> RunSingleBatch<TCursor>(
             IStream<TData, TCursor> stream,
+            bool synchronize,
             ICursor<TCursor> initialCursor = null)
         {
             TaskCompletionSource<AggregationBatch<TCursor>> tcs = null;
 
             tcs = new TaskCompletionSource<AggregationBatch<TCursor>>();
 
-            var exchange = Interlocked.CompareExchange<object>(ref batchTaskCompletionSource, tcs, null);
-
-            if (exchange != null)
+            if (synchronize)
             {
-                Debug.WriteLine("[Catchup] RunSingleBatch returning early");
-                var batch = await ((TaskCompletionSource<AggregationBatch<TCursor>>) batchTaskCompletionSource).Task;
-                return batch.Cursor;
+                var exchange = Interlocked.CompareExchange<object>(ref batchTaskCompletionSource, tcs, null);
+
+                if (exchange != null)
+                {
+                    Debug.WriteLine("[Catchup] RunSingleBatch returning early");
+                    var batch = await ((TaskCompletionSource<AggregationBatch<TCursor>>) batchTaskCompletionSource).Task;
+                    return batch.Cursor;
+                }
             }
 
             ICursor<TCursor> upstreamCursor = null;
