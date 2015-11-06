@@ -59,6 +59,7 @@ namespace Alluvial.Tests.Distributors
 
             var distributor = CreateDistributor(async lease =>
             {
+                await Task.Delay(1);
                 Interlocked.Increment(ref received);
                 mre.Set();
             }, waitInterval: TimeSpan.FromMilliseconds(DefaultLeaseDuration.TotalMilliseconds*4));
