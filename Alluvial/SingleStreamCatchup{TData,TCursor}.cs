@@ -42,7 +42,7 @@ namespace Alluvial
         /// </returns>
         public override async Task<ICursor<TCursor>> RunSingleBatch()
         {
-            return await RunSingleBatch(stream, initialCursor);
+            return await RunSingleBatch(stream, true, initialCursor);
         }
 
         /// <summary>
