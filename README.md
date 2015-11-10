@@ -10,21 +10,21 @@ Alluvial [![Build Status](https://ci.appveyor.com/api/projects/status/github/jon
 * Treating arbitrary data as a queue 
 * Migrating data
 
-If you can define your data as an ordered stream, Alluvial does the rest. 
+If you can define a query that returns your data as an ordered stream, Alluvial does the rest. 
 
-But here's what it can do so far:
+Here's what it can do currently:
 
-* Define arbitrary data as a data stream
+* Define data from any source as a data stream
 * Query those data streams
 * Derive streams from other streams
-* Track cursors that allow you to resume consumption of a stream at a later point
+* Track cursors that allow you to resume consumption of a stream at a later point and on a different node
+* Restart streams queries from any past position
 * Create persisted projections based on existing data
 * Update persisted projections as new data appears
 * Create projections on demand
+* Distributing stream query work across nodes
 
 Here's what's planned:
 
-* Partitioning work across nodes
-* Elastic redistribution of work partitions
+* Elastic redistribution of stream query work using Raft
 
-Alluvial is very young and can use your help.
