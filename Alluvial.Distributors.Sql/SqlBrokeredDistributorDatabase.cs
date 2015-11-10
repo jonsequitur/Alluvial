@@ -35,7 +35,7 @@ namespace Alluvial.Distributors.Sql
         {
             var builder = new SqlConnectionStringBuilder(ConnectionString);
 
-            var initialCatalog = builder.InitialCatalog;
+            var distributorDatabaseName = builder.InitialCatalog;
             builder.InitialCatalog = "master";
 
             using (var connection = new SqlConnection(builder.ConnectionString))
@@ -45,14 +45,16 @@ namespace Alluvial.Distributors.Sql
                 var cmd = connection.CreateCommand();
                 cmd.CommandText = string.Format(
                     @"IF db_id('{0}') IS NULL
-    CREATE DATABASE [{0}]", initialCatalog);
+    CREATE DATABASE [{0}]", distributorDatabaseName);
                 cmd.CommandType = CommandType.Text;
 
                 await cmd.ExecuteScalarAsync();
 
-                await RunScript(connection, @"Alluvial.Distributors.Sql.CreateDatabase.sql");
+                await RunScript(connection,
+                                @"Alluvial.Distributors.Sql.CreateDatabase.sql",
+                                distributorDatabaseName);
 
-                await InitializeSchema(connection);
+                await InitializeSchema(connection, distributorDatabaseName);
             }
         }
 
@@ -60,19 +62,11 @@ namespace Alluvial.Distributors.Sql
         /// Initializes the SQL distributor schema.
         /// </summary>
         /// <remarks>This can be used to create the necessary database objects within an existing database. They are created in the "Alluvial" namespace.</remarks>
-        public async Task InitializeSchema()
+        private async Task InitializeSchema(SqlConnection connection, string distributorDatabaseName)
         {
-            var builder = new SqlConnectionStringBuilder(ConnectionString);
-
-            using (var connection = new SqlConnection(builder.ConnectionString))
-            {
-                await InitializeSchema(connection);
-            }
-        }
-
-        private async Task InitializeSchema(SqlConnection connection)
-        {
-            await RunScript(connection, @"Alluvial.Distributors.Sql.InitializeSchema.sql");
+            await RunScript(connection,
+                            @"Alluvial.Distributors.Sql.InitializeSchema.sql",
+                            distributorDatabaseName);
         }
 
         /// <summary>
@@ -119,13 +113,13 @@ IF NOT EXISTS (SELECT * FROM [Alluvial].[Leases]
             }
         }
 
-        private async Task RunScript(SqlConnection connection, string alluvialDistributorsSqlInitializeschemaSql)
+        private async Task RunScript(SqlConnection connection, string alluvialDistributorsSqlInitializeschemaSql, string databaseName)
         {
             var scriptStream = typeof (SqlBrokeredDistributorDatabase).Assembly.GetManifestResourceStream(alluvialDistributorsSqlInitializeschemaSql);
 
             var scripts = new StreamReader(scriptStream)
                 .ReadToEnd()
-                .Replace(@"[{DatabaseName}]", string.Format(@"[{0}]", connection.Database))
+                .Replace(@"[{DatabaseName}]", string.Format(@"[{0}]", databaseName))
                 .Split(new[] { "GO" }, StringSplitOptions.RemoveEmptyEntries);
 
             if (connection.State != ConnectionState.Open)

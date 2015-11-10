@@ -12,7 +12,7 @@ namespace Alluvial.Tests.Distributors
         private SqlBrokeredDistributor<int> distributor;
 
         public static readonly SqlBrokeredDistributorDatabase Database = new SqlBrokeredDistributorDatabase(
-            @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=AlluvialSqlDistributor");
+            @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=AlluvialSqlDistributorTests");
 
         protected override IDistributor<int> CreateDistributor(
             Func<Lease<int>, Task> onReceive = null,
