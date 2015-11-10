@@ -62,6 +62,11 @@ namespace Alluvial.Distributors.Sql
         /// Initializes the SQL distributor schema.
         /// </summary>
         /// <remarks>This can be used to create the necessary database objects within an existing database. They are created in the "Alluvial" namespace.</remarks>
+        public async Task InitializeSchema(SqlConnection connection)
+        {
+            await InitializeSchema(connection, connection.Database);
+        }
+
         private async Task InitializeSchema(SqlConnection connection, string distributorDatabaseName)
         {
             await RunScript(connection,
