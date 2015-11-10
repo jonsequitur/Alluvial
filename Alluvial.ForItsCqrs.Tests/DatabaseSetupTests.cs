@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Entity;
+using System.Data.SqlClient;
 using FluentAssertions;
 using System.Linq;
 using System.Reflection;
@@ -34,9 +35,12 @@ namespace Alluvial.ForItsCqrs.Tests
                 await db.SaveChangesAsync();
             }
 
-            var distributorDb = new SqlBrokeredDistributorDatabase(AlluvialForItsCqrsSchemaTestDbContext.ConnectionString);
-
-            await distributorDb.InitializeSchema();
+            var distributorDb = new SqlBrokeredDistributorDatabase(connectionString);
+            
+            using (var connection = new SqlConnection(connectionString))
+            {
+                await distributorDb.InitializeSchema(connection);
+            }
 
             RunReadModelDbInitializer();
 
