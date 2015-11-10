@@ -11,20 +11,20 @@ namespace Alluvial.ForItsCqrs
 {
     public static class EventStream
     {
-        public static IStream<EventStreamChange, long> AllChanges(
+        private static IStream<EventStreamChange, long> AllChanges(
             string streamId,
-            Func<IQueryable<StorableEvent>> getStorableEvents,
-            int? batchCount = null)
+            Func<IQueryable<StorableEvent>> getStorableEvents)
         {
             return Stream
                 .Create<EventStreamChange, long>(streamId,
-                    async streamQuery => await EventStreamChanges(getStorableEvents(), streamQuery),
-                    (q, b) => b.LastOrDefault()
-                        .IfNotNull()
-                        .ThenDo(u => q.Cursor.AdvanceTo(u.AbsoluteSequenceNumber)));
+                                                 async streamQuery => await EventStreamChanges(getStorableEvents(), streamQuery),
+                                                 (q, b) => b.LastOrDefault()
+                                                            .IfNotNull()
+                                                            .ThenDo(u => q.Cursor.AdvanceTo(u.AbsoluteSequenceNumber)));
         }
 
-        private static async Task<IEnumerable<EventStreamChange>> EventStreamChanges(IQueryable<StorableEvent> events,
+        private static async Task<IEnumerable<EventStreamChange>> EventStreamChanges(
+            IQueryable<StorableEvent> events,
             IStreamQuery<long> streamQuery)
         {
             var query = events
@@ -51,26 +51,29 @@ namespace Alluvial.ForItsCqrs
                 })
                 .OrderBy(e => e.AbsoluteSequenceNumber)
                 .ToArray();
+
             return eventStreamChanges;
         }
 
-        public static IStream<IStream<IEvent, long>, long> PerAggregate(string streamId, Func<IQueryable<StorableEvent>> getStorableEvents)
+        public static IStream<IStream<IEvent, long>, long> PerAggregate(
+            string streamId,
+            Func<IQueryable<StorableEvent>> getStorableEvents)
         {
-            return AllChanges(streamId, getStorableEvents).Trace()
+            return AllChanges(streamId, getStorableEvents)
                 .IntoMany(
                     async (update, fromCursor, toCursor) =>
-                    {
-                        return Stream.Create<IEvent, long>(update.AggregateId.ToString(),
-                            q => QueryAsync(getStorableEvents, q, update, fromCursor, toCursor),
-                            (query, batch) => AdvanceCursor(batch, query, toCursor));
-                    });
+                        Stream.Create<IEvent, long>(update.AggregateId.ToString(),
+                                                    q => QueryAsync(getStorableEvents, q, update, fromCursor, toCursor),
+                                                    (query, batch) => AdvanceCursor(batch, query, toCursor)));
         }
 
-        private static Maybe<Unit> AdvanceCursor(IStreamBatch<IEvent> batch, IStreamQuery<long> query, long toCursor)
+        private static Maybe<Unit> AdvanceCursor(
+            IStreamBatch<IEvent> batch,
+            IStreamQuery<long> query, long toCursor)
         {
             return batch.LastOrDefault()
-                .IfNotNull()
-                .ThenDo(e => query.Cursor.AdvanceTo(toCursor));
+                        .IfNotNull()
+                        .ThenDo(e => query.Cursor.AdvanceTo(toCursor));
         }
 
         private static async Task<IEnumerable<IEvent>> QueryAsync(
@@ -86,13 +89,15 @@ namespace Alluvial.ForItsCqrs
                     .Where(e => e.Id >= fromCursor && e.Id <= toCursor);
 
                 query = query.OrderBy(e => e.Id)
-                    .Take(q.BatchSize ?? 1000);
+                             .Take(q.BatchSize ?? 1000);
 
                 var events = query
                     .ToArray();
 
                 foreach (var e in events)
+                {
                     Trace.WriteLine(e.Id);
+                }
 
                 return events.Select(e => e.ToDomainEvent());
             }
