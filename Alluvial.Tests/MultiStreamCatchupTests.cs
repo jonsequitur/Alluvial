@@ -349,7 +349,7 @@ namespace Alluvial.Tests
 
             var catchup = StreamCatchup.All(streamSource.StreamPerAggregate(),
                                             batchSize: 10,
-                                            manageCursor: async (id, use) =>
+                                            manageUpstreamCursor: async (id, use) =>
                                             {
                                                 var c = streamSource.StreamPerAggregate().NewCursor();
                                                 await use(c);
@@ -371,7 +371,7 @@ namespace Alluvial.Tests
 
             var catchup = StreamCatchup.All(streamSource.StreamPerAggregate(),
                                             batchSize: 1,
-                                            manageCursor: async (id, use) => { await use(storedCursor); });
+                                            manageUpstreamCursor: async (id, use) => { await use(storedCursor); });
             using (catchup.Subscribe(new BalanceProjector()))
             {
                 var cursor = await catchup.RunSingleBatch();
