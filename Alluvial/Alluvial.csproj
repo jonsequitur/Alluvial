@@ -57,6 +57,7 @@
     <Compile Include="InMemoryProjectionStore.cs" />
     <Compile Include="IStreamQueryRangePartition{T}.cs" />
     <Compile Include="IStreamQueryValuePartition{T}.cs" />
+    <Compile Include="ITrackCursorPosition.cs" />
     <Compile Include="Partition.cs" />
     <Compile Include="PartitionBuilders\BigIntegerPartitionBuilder.cs" />
     <Compile Include="PartitionBuilders\Int32PartitionBuilder.cs" />
