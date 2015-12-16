@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Alluvial
 {
-    internal class InMemoryProjectionStore<TProjection> :
+    public class InMemoryProjectionStore<TProjection> :
         IProjectionStore<string, TProjection>,
         IEnumerable<TProjection>
     {

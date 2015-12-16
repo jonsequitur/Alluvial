@@ -1,13 +1,18 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.Its.Domain;
 
 namespace Alluvial.ForItsCqrs.Tests
 {
-    partial class AggregateA : EventSourcedAggregate<AggregateA>
+    public class AggregateA : EventSourcedAggregate<AggregateA>
     {
         public AggregateA(Guid id, IEnumerable<IEvent> eventHistory)
             : base(id, eventHistory)
+        {
+        }
+
+        public AggregateA(CreateAggregateA createAggregateA) : base(createAggregateA)
         {
         }
 
@@ -15,12 +20,67 @@ namespace Alluvial.ForItsCqrs.Tests
         {
             public override void Update(AggregateA aggregate)
             {
-                throw new NotImplementedException();
             }
+        }
+
+        public class CommandHandler : ICommandHandler<AggregateA, CreateAggregateA>
+        {
+            public async Task EnactCommand(AggregateA aggregate, CreateAggregateA command)
+            {
+                aggregate.RecordEvent(new Created());
+            }
+
+            public async Task HandleScheduledCommandException(AggregateA aggregate, CommandFailed<CreateAggregateA> command)
+            {
+            }
+        }
+
+        public class Created : Event
+        {
+        }
+
+        public class EventType1 : Event
+        {
+        }
+
+        public class EventType2 : Event
+        {
+        }
+
+        public class EventType3 : Event
+        {
+        }
+
+        public class EventType4 : Event
+        {
+        }
+
+        public class EventType5 : Event
+        {
+        }
+
+        public class EventType6 : Event
+        {
+        }
+
+        public class EventType7 : Event
+        {
+        }
+
+        public class EventType8 : Event
+        {
         }
     }
 
-    partial class AggregateB : EventSourcedAggregate<AggregateB>
+    public class CreateAggregateA : ConstructorCommand<AggregateA>
+    {
+        public override bool Authorize(AggregateA aggregate)
+        {
+            return true;
+        }
+    }
+
+    public class AggregateB : EventSourcedAggregate<AggregateB>
     {
         public AggregateB(Guid id, IEnumerable<IEvent> eventHistory)
             : base(id, eventHistory)
@@ -31,113 +91,43 @@ namespace Alluvial.ForItsCqrs.Tests
         {
             public override void Update(AggregateB aggregate)
             {
-                throw new NotImplementedException();
             }
         }
-    }
 
-    public partial class AggregateA
-    {
         public class EventType1 : Event
         {
         }
-    }
 
-    public partial class AggregateA
-    {
-        public class EventType2 : Event
-        {
-        }
-    }
-
-    public partial class AggregateA
-    {
-        public class EventType3 : Event
-        {
-        }
-    }
-
-    public partial class AggregateA
-    {
-        public class EventType4 : Event
-        {
-        }
-    }
-
-    public partial class AggregateA
-    {
-        public class EventType5 : Event
-        {
-        }
-    }
-
-    public partial class AggregateA
-    {
-        public class EventType6 : Event
-        {
-        }
-    }
-
-    public partial class AggregateA
-    {
-        public class EventType7 : Event
-        {
-        }
-    }
-
-    public partial class AggregateA
-    {
-        public class EventType8 : Event
-        {
-        }
-    }
-
-    public partial class AggregateB
-    {
-        public class EventType1 : Event
-        {
-        }
-    }
-
-    public partial class AggregateB
-    {
         public class EventType9 : Event
         {
         }
-    }
 
-    public partial class AggregateB
-    {
         public class EventType10 : Event
         {
         }
-    }
 
-    public partial class AggregateB
-    {
         public class EventType11 : Event
         {
         }
-    }
 
-    public partial class AggregateB
-    {
         public class EventType12 : Event
         {
         }
-    }
 
-    public partial class AggregateB
-    {
         public class EventType13 : Event
+        {
+        }
+
+        public class EventType14 : Event
         {
         }
     }
 
-    public partial class AggregateB
+    public class CreateAggregateB : ConstructorCommand<AggregateB>
     {
-        public class EventType14 : Event
+        public override bool Authorize(AggregateB aggregate)
         {
+            return true;
         }
     }
 }

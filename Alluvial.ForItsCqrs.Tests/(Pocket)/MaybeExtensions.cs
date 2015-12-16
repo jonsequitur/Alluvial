@@ -13,7 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CSharp.RuntimeBinder;
 
-namespace Microsoft.Its.Recipes
+namespace Pocket
 {
     /// <summary>
     ///     Supports chaining of expressions when intermediate values may be null, to support a fluent API style using common .NET types.
@@ -25,13 +25,13 @@ namespace Microsoft.Its.Recipes
     internal static class MaybeExtensions
     {
         /// <summary>
-        ///     Specifies a function that will be evaluated if the source <see cref="Recipes.Maybe{T}" /> has no value.
+        ///     Specifies a function that will be evaluated if the source <see cref="Pocket.Maybe{T}" /> has no value.
         /// </summary>
         /// <typeparam name="T">
-        ///     The type held by the <see cref="Recipes.Maybe{T}" />.
+        ///     The type held by the <see cref="Pocket.Maybe{T}" />.
         /// </typeparam>
         /// <param name="maybe">The source maybe.</param>
-        /// <param name="otherValue">The value to be returned if the <see cref="Recipes.Maybe{T}" /> has no value.</param>
+        /// <param name="otherValue">The value to be returned if the <see cref="Pocket.Maybe{T}" /> has no value.</param>
         /// <returns>
         ///     The value of the Maybe if it has a value; otherwise, the value returned by <paramref name="otherValue" />.
         /// </returns>
@@ -46,13 +46,13 @@ namespace Microsoft.Its.Recipes
         }
 
         /// <summary>
-        ///     Specifies a function that will be evaluated if the source <see cref="Recipes.Maybe{T}" /> has no value.
+        ///     Specifies a function that will be evaluated if the source <see cref="Pocket.Maybe{T}" /> has no value.
         /// </summary>
         /// <typeparam name="T">
-        ///     The type held by the <see cref="Recipes.Maybe{T}" />.
+        ///     The type held by the <see cref="Pocket.Maybe{T}" />.
         /// </typeparam>
         /// <param name="maybe">The source maybe.</param>
-        /// <param name="other">The value to be returned if the <see cref="Recipes.Maybe{T}" /> has no value.</param>
+        /// <param name="other">The value to be returned if the <see cref="Pocket.Maybe{T}" /> has no value.</param>
         /// <returns>
         ///     The value of the Maybe if it has a value; otherwise, the value returned by <paramref name="other" />.
         /// </returns>
@@ -64,13 +64,13 @@ namespace Microsoft.Its.Recipes
         }
 
         /// <summary>
-        ///     Specifies a function that will be evaluated if the source <see cref="Recipes.Maybe{T}" /> has no value.
+        ///     Specifies a function that will be evaluated if the source <see cref="Pocket.Maybe{T}" /> has no value.
         /// </summary>
         /// <typeparam name="T">
-        ///     The type held by the <see cref="Recipes.Maybe{T}" />.
+        ///     The type held by the <see cref="Pocket.Maybe{T}" />.
         /// </typeparam>
         /// <param name="maybe">The source maybe.</param>
-        /// <param name="otherValue">The value to be returned if the <see cref="Recipes.Maybe{T}" /> has no value.</param>
+        /// <param name="otherValue">The value to be returned if the <see cref="Pocket.Maybe{T}" /> has no value.</param>
         /// <returns>
         ///     The value of the Maybe if it has a value; otherwise, the value returned by <paramref name="otherValue" />.
         /// </returns>
@@ -85,13 +85,13 @@ namespace Microsoft.Its.Recipes
         }
 
         /// <summary>
-        ///     Specifies a function that will be evaluated if the source <see cref="Recipes.Maybe{T}" /> has no value.
+        ///     Specifies a function that will be evaluated if the source <see cref="Pocket.Maybe{T}" /> has no value.
         /// </summary>
         /// <typeparam name="T">
-        ///     The type held by the <see cref="Recipes.Maybe{T}" />.
+        ///     The type held by the <see cref="Pocket.Maybe{T}" />.
         /// </typeparam>
         /// <param name="maybe">The source maybe.</param>
-        /// <param name="otherValue">The value to be returned if the <see cref="Recipes.Maybe{T}" /> has no value.</param>
+        /// <param name="otherValue">The value to be returned if the <see cref="Pocket.Maybe{T}" /> has no value.</param>
         /// <returns>
         ///     The value of the Maybe if it has a value; otherwise, the value returned by <paramref name="otherValue" />.
         /// </returns>
@@ -106,13 +106,13 @@ namespace Microsoft.Its.Recipes
         }
 
         /// <summary>
-        ///     Specifies a function that will be evaluated if the source <see cref="Recipes.Maybe{T}" /> has no value.
+        ///     Specifies a function that will be evaluated if the source <see cref="Pocket.Maybe{T}" /> has no value.
         /// </summary>
         /// <typeparam name="T">
-        ///     The type held by the <see cref="Recipes.Maybe{T}" />.
+        ///     The type held by the <see cref="Pocket.Maybe{T}" />.
         /// </typeparam>
         /// <param name="maybe">The source maybe.</param>
-        /// <param name="otherValue">The value to be returned if the <see cref="Recipes.Maybe{T}" /> has no value.</param>
+        /// <param name="otherValue">The value to be returned if the <see cref="Pocket.Maybe{T}" /> has no value.</param>
         /// <returns>
         ///     The value of the Maybe if it has a value; otherwise, the value returned by <paramref name="otherValue" />.
         /// </returns>
@@ -127,10 +127,10 @@ namespace Microsoft.Its.Recipes
         }
 
         /// <summary>
-        /// Returns the default value for <typeparamref name="T" /> if the <see cref="Recipes.Maybe{T}" /> has no value.
+        /// Returns the default value for <typeparamref name="T" /> if the <see cref="Pocket.Maybe{T}" /> has no value.
         /// </summary>
         /// <typeparam name="T">
-        ///     The type held by the <see cref="Recipes.Maybe{T}" />.
+        ///     The type held by the <see cref="Pocket.Maybe{T}" />.
         /// </typeparam>
         public static T ElseDefault<T>(this Maybe<T> maybe)
         {
@@ -138,10 +138,10 @@ namespace Microsoft.Its.Recipes
         }
 
         /// <summary>
-        /// Returns the default value for <typeparamref name="T" /> if the <see cref="Recipes.Maybe{T}" /> has no value.
+        /// Returns the default value for <typeparamref name="T" /> if the <see cref="Pocket.Maybe{T}" /> has no value.
         /// </summary>
         /// <typeparam name="T">
-        ///     The type held by the <see cref="Recipes.Maybe{T}" />.
+        ///     The type held by the <see cref="Pocket.Maybe{T}" />.
         /// </typeparam>
         public static T ElseDefault<T>(this Maybe<Maybe<T>> maybe)
         {
@@ -149,10 +149,10 @@ namespace Microsoft.Its.Recipes
         }
 
         /// <summary>
-        /// Returns the default value for <typeparamref name="T" /> if the <see cref="Recipes.Maybe{T}" /> has no value.
+        /// Returns the default value for <typeparamref name="T" /> if the <see cref="Pocket.Maybe{T}" /> has no value.
         /// </summary>
         /// <typeparam name="T">
-        ///     The type held by the <see cref="Recipes.Maybe{T}" />.
+        ///     The type held by the <see cref="Pocket.Maybe{T}" />.
         /// </typeparam>
         public static T ElseDefault<T>(this Maybe<Maybe<Maybe<T>>> maybe)
         {
@@ -160,10 +160,10 @@ namespace Microsoft.Its.Recipes
         }
 
         /// <summary>
-        /// Returns the default value for <typeparamref name="T" /> if the <see cref="Recipes.Maybe{T}" /> has no value.
+        /// Returns the default value for <typeparamref name="T" /> if the <see cref="Pocket.Maybe{T}" /> has no value.
         /// </summary>
         /// <typeparam name="T">
-        ///     The type held by the <see cref="Recipes.Maybe{T}" />.
+        ///     The type held by the <see cref="Pocket.Maybe{T}" />.
         /// </typeparam>
         public static T ElseDefault<T>(this Maybe<Maybe<Maybe<Maybe<T>>>> maybe)
         {
@@ -173,7 +173,7 @@ namespace Microsoft.Its.Recipes
         /// <summary>
         /// Returns null if the source has no value.
         /// </summary>
-        /// <typeparam name="T">The type held by the <see cref="Recipes.Maybe{T}" />.</typeparam>
+        /// <typeparam name="T">The type held by the <see cref="Pocket.Maybe{T}" />.</typeparam>
         public static T? ElseNull<T>(this Maybe<T> maybe)
             where T : struct
         {
@@ -186,10 +186,10 @@ namespace Microsoft.Its.Recipes
         }
 
         /// <summary>
-        /// Performs an action if the <see cref="Recipes.Maybe{T}" /> has no value.
+        /// Performs an action if the <see cref="Pocket.Maybe{T}" /> has no value.
         /// </summary>
         /// <typeparam name="T">
-        ///     The type held by the <see cref="Recipes.Maybe{T}" />.
+        ///     The type held by the <see cref="Pocket.Maybe{T}" />.
         /// </typeparam>
         public static void ElseDo<T>(this Maybe<T> maybe, Action action)
         {
@@ -205,9 +205,9 @@ namespace Microsoft.Its.Recipes
         }
 
         /// <summary>
-        /// Throws an exception if the <see cref="Recipes.Maybe{T}" /> has no value.
+        /// Throws an exception if the <see cref="Pocket.Maybe{T}" /> has no value.
         /// </summary>
-        /// <typeparam name="T">The type held by the <see cref="Recipes.Maybe{T}" />.</typeparam>
+        /// <typeparam name="T">The type held by the <see cref="Pocket.Maybe{T}" />.</typeparam>
         /// <param name="maybe">The maybe.</param>
         /// <param name="exception">A function that returns the exception to be thrown.</param>
         /// <returns></returns>
@@ -265,7 +265,7 @@ namespace Microsoft.Its.Recipes
         /// <typeparam name="T">The type of the value expected to be returned.</typeparam>
         /// <param name="source">The source object.</param>
         /// <param name="getValue">A delegate that attempts to return a value via a dynamic invocation on the source object.</param>
-        /// <remarks>This method will not cast the result value to <typeparamref name="T" />. If the returned value is not of this type, then a negative <see cref="Recipes.Maybe{T}" /> will be returned.</remarks>
+        /// <remarks>This method will not cast the result value to <typeparamref name="T" />. If the returned value is not of this type, then a negative <see cref="Pocket.Maybe{T}" /> will be returned.</remarks>
         public static Maybe<T> IfHas<T>(
             this object source,
             Func<dynamic, T> getValue)
@@ -282,9 +282,9 @@ namespace Microsoft.Its.Recipes
         }
 
         /// <summary>
-        /// Creates a <see cref="Recipes.Maybe{T}" /> that has a value if <paramref name="source" /> is not null. 
+        /// Creates a <see cref="Pocket.Maybe{T}" /> that has a value if <paramref name="source" /> is not null. 
         /// </summary>
-        /// <typeparam name="T">The type of the instance wrapped by the <see cref="Recipes.Maybe{T}" />.</typeparam>
+        /// <typeparam name="T">The type of the instance wrapped by the <see cref="Pocket.Maybe{T}" />.</typeparam>
         /// <param name="source">The source instance, which may be null.</param>
         public static Maybe<T> IfNotNull<T>(this T source) where T : class
         {
@@ -297,7 +297,7 @@ namespace Microsoft.Its.Recipes
         }
 
         /// <summary>
-        /// Creates a <see cref="Recipes.Maybe{T}" /> that has a value if <paramref name="source" /> has a value. 
+        /// Creates a <see cref="Pocket.Maybe{T}" /> that has a value if <paramref name="source" /> has a value. 
         /// </summary>
         public static Maybe<T> IfNotNull<T>(this Maybe<T> source) where T : class
         {
@@ -310,9 +310,9 @@ namespace Microsoft.Its.Recipes
         }
 
         /// <summary>
-        /// Creates a <see cref="Recipes.Maybe{T}" /> that has a value if <paramref name="source" /> is not null. 
+        /// Creates a <see cref="Pocket.Maybe{T}" /> that has a value if <paramref name="source" /> is not null. 
         /// </summary>
-        /// <typeparam name="T">The type of the instance wrapped by the <see cref="Recipes.Maybe{T}" />.</typeparam>
+        /// <typeparam name="T">The type of the instance wrapped by the <see cref="Pocket.Maybe{T}" />.</typeparam>
         /// <param name="source">The source instance, which may be null.</param>
         public static Maybe<T> IfNotNull<T>(this T? source)
             where T : struct
@@ -326,7 +326,7 @@ namespace Microsoft.Its.Recipes
         }
 
         /// <summary>
-        /// Creates a <see cref="Recipes.Maybe{T}" /> that has a value if <paramref name="source" /> is not null, empty, or entirely whitespace. 
+        /// Creates a <see cref="Pocket.Maybe{T}" /> that has a value if <paramref name="source" /> is not null, empty, or entirely whitespace. 
         /// </summary>
         /// <param name="source">The string.</param>
         public static Maybe<string> IfNotNullOrEmptyOrWhitespace(this string source)
@@ -340,7 +340,7 @@ namespace Microsoft.Its.Recipes
         }
 
         /// <summary>
-        /// Creates a <see cref="Recipes.Maybe{T}" /> that has a value if <paramref name="source" /> is assignable to type <typeparamref name="T" />. 
+        /// Creates a <see cref="Pocket.Maybe{T}" /> that has a value if <paramref name="source" /> is assignable to type <typeparamref name="T" />. 
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="source">The source.</param>
@@ -388,7 +388,7 @@ namespace Microsoft.Its.Recipes
         }
      
         /// <summary>
-        /// Specifies the result of a <see cref="Recipes.Maybe{T}" /> if the <see cref="Recipes.Maybe{T}" /> has a value.
+        /// Specifies the result of a <see cref="Pocket.Maybe{T}" /> if the <see cref="Pocket.Maybe{T}" /> has a value.
         /// </summary>
         /// <typeparam name="TIn">The type of source object.</typeparam>
         /// <typeparam name="TOut">The type of result.</typeparam>
@@ -405,10 +405,10 @@ namespace Microsoft.Its.Recipes
         }
 
         /// <summary>
-        /// Performs an action if the <see cref="Recipes.Maybe{T}" /> has a value.
+        /// Performs an action if the <see cref="Pocket.Maybe{T}" /> has a value.
         /// </summary>
         /// <typeparam name="T">
-        ///     The type held by the <see cref="Recipes.Maybe{T}" />.
+        ///     The type held by the <see cref="Pocket.Maybe{T}" />.
         /// </typeparam>
         public static Maybe<Unit> ThenDo<T>(this Maybe<T> maybe, Action<T> action)
         {
@@ -433,7 +433,7 @@ namespace Microsoft.Its.Recipes
         /// <typeparam name="TOut">The type of result.</typeparam>
         /// <param name="source">The source object.</param>
         /// <param name="getValue">A delegate to get the value from the source object.</param>
-        /// <param name="ignore">A predicate to determine whether the exception should be ignored. If this is not specified, all exceptions are ignored. If it is specified and an exception is thrown that matches the predicate, the exception is ignored and a <see cref="Recipes.Maybe{TOut}" /> having no value is returned. If it is specified and an exception is thrown that does not match the predicate, the exception is allowed to propagate.</param>
+        /// <param name="ignore">A predicate to determine whether the exception should be ignored. If this is not specified, all exceptions are ignored. If it is specified and an exception is thrown that matches the predicate, the exception is ignored and a <see cref="Pocket.Maybe{TOut}" /> having no value is returned. If it is specified and an exception is thrown that does not match the predicate, the exception is allowed to propagate.</param>
         /// <returns></returns>
         public static Maybe<TOut> Try<TIn, TOut>(
             this TIn source,
@@ -483,7 +483,7 @@ namespace Microsoft.Its.Recipes
         private T value;
 
         /// <summary>
-        /// Returns a <see cref="Recipes.Maybe{T}" /> that contains a value.
+        /// Returns a <see cref="Pocket.Maybe{T}" /> that contains a value.
         /// </summary>
         /// <param name="value">The value.</param>
         public static Maybe<T> Yes(T value)
@@ -496,7 +496,7 @@ namespace Microsoft.Its.Recipes
         }
 
         /// <summary>
-        /// Returns a <see cref="Recipes.Maybe{T}" /> that does not contain a value.
+        /// Returns a <see cref="Pocket.Maybe{T}" /> that does not contain a value.
         /// </summary>
         public static Maybe<T> No()
         {
@@ -504,7 +504,7 @@ namespace Microsoft.Its.Recipes
         }
 
         /// <summary>
-        /// Gets the value contained by the <see cref="Recipes.Maybe{T}" />.
+        /// Gets the value contained by the <see cref="Pocket.Maybe{T}" />.
         /// </summary>
         /// <value>
         /// The value.

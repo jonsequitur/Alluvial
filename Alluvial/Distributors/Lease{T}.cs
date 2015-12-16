@@ -106,6 +106,14 @@ namespace Alluvial.Distributors
             }
         }
 
+        public DateTimeOffset LastGranted
+        {
+            get
+            {
+                return leasable.LeaseLastGranted;
+            }
+        }
+
         internal void NotifyCompleted()
         {
             completed = true;

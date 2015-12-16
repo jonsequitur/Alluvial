@@ -1,16 +1,25 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using FluentAssertions;
 using System.Linq;
 using System.Threading.Tasks;
+using Alluvial.Distributors;
+using Alluvial.Distributors.Sql;
 using Microsoft.Its.Domain;
 using Microsoft.Its.Domain.Sql;
+using Microsoft.Its.Domain.Testing;
 using NUnit.Framework;
+using Pocket;
 
 namespace Alluvial.ForItsCqrs.Tests
 {
     [TestFixture]
-    public class EventStreamTests
+    public class ProjectionTests
     {
+        private static int absoluteSequenceNumber;
+        private readonly InMemoryEventStream eventStream = new InMemoryEventStream();
+
         [Test]
         public async Task AllChanges_doesnt_miss_aggregates()
         {
@@ -36,6 +45,86 @@ namespace Alluvial.ForItsCqrs.Tests
             catchup.Subscribe(aggregator, store);
             catchup.RunUntilCaughtUp().Wait();
             count.Should().Be(2);
+        }
+
+        [Test]
+        public async Task Map_projections_have_individual_cursors()
+        {
+            var aggregateIds = Enumerable.Range(1, 100).Select(_ => Guid.NewGuid()).ToArray();
+
+            await WriteEvents<AggregateA.EventType1>(aggregateIds.Concat(aggregateIds));
+
+            var allChanges = EventStream.PerAggregate("All",
+                                                      () => eventStream
+                                                          .Select(e => e.ToStorableEvent())
+                                                          .AsQueryable());
+
+            var catchup = StreamCatchup.All(allChanges);
+
+            var aggregator = Aggregator.Create<Projection<int, long>, IEvent>((p, b) =>
+            {
+                p.Value++;
+                Console.WriteLine(b);
+            });
+
+            var store = new InMemoryProjectionStore<Projection<int, long>>();
+            catchup.Subscribe(aggregator, store);
+
+            await catchup.RunUntilCaughtUp().TimeoutAfter(DefaultTimeout());
+
+            store.Select(p => p.CursorPosition).Should().OnlyContain(i => i > 100);
+        }
+
+        [Test]
+        public async Task When_one_map_projection_encounters_errors_it_does_not_cause_the_others_to_fall_behind()
+        {
+
+
+
+            // FIX (When_one_map_projection_encounters_errors_the_others_do_not_fall_behind) write test
+            Assert.Fail("Test not written yet.");
+        }
+
+        [Test]
+        public async Task The_partition_that_is_the_farthest_behind_is_picked_up_first_by_the_distributor()
+        {
+            var database = new SqlBrokeredDistributorDatabase(
+                @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=AlluvialSqlDistributorTests");
+
+            var leaseables = Partition.AllGuids()
+                                      .Among(10)
+                                      .Select(p => new Leasable<IStreamQueryRangePartition<Guid>>(p, p.ToString())
+                                      {
+                                          LeaseLastGranted = DateTimeOffset.Parse("2015-12-16 06:29:53 AM"),
+                                          LeaseLastReleased = DateTimeOffset.Parse("2015-12-16 06:31:11 AM")
+                                      })
+                                      .ToArray();
+
+            await database.CreateDatabase();
+            var pool = Guid.NewGuid().ToString();
+            await database.RegisterLeasableResources(leaseables, pool);
+
+            var distributor = new SqlBrokeredDistributor<IStreamQueryRangePartition<Guid>>(
+                leaseables,
+                database,
+                pool,
+                5,
+                TimeSpan.FromSeconds(30));
+
+            DateTimeOffset lastGranted = new DateTimeOffset(); 
+            
+            distributor.OnReceive(async lease =>
+            {
+                lastGranted = lease.LastGranted;
+            });
+
+            await distributor.Distribute(1);
+
+            Console.WriteLine(lastGranted);
+
+
+            // FIX (The_projections_that_are_the_farthest_behind_are_updated_first) write test
+            Assert.Fail("Test not written yet.");
         }
 
         private static StorableEvent[] CreateStorableEvents(
@@ -460,6 +549,55 @@ namespace Alluvial.ForItsCqrs.Tests
                     Id = 46,
                     Body = "{}"
                 },
+            };
+        }
+
+        private TimeSpan DefaultTimeout()
+        {
+            return TimeSpan.FromSeconds(5*(Debugger.IsAttached ? 100 : 1));
+        }
+
+        private async Task WriteEvents<TEvent>(IEnumerable<Guid> aggregateIds) where TEvent : IEvent, new()
+        {
+            foreach (var aggregateId in aggregateIds)
+            {
+                var existing = new EventSequence(aggregateId);
+
+                existing.AddRange((await eventStream.All(aggregateId.ToString()))
+                                      .Select(e => e.ToDomainEvent()));
+
+                var @event = new TEvent();
+
+                existing.Add(@event);
+
+                var storedEvent = @event.ToStoredEvent() as InMemoryStoredEvent;
+
+                storedEvent.Metadata.AbsoluteSequenceNumber = eventStream.Count() + 1;
+
+                await eventStream.Append(new[] { storedEvent });
+            }
+        }
+    }
+
+    public static class EventExtensions
+    {
+        public static StorableEvent ToStorableEvent(this IStoredEvent @event)
+        {
+            var absoluteSequenceNumber = @event.IfTypeIs<IHaveExtensibleMetada>()
+                                               .And()
+                                               .IfHas<int>(e => e.Metadata.AbsoluteSequenceNumber)
+                                               .ElseDefault();
+
+            return new StorableEvent
+            {
+                SequenceNumber = @event.SequenceNumber,
+                AggregateId = Guid.Parse(@event.AggregateId),
+                Timestamp = @event.Timestamp,
+                Type = @event.Type,
+                Body = @event.Body,
+                ETag = @event.ETag,
+                StreamName = @event.StreamName,
+                Id = absoluteSequenceNumber
             };
         }
     }

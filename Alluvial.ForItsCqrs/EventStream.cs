@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain;
 using Microsoft.Its.Domain.Sql;
-using Microsoft.Its.Recipes;
+using Pocket;
 
 namespace Alluvial.ForItsCqrs
 {
@@ -23,12 +22,29 @@ namespace Alluvial.ForItsCqrs
                                                             .ThenDo(u => q.Cursor.AdvanceTo(u.AbsoluteSequenceNumber)));
         }
 
+        private static IPartitionedStream<EventStreamChange, long, Guid> AllChangesPartitioned(
+            Func<IQueryable<StorableEvent>> getStorableEvents)
+        {
+            return Stream
+                .PartitionedByRange<EventStreamChange, long, Guid>(
+                    query: async (query, partition) => await EventStreamChanges(getStorableEvents(), query, partition),
+                    advanceCursor: (q, b) => b.LastOrDefault()
+                                              .IfNotNull()
+                                              .ThenDo(u => q.Cursor.AdvanceTo(u.AbsoluteSequenceNumber)));
+        }
+
         private static async Task<IEnumerable<EventStreamChange>> EventStreamChanges(
             IQueryable<StorableEvent> events,
-            IStreamQuery<long> streamQuery)
+            IStreamQuery<long> streamQuery,
+            IStreamQueryRangePartition<Guid> partition = null)
         {
             var query = events
                 .Where(e => e.Id > streamQuery.Cursor.Position);
+
+            if (partition != null)
+            {
+                query = query.WithinPartition(e => e.AggregateId, partition);
+            }
 
             var fetchedFromEventStore = query
                 .OrderBy(e => e.Id)
@@ -67,13 +83,14 @@ namespace Alluvial.ForItsCqrs
                                                     (query, batch) => AdvanceCursor(batch, query, toCursor)));
         }
 
-        private static Maybe<Unit> AdvanceCursor(
+        private static void AdvanceCursor(
             IStreamBatch<IEvent> batch,
-            IStreamQuery<long> query, long toCursor)
+            IStreamQuery<long> query,
+            long toCursor)
         {
-            return batch.LastOrDefault()
-                        .IfNotNull()
-                        .ThenDo(e => query.Cursor.AdvanceTo(toCursor));
+            batch.LastOrDefault()
+                 .IfNotNull()
+                 .ThenDo(e => query.Cursor.AdvanceTo(toCursor));
         }
 
         private static async Task<IEnumerable<IEvent>> QueryAsync(
@@ -91,13 +108,7 @@ namespace Alluvial.ForItsCqrs
                 query = query.OrderBy(e => e.Id)
                              .Take(q.BatchSize ?? 1000);
 
-                var events = query
-                    .ToArray();
-
-                foreach (var e in events)
-                {
-                    Trace.WriteLine(e.Id);
-                }
+                var events = query.ToArray();
 
                 return events.Select(e => e.ToDomainEvent());
             }

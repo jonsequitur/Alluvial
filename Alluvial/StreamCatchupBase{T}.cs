@@ -122,7 +122,7 @@ namespace Alluvial
 
             await Task.WhenAll(aggregationTasks);
 
-            this.batchTaskCompletionSource = null;
+            batchTaskCompletionSource = null;
 
             return upstreamCursor;
         }
