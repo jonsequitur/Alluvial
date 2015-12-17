@@ -84,7 +84,7 @@ namespace Alluvial.Distributors
 
         public override string ToString()
         {
-            return string.Format("lease:{0} (granted @ {1}, released @ {2})",
+            return string.Format("lease:{0} (last granted @ {1}, last released @ {2})",
                                  ResourceName,
                                  LastGranted,
                                  LastReleased) + " (" + ownerToken + ")";

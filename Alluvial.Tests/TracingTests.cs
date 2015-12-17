@@ -171,11 +171,11 @@ namespace Alluvial.Tests
 
                 traceListener.Messages
                              .Should()
-                             .Contain(m => m.Contains("[Distribute] OnReceive leasable resource:1"));
+                             .Contain(m => m.Contains("[Distribute] OnReceive lease:1"));
 
                 traceListener.Messages
                              .Should()
-                             .Contain(m => m.Contains("[Distribute] OnReceive (done) leasable resource:1"));
+                             .Contain(m => m.Contains("[Distribute] OnReceive (done) lease:1"));
             }
         }
 
