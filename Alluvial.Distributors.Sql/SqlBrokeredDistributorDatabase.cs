@@ -44,17 +44,29 @@ namespace Alluvial.Distributors.Sql
 
                 var cmd = connection.CreateCommand();
                 cmd.CommandText = string.Format(
-                    @"IF db_id('{0}') IS NULL
-    CREATE DATABASE [{0}]", distributorDatabaseName);
+                    @"
+IF db_id('{0}') IS NULL
+    BEGIN
+        CREATE DATABASE [{0}]
+        SELECT 'created'
+    END
+ELSE
+    BEGIN
+        SELECT 'already exists'
+    END",
+                    distributorDatabaseName);
                 cmd.CommandType = CommandType.Text;
 
-                await cmd.ExecuteScalarAsync();
+                var result = await cmd.ExecuteScalarAsync() as string;
 
-                await RunScript(connection,
-                                @"Alluvial.Distributors.Sql.CreateDatabase.sql",
-                                distributorDatabaseName);
+                if (result == "created")
+                {
+                    await RunScript(connection,
+                                    @"Alluvial.Distributors.Sql.CreateDatabase.sql",
+                                    distributorDatabaseName);
 
-                await InitializeSchema(connection, distributorDatabaseName);
+                    await InitializeSchema(connection, distributorDatabaseName);
+                }
             }
         }
 
