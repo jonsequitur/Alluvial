@@ -29,9 +29,14 @@ namespace Alluvial.Distributors
             this.duration = duration;
             this.ownerToken = ownerToken;
             this.extend = extend;
-
+            this.LastGranted = this.leasable.LeaseLastGranted;
+            this.LastReleased = this.leasable.LeaseLastReleased;
             cancellationTokenSource.CancelAfter(Duration);
         }
+
+        public DateTimeOffset LastReleased { get; private set; }
+
+        public DateTimeOffset LastGranted { get; private set; }
 
         public TimeSpan Duration
         {
@@ -79,7 +84,10 @@ namespace Alluvial.Distributors
 
         public override string ToString()
         {
-            return leasable + " (" + ownerToken + ")";
+            return string.Format("lease:{0} (granted @ {1}, released @ {2})",
+                                 ResourceName,
+                                 LastGranted,
+                                 LastReleased) + " (" + ownerToken + ")";
         }
 
         internal Leasable<T> Leasable

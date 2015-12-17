@@ -214,7 +214,7 @@ namespace Alluvial.Tests
                                            receivedBatch = b;
                                        });
 
-            var sentBatch = new StreamBatch<int>(Enumerable.Range(1, 10).ToArray(), 0);
+            var sentBatch =  StreamBatch.Create(Enumerable.Range(1, 10).ToArray(),Cursor.New<int>());
             await aggregator.Aggregate(41, sentBatch);
 
             receivedProjection.Should().Be(41);

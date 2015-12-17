@@ -19,7 +19,7 @@ namespace Alluvial.Tests.Distributors
             string pool = null)
         {
             distributor = new InMemoryDistributor<int>(
-                leasables ?? DefaultLeasable,
+                leasables ?? DefaultLeasables,
                 pool ?? DateTimeOffset.UtcNow.Ticks.ToString(),
                 maxDegreesOfParallelism,
                 waitInterval,
