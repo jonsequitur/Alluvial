@@ -171,11 +171,11 @@ namespace Alluvial.Tests
 
                 traceListener.Messages
                              .Should()
-                             .Contain(m => m.Contains("[Distribute] OnReceive leasable resource:1"));
+                             .Contain(m => m.Contains("[Distribute] OnReceive lease:1"));
 
                 traceListener.Messages
                              .Should()
-                             .Contain(m => m.Contains("[Distribute] OnReceive (done) leasable resource:1"));
+                             .Contain(m => m.Contains("[Distribute] OnReceive (done) lease:1"));
             }
         }
 
@@ -214,7 +214,7 @@ namespace Alluvial.Tests
                                            receivedBatch = b;
                                        });
 
-            var sentBatch = new StreamBatch<int>(Enumerable.Range(1, 10).ToArray(), 0);
+            var sentBatch =  StreamBatch.Create(Enumerable.Range(1, 10).ToArray(),Cursor.New<int>());
             await aggregator.Aggregate(41, sentBatch);
 
             receivedProjection.Should().Be(41);

@@ -22,7 +22,7 @@ namespace Alluvial.Tests.Distributors
             TimeSpan? waitInterval = null,
             string pool = null)
         {
-            leasables = leasables ?? DefaultLeasable;
+            leasables = leasables ?? DefaultLeasables;
 
             pool = pool ?? DateTimeOffset.UtcNow.Ticks.ToString();
             distributor = new SqlBrokeredDistributor<int>(
