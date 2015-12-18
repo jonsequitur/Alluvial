@@ -50,7 +50,7 @@ namespace Alluvial.ForItsCqrs.Tests
         [Test]
         public async Task The_command_scheduler_queue_can_be_processed_as_a_stream()
         {
-            ScheduleSomeCommands();
+            ScheduleSomeCommands(20);
 
             var catchup = ScheduledCommandStream()
                 .DistributeAmong(Partition.AllGuids()
@@ -65,6 +65,8 @@ namespace Alluvial.ForItsCqrs.Tests
 
             Console.WriteLine(store.ToLogString());
 
+            store.Count().Should().Be(20);
+
             using (var db = new CommandSchedulerDbContext())
             {
                 store.Select(p => p.Value)
@@ -74,9 +76,9 @@ namespace Alluvial.ForItsCqrs.Tests
             }
         }
 
-        private static void ScheduleSomeCommands(DateTimeOffset? dueTime = null)
+        private static void ScheduleSomeCommands(int howMany= 20, DateTimeOffset? dueTime = null)
         {
-            Enumerable.Range(1, 20)
+            Enumerable.Range(1, howMany)
                       .Select(_ => Guid.NewGuid())
                       .ToList()
                       .ForEach(id =>
@@ -107,9 +109,9 @@ namespace Alluvial.ForItsCqrs.Tests
                 });
         }
 
-        public IPartitionedStream<ScheduledCommand, long, Guid> ScheduledCommandStream()
+        public IPartitionedStream<ScheduledCommand, DateTimeOffset, Guid> ScheduledCommandStream()
         {
-            return Stream.PartitionedByRange<ScheduledCommand, long, Guid>(
+            return Stream.PartitionedByRange<ScheduledCommand, DateTimeOffset, Guid>(
                 async (q, partition) =>
                 {
                     using (var db = new CommandSchedulerDbContext())
@@ -123,7 +125,20 @@ namespace Alluvial.ForItsCqrs.Tests
                                        .ToArrayAsync();
                     }
                 },
-                advanceCursor: (q, b) => q.Cursor.AdvanceTo(DateTime.Now.Ticks));
+                advanceCursor: (q, b) =>
+                {
+                    // advance the cursor to the latest due time
+                    var latestDuetime = b
+                        .Select(c => c.DueTime)
+                        .Where(d => d != null)
+                        .Select(d => d.Value)
+                        .OrderBy(d => d)
+                        .LastOrDefault();
+                    if (latestDuetime != default(DateTimeOffset))
+                    {
+                        q.Cursor.AdvanceTo(latestDuetime);
+                    }
+                });
         }
     }
 
