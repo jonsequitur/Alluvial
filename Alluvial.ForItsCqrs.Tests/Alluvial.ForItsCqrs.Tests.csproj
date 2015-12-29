@@ -60,17 +60,17 @@
       <HintPath>..\packages\Its.Validation.1.4.3\lib\net45\Its.Validation.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="Microsoft.Its.Domain, Version=0.12.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.Its.Domain, Version=0.13.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Its.Domain.0.12.11-beta\lib\net451\Microsoft.Its.Domain.dll</HintPath>
+      <HintPath>..\packages\Its.Domain.0.13.0-beta\lib\net451\Microsoft.Its.Domain.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Its.Domain.Sql, Version=0.12.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.Its.Domain.Sql, Version=0.13.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Its.Domain.Sql.0.12.11-beta\lib\net451\Microsoft.Its.Domain.Sql.dll</HintPath>
+      <HintPath>..\packages\Its.Domain.Sql.0.13.0-beta\lib\net451\Microsoft.Its.Domain.Sql.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Its.Domain.Testing, Version=0.12.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.Its.Domain.Testing, Version=0.13.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Its.Domain.Testing.0.12.11-beta\lib\net451\Microsoft.Its.Domain.Testing.dll</HintPath>
+      <HintPath>..\packages\Its.Domain.Testing.0.13.0-beta\lib\net451\Microsoft.Its.Domain.Testing.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>

@@ -1,15 +1,75 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain;
 using Microsoft.Its.Domain.Sql;
+using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Pocket;
 
 namespace Alluvial.ForItsCqrs
 {
     public static class EventStream
     {
+        public static IStreamAggregator<CommandsApplied, ScheduledCommand> DeliverScheduledCommands()
+        {
+            return Aggregator.Create<CommandsApplied, ScheduledCommand>(
+                async (projection, batch) =>
+                {
+                    using (var commandSchedulerDb = new CommandSchedulerDbContext())
+                    {
+                        foreach (var cmd in batch)
+                        {
+                            await Configuration.Current.DeserializeAndDeliver(cmd, commandSchedulerDb);
+                            projection.Value.Add(cmd.Result);
+                        }
+                        await commandSchedulerDb.SaveChangesAsync();
+                    }
+
+                    return projection;
+                });
+        }
+
+        public static IPartitionedStream<ScheduledCommand, long, Guid> ScheduledCommandStream(string clockName = "default")
+        {
+            return Stream.PartitionedByRange<ScheduledCommand, long, Guid>(
+                async (q, partition) =>
+                {
+                    using (var db = new CommandSchedulerDbContext())
+                    {
+                        var batchCount = q.BatchSize ?? 5;
+                        var query = db.ScheduledCommands
+                                      .Due()
+                                      .Where(c => c.Clock.Name == clockName)
+                                      .WithinPartition(e => e.AggregateId, partition)
+                                      .Take(() => batchCount);
+                        var scheduledCommands = await query.ToArrayAsync();
+                        return scheduledCommands;
+                    }
+                },
+                advanceCursor: (q, b) =>
+                {
+                    q.Cursor.AdvanceTo(DateTimeOffset.UtcNow.Ticks);
+
+                    // advance the cursor to the latest due time
+//                    var latestDuetime = b
+//                        .Select(c => c.DueTime)
+//                        .Where(d => d != null)
+//                        .Select(d => d.Value)
+//                        .OrderBy(d => d)
+//                        .LastOrDefault();
+//                    if (latestDuetime != default(DateTimeOffset))
+//                    {
+//                        q.Cursor.AdvanceTo(latestDuetime);
+//                    }
+//                    else
+//                    {
+//                        q.Cursor.AdvanceTo(DateTimeOffset.UtcNow);
+//                    }
+                });
+        }
+
         private static IStream<EventStreamChange, long> AllChanges(
             string streamId,
             Func<IQueryable<StorableEvent>> getStorableEvents)
@@ -26,11 +86,10 @@ namespace Alluvial.ForItsCqrs
             Func<IQueryable<StorableEvent>> getStorableEvents)
         {
             return Stream
-                .PartitionedByRange<EventStreamChange, long, Guid>(
-                    query: async (query, partition) => await EventStreamChanges(getStorableEvents(), query, partition),
-                    advanceCursor: (q, b) => b.LastOrDefault()
-                                              .IfNotNull()
-                                              .ThenDo(u => q.Cursor.AdvanceTo(u.AbsoluteSequenceNumber)));
+                .PartitionedByRange<EventStreamChange, long, Guid>(async (query, partition) => await EventStreamChanges(getStorableEvents(), query, partition),
+                                                                   advanceCursor: (q, b) => b.LastOrDefault()
+                                                                                             .IfNotNull()
+                                                                                             .ThenDo(u => q.Cursor.AdvanceTo(u.AbsoluteSequenceNumber)));
         }
 
         private static async Task<IEnumerable<EventStreamChange>> EventStreamChanges(

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data.Entity;
 using System.Diagnostics;
 using FluentAssertions;
 using System.Linq;

@@ -72,11 +72,27 @@ namespace Alluvial.ForItsCqrs.Tests
         }
     }
 
-    public class CreateAggregateA : ConstructorCommand<AggregateA>
+    public class CreateAggregateA : ConstructorCommand<AggregateA>, ISpecifySchedulingBehavior
     {
         public override bool Authorize(AggregateA aggregate)
         {
             return true;
+        }
+
+        public bool CanBeDeliveredDuringScheduling
+        {
+            get
+            {
+                return false;
+            }
+        }
+
+        public bool RequiresDurableScheduling
+        {
+            get
+            {
+                return true;
+            }
         }
     }
 
