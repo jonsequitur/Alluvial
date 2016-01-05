@@ -1,18 +1,17 @@
 ﻿using System;
-using System.Data.Entity;
 using System.Diagnostics;
-using FluentAssertions;
 using System.Linq;
 using System.Threading.Tasks;
 using Alluvial.Distributors;
 using Alluvial.Distributors.Sql;
+using FluentAssertions;
 using Microsoft.Its.Domain;
 using Microsoft.Its.Domain.Sql;
 using Microsoft.Its.Domain.Testing;
 using NUnit.Framework;
 using Pocket;
 
-namespace Alluvial.ForItsCqrs.Tests
+namespace Alluvial.Streams.ItsDomainSql.Tests
 {
     [TestFixture]
     public class ProjectionTests
@@ -82,11 +81,9 @@ namespace Alluvial.ForItsCqrs.Tests
                 var eventType14s = batch.OfType<AggregateB.EventType14>().ToList();
                 projection.Value.AddRange(eventType14s);
             }).Trace();
-
-            var cursorStore = new InMemoryProjectionStore<ICursor<long>>(id => Cursor.New<long>());
+            
             var catchup = streams.DistributeAmong(
-                Partition.AllGuids().Among(10),
-                fetchAndSavePartitionCursor: cursorStore.Trace().AsHandler());
+                Partition.AllGuids().Among(10));
 
             var store = new InMemoryProjectionStore<MatchingEvents>();
             catchup.Subscribe(aggregator, store.Trace());

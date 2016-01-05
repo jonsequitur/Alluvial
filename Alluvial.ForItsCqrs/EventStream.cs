@@ -8,7 +8,7 @@ using Microsoft.Its.Domain.Sql;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 using Pocket;
 
-namespace Alluvial.ForItsCqrs
+namespace Alluvial.Streams.ItsDomainSql
 {
     public static class EventStream
     {

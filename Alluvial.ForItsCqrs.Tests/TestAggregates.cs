@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Its.Domain;
 
-namespace Alluvial.ForItsCqrs.Tests
+namespace Alluvial.Streams.ItsDomainSql.Tests
 {
     public class AggregateA : EventSourcedAggregate<AggregateA>
     {

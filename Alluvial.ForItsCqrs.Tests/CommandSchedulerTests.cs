@@ -1,16 +1,16 @@
 using System;
 using System.Data.Entity;
-using FluentAssertions;
-using Its.Log.Instrumentation;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
+using FluentAssertions;
+using Its.Log.Instrumentation;
 using Microsoft.Its.Domain;
 using Microsoft.Its.Domain.Sql;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 using NUnit.Framework;
 
-namespace Alluvial.ForItsCqrs.Tests
+namespace Alluvial.Streams.ItsDomainSql.Tests
 {
     [TestFixture]
     public class CommandSchedulerTests

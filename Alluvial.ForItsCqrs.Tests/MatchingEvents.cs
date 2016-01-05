@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-using Its.Log.Instrumentation;
 using System.Linq;
+using Its.Log.Instrumentation;
 using Microsoft.Its.Domain;
 
-namespace Alluvial.ForItsCqrs.Tests
+namespace Alluvial.Streams.ItsDomainSql.Tests
 {
     public class MatchingEvents : Projection<List<IEvent>, long>
     {

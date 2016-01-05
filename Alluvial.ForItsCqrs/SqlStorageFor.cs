@@ -2,7 +2,7 @@ using System;
 using System.Data.Entity;
 using System.Threading.Tasks;
 
-namespace Alluvial.ForItsCqrs
+namespace Alluvial.Streams.ItsDomainSql
 {
     public static class SqlStorageFor
     {

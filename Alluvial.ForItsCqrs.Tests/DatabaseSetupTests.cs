@@ -2,22 +2,19 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Entity;
 using System.Data.SqlClient;
-using FluentAssertions;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Alluvial.Distributors.Sql;
+using FluentAssertions;
 using Microsoft.Its.Domain.Sql;
 using NUnit.Framework;
 
-namespace Alluvial.ForItsCqrs.Tests
+namespace Alluvial.Streams.ItsDomainSql.Tests
 {
     [TestFixture]
     public class DatabaseSetupTests
     {
-        public static readonly string connectionString =
-            @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=AlluvialForItsCqrsSchemaTest";
-
         [Test]
         public async Task The_ItsDomainSql_database_initializer_isnt_bothered_by_the_Alluvial_distributor_schema()
         {
@@ -25,7 +22,7 @@ namespace Alluvial.ForItsCqrs.Tests
 
             var methodName = MethodBase.GetCurrentMethod().Name;
 
-            using (var db = new AlluvialForItsCqrsSchemaTestDbContext())
+            using (var db = new SchemaTestDbContext())
             {
                 db.Tallies.Add(new Tally
                 {
@@ -35,16 +32,16 @@ namespace Alluvial.ForItsCqrs.Tests
                 await db.SaveChangesAsync();
             }
 
-            var distributorDb = new SqlBrokeredDistributorDatabase(connectionString);
+            var distributorDb = new SqlBrokeredDistributorDatabase(SchemaTestDbContext.ConnectionString);
             
-            using (var connection = new SqlConnection(connectionString))
+            using (var connection = new SqlConnection(SchemaTestDbContext.ConnectionString))
             {
                 await distributorDb.InitializeSchema(connection);
             }
 
             RunReadModelDbInitializer();
 
-            using (var db = new AlluvialForItsCqrsSchemaTestDbContext())
+            using (var db = new SchemaTestDbContext())
             {
                 db.Tallies.Should().Contain(t => t.Name == methodName,
                                             "the database should not be rebuilt due to the addition of the Alluvial schema");
@@ -53,20 +50,20 @@ namespace Alluvial.ForItsCqrs.Tests
 
         private static void RunReadModelDbInitializer()
         {
-            using (var readModelDbContext = new AlluvialForItsCqrsSchemaTestDbContext())
+            using (var readModelDbContext = new SchemaTestDbContext())
             {
-                var initializer = new ReadModelDatabaseInitializer<AlluvialForItsCqrsSchemaTestDbContext>();
+                var initializer = new ReadModelDatabaseInitializer<SchemaTestDbContext>();
                 initializer.InitializeDatabase(readModelDbContext);
             }
         }
     }
 
-    public class AlluvialForItsCqrsSchemaTestDbContext : ReadModelDbContext
+    public class SchemaTestDbContext : ReadModelDbContext
     {
         public static readonly string ConnectionString =
-            @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=AlluvialForItsCqrsSchemaTest";
+            @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=AlluvialStreamsItsDomainSqlSchemaTest";
 
-        public AlluvialForItsCqrsSchemaTestDbContext() : base(ConnectionString)
+        public SchemaTestDbContext() : base(ConnectionString)
         {
         }
 

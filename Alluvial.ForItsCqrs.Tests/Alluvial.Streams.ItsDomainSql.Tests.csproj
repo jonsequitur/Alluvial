@@ -6,8 +6,8 @@
     <ProjectGuid>{308346D2-73FD-42DF-8403-44481D192FDF}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Alluvial.ForItsCqrs.Tests</RootNamespace>
-    <AssemblyName>Alluvial.ForItsCqrs.Tests</AssemblyName>
+    <RootNamespace>Alluvial.Streams.ItsDomainSql.Tests</RootNamespace>
+    <AssemblyName>Alluvial.Streams.ItsDomainSql.Tests</AssemblyName>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -129,9 +129,9 @@
       <Project>{199FDA52-CB10-4B05-B39E-AF79EC56B3C9}</Project>
       <Name>Alluvial.Distributors.Sql</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Alluvial.ForItsCqrs\Alluvial.ForItsCqrs.csproj">
+    <ProjectReference Include="..\Alluvial.ForItsCqrs\Alluvial.Streams.ItsDomainSql.csproj">
       <Project>{91d10713-fc52-4744-9cb2-16b6dfecdbe2}</Project>
-      <Name>Alluvial.ForItsCqrs</Name>
+      <Name>Alluvial.Streams.ItsDomainSql</Name>
     </ProjectReference>
     <ProjectReference Include="..\Alluvial\Alluvial.csproj">
       <Project>{04e9b45a-0459-491f-a812-31fe37237770}</Project>

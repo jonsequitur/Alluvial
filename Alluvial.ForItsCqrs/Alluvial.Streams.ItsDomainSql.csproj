@@ -7,8 +7,8 @@
     <ProjectGuid>{91D10713-FC52-4744-9CB2-16B6DFECDBE2}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Alluvial.ForItsCqrs</RootNamespace>
-    <AssemblyName>Alluvial.ForItsCqrs</AssemblyName>
+    <RootNamespace>Alluvial.Streams.ItsDomainSql</RootNamespace>
+    <AssemblyName>Alluvial.Streams.ItsDomainSql</AssemblyName>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />

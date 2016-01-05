@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Alluvial.ForItsCqrs
+namespace Alluvial.Streams.ItsDomainSql
 {
     public class EventStreamChange : IComparable<EventStreamChange>
     {

@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
   <metadata>
-    <id>Alluvial.ForItsCqrs</id>
-    <title>Alluvial.ForItsCqrs</title>
+    <id>Alluvial.Streams.ItsDomainSql</id>
+    <title>Alluvial.Streams.ItsDomainSql</title>
     <version>0.1.1-alpha</version>
     <authors>jonsequitur</authors>
     <owners>jonsequitur</owners>
@@ -11,7 +11,7 @@
     <licenseUrl>http://opensource.org/licenses/MIT</licenseUrl>
     <copyright>Copyright © 2015 Jon Sequeira</copyright>
     <description>Write projections and deliver scheduled commands for Its.Domain using Alluvial</description>
-    <tags>data projections stream-processing CQRS</tags>
+    <tags>data projections stream-processing CQRS Its.Cqrs</tags>
     <dependencies>
         <dependency id="Alluvial" version="[0.1.20-alpha,)" />
         <dependency id="Its.Domain" version="[0.12.11-beta,)" />
