@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data.SqlTypes;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Numerics;
@@ -50,18 +51,32 @@ namespace Alluvial
             Expression<Func<TData, TPartition>> key,
             IStreamQueryRangePartition<TPartition> partition)
         {
-            var lower = Expression.Constant(partition.LowerBoundExclusive);
-            var upper = Expression.Constant(partition.UpperBoundInclusive);
+            Expression selectKey = key.Body;
+            Expression lower = Expression.Constant(partition.LowerBoundExclusive);
+            Expression upper = Expression.Constant(partition.UpperBoundInclusive);
 
-            var compareTo = MethodInfoFor<TPartition>.CompareTo;
+            MethodInfo compareTo;
+
+            if (typeof (TPartition) == typeof (Guid) &&
+                source is EnumerableQuery)
+            {
+                compareTo = MethodInfoFor<SqlGuid>.CompareTo;
+                lower = Expression.Convert(lower, typeof (SqlGuid));
+                upper = Expression.Convert(upper, typeof (SqlGuid));
+                selectKey = Expression.Convert(selectKey, typeof (SqlGuid));
+            }
+            else
+            {
+                compareTo = MethodInfoFor<TPartition>.CompareTo;
+            }
 
             var selectLeft = Expression.GreaterThan(
-                Expression.Call(key.Body,
+                Expression.Call(selectKey,
                                 compareTo,
                                 lower), Expression.Constant(0));
 
             var selectRight = Expression.LessThanOrEqual(
-                Expression.Call(key.Body,
+                Expression.Call(selectKey,
                                 compareTo,
                                 upper), Expression.Constant(0));
 

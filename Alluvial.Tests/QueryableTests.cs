@@ -1,5 +1,4 @@
 using System;
-using System.Data.Entity;
 using FluentAssertions;
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,7 +7,7 @@ using NUnit.Framework;
 namespace Alluvial.Tests
 {
     [TestFixture]
-    public class QueryableTests
+    public abstract class QueryableTests
     {
         [Test]
         public async Task WithinPartition_by_range_correctly_partitions_queries_by_guid()
@@ -23,13 +22,10 @@ namespace Alluvial.Tests
 
             var stream = Stream.PartitionedByRange<Event, int, Guid>(async (q, p) =>
             {
-                using (var db = new AlluvialSqlTestsDbContext())
-                {
-                    return await db.Events
-                                   .Where(e => e.Id == id)
-                                   .WithinPartition(e => e.Guid, p)
-                                   .ToArrayAsync();
-                }
+                return Events()
+                    .Where(e => e.Id == id)
+                    .WithinPartition(e => e.Guid, p)
+                    .ToArray();
             });
 
             var catchup = stream.DistributeAmong(Partition.AllGuids().Among(20));
@@ -56,13 +52,10 @@ namespace Alluvial.Tests
 
             var stream = Stream.PartitionedByRange<Event, int, int>(async (q, p) =>
             {
-                using (var db = new AlluvialSqlTestsDbContext())
-                {
-                    return await db.Events
-                                   .Where(e => e.Id == id)
-                                   .WithinPartition(e => e.SequenceNumber, p)
-                                   .ToArrayAsync();
-                }
+                return Events()
+                    .Where(e => e.Id == id)
+                    .WithinPartition(e => e.SequenceNumber, p)
+                    .ToArray();
             });
 
             var catchup = stream.DistributeAmong(Partition.ByRange(0, 100).Among(5));
@@ -99,13 +92,10 @@ namespace Alluvial.Tests
 
             var stream = Stream.PartitionedByRange<Event, int, string>(async (q, p) =>
             {
-                using (var db = new AlluvialSqlTestsDbContext())
-                {
-                    return await db.Events
-                                   .Where(e => e.Guid == guid)
-                                   .WithinPartition(e => e.Id, p)
-                                   .ToArrayAsync();
-                }
+                return Events()
+                    .Where(e => e.Guid == guid)
+                    .WithinPartition(e => e.Id, p)
+                    .ToArray();
             });
 
             var catchup = stream.DistributeAmong(partitions);
@@ -119,16 +109,8 @@ namespace Alluvial.Tests
             store.Select(x => x).Should().BeEquivalentTo(new[] { 130, 130 });
         }
 
-        private static async Task WriteEvents(Func<int, Event> createEvent, int howMany = 100)
-        {
-            using (var db = new AlluvialSqlTestsDbContext())
-            {
-                for (var i = 1; i <= howMany; i++)
-                {
-                    db.Events.Add(createEvent(i));
-                }
-                await db.SaveChangesAsync();
-            }
-        }
+        protected abstract Task WriteEvents(Func<int, Event> createEvent, int howMany = 100);
+
+        protected abstract IQueryable<Event> Events();
     }
 }
