@@ -6,7 +6,7 @@ namespace Alluvial
     /// A projection.
     /// </summary>
     /// <typeparam name="TValue">The type of the value.</typeparam>
-    [DebuggerDisplay("ToString()")]
+    [DebuggerDisplay("{ToString()}")]
     public class Projection<TValue>
     {
         private static readonly string projectionName = typeof (Projection<TValue>).ReadableName();

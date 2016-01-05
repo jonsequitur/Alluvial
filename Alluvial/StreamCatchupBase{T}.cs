@@ -14,7 +14,6 @@ namespace Alluvial
     /// <typeparam name="TCursor">The type of the cursor.</typeparam>
     internal abstract class StreamCatchupBase<TData, TCursor> : IStreamCatchup<TData, TCursor>
     {
-        private readonly int? batchSize;
         private object batchTaskCompletionSource;
         protected readonly ConcurrentDictionary<Type, IAggregatorSubscription> aggregatorSubscriptions;
 
@@ -22,10 +21,12 @@ namespace Alluvial
             int? batchSize = null,
             ConcurrentDictionary<Type, IAggregatorSubscription> aggregatorSubscriptions = null)
         {
-            this.batchSize = batchSize;
+            BatchSize = batchSize;
             this.aggregatorSubscriptions = aggregatorSubscriptions ??
                                            new ConcurrentDictionary<Type, IAggregatorSubscription>();
         }
+
+        protected int? BatchSize { get; private set; }
 
         public IDisposable SubscribeAggregator<TProjection>(
             IStreamAggregator<TProjection, TData> aggregator,
@@ -86,17 +87,20 @@ namespace Alluvial
             {
                 var cursor = initialCursor ?? projections.OfType<ICursor<TCursor>>().MinOrDefault();
                 upstreamCursor = cursor;
-                var query = stream.CreateQuery(cursor, batchSize);
+                var query = stream.CreateQuery(cursor, BatchSize);
 
                 try
                 {
                     var batch = await query.NextBatch();
 
-                    tcs.SetResult(new AggregationBatch<TCursor>
+                    if (!tcs.Task.IsCompleted)
                     {
-                        Cursor = query.Cursor,
-                        Batch = batch
-                    });
+                        tcs.SetResult(new AggregationBatch<TCursor>
+                        {
+                            Cursor = query.Cursor,
+                            Batch = batch
+                        });
+                    }
                 }
                 catch (Exception exception)
                 {
@@ -122,7 +126,7 @@ namespace Alluvial
 
             await Task.WhenAll(aggregationTasks);
 
-            this.batchTaskCompletionSource = null;
+            batchTaskCompletionSource = null;
 
             return upstreamCursor;
         }
