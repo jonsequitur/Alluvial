@@ -103,7 +103,7 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .Contain("[Put] Projection(IDomainEvent,Int32): null @ cursor 0 for stream the-stream-id");
+                         .Contain("[Store.Put] Projection(IDomainEvent,Int32): null @ cursor 0 for stream the-stream-id");
         }
 
         [Test]
@@ -116,7 +116,7 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .Contain("[Get] Projection(IDomainEvent,Int32): null @ cursor 0 for stream the-stream-id");
+                         .Contain("[Store.Get] Projection(IDomainEvent,Int32): null @ cursor 0 for stream the-stream-id");
         }
 
         [Test]
@@ -130,7 +130,7 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .Contain("[Get] no projection for stream the-stream-id");
+                         .Contain("[Store.Get] no projection for stream the-stream-id");
         }
 
         [Test]

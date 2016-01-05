@@ -43,13 +43,13 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Its.Validation.1.4.3\lib\net45\Its.Validation.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Its.Domain, Version=0.12.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.Its.Domain, Version=0.13.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Its.Domain.0.12.10-beta\lib\net451\Microsoft.Its.Domain.dll</HintPath>
+      <HintPath>..\packages\Its.Domain.0.13.1-beta\lib\net451\Microsoft.Its.Domain.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Its.Domain.Sql, Version=0.12.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.Its.Domain.Sql, Version=0.13.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Its.Domain.Sql.0.12.10-beta\lib\net451\Microsoft.Its.Domain.Sql.dll</HintPath>
+      <HintPath>..\packages\Its.Domain.Sql.0.13.1-beta\lib\net451\Microsoft.Its.Domain.Sql.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
@@ -81,10 +81,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CommandsApplied.cs" />
     <Compile Include="EventStream.cs" />
     <Compile Include="EventStreamChange.cs" />
     <Compile Include="%28Pocket%29\MaybeExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SqlStorageFor.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Alluvial\Alluvial.csproj">
@@ -93,6 +95,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Alluvial.ForItsCqrs.nuspec" />
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>

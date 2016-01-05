@@ -50,6 +50,7 @@
     <Compile Include="AnonymousDistributor.cs" />
     <Compile Include="AnonymousPartitionedStream{TData,TCursor,TPartition}.cs" />
     <Compile Include="Cursor{TPosition}.cs" />
+    <Compile Include="DistributedMultiStreamCatchup{TData,TUpstreamCursor,TDownstreamCursor,TPartition}.cs" />
     <Compile Include="Distributors\Leasable{T}.cs" />
     <Compile Include="Distributors\Lease{T}.cs" />
     <Compile Include="InMemoryDistributor.cs" />
@@ -82,7 +83,7 @@
     <Compile Include="Projection{TValue,TCursor}.cs" />
     <Compile Include="Projection{TValue}.cs" />
     <Compile Include="Projection.cs" />
-    <Compile Include="DistributedStreamCatchup{TData,TCursor,TPartition}.cs" />
+    <Compile Include="DistributedSingleStreamCatchup{TData,TCursor,TPartition}.cs" />
     <Compile Include="SingleStreamCatchup{TData,TCursor}.cs" />
     <Compile Include="StreamCatchupBase{T}.cs" />
     <Compile Include="PipeAsync{TProjection,TData}.cs" />

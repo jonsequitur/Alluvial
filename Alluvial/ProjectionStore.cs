@@ -51,7 +51,7 @@ namespace Alluvial
 
         private static void TracePut<TKey, TProjection>(TKey key, TProjection projection)
         {
-            trace.WriteLine(string.Format("[Put] {0} for stream {1}",
+            trace.WriteLine(string.Format("[Store.Put] {0} for stream {1}",
                                           projection,
                                           key));
         }
@@ -60,11 +60,11 @@ namespace Alluvial
         {
             if (projection == null)
             {
-                trace.WriteLine("[Get] no projection for stream " + key);
+                trace.WriteLine("[Store.Get] no projection for stream " + key);
             }
             else
             {
-                trace.WriteLine(string.Format("[Get] {0} for stream {1}",
+                trace.WriteLine(string.Format("[Store.Get] {0} for stream {1}",
                                               projection,
                                               key));
             }

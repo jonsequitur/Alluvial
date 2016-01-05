@@ -35,7 +35,14 @@ namespace Alluvial.Tests
 
                         return b;
                     },
-                    advanceCursor: (query, batch) => { query.Cursor.AdvanceTo(words.IndexOf(batch.Last()) + 1); });
+                    advanceCursor: (query, batch) =>
+                    {
+                        var last = batch.LastOrDefault();
+                        if (last != null)
+                        {
+                            query.Cursor.AdvanceTo(words.IndexOf(last) + 1);
+                        }
+                    });
 
             Formatter.ListExpansionLimit = 100;
             Formatter<Projection<HashSet<int>, int>>.RegisterForAllMembers();
@@ -71,7 +78,7 @@ namespace Alluvial.Tests
                       .ForEach(partition =>
                                    store.Should()
                                         .ContainSingle(projection =>
-                                                           projection.Value.Count() == 100 &&
+                                                           projection.Value.Count == 100 &&
                                                            projection.Value.All(p => p.IsWithinPartition(partition))));
         }
 
@@ -96,7 +103,7 @@ namespace Alluvial.Tests
             var catchup = partitionedStream
                 .DistributeAmong(partitions,
                                  batchSize: 73,
-                                 cursorPerPartition: cursorStore.Trace().AsHandler());
+                                 fetchAndSavePartitionCursor: cursorStore.Trace().AsHandler());
 
             catchup.Subscribe(aggregator);
 

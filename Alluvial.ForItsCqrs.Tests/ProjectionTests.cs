@@ -29,7 +29,7 @@ namespace Alluvial.ForItsCqrs.Tests
         }
 
         [Test]
-        public async Task AllChanges_doesnt_miss_aggregates()
+        public async Task EventStream_PerAggregate_doesnt_miss_aggregates()
         {
             var aggregateId1 = Guid.NewGuid();
             var aggregateId2 = Guid.NewGuid();
@@ -37,7 +37,13 @@ namespace Alluvial.ForItsCqrs.Tests
             var aggregateId4 = Guid.NewGuid();
 
             var storableEvents = CreateStorableEvents(aggregateId1, aggregateId2, aggregateId3, aggregateId4).AsQueryable();
-            var allChanges = EventStream.PerAggregate("Snarf", () => storableEvents);
+
+            var expectedCount = storableEvents
+                .Select(e => e.ToDomainEvent())
+                .OfType<AggregateB.EventType14>()
+                .Count();
+
+            var streams = EventStream.PerAggregate("per-aggregate", () => storableEvents);
 
             var aggregator = Aggregator.Create<int, IEvent>((oldCount, batch) =>
             {
@@ -46,13 +52,45 @@ namespace Alluvial.ForItsCqrs.Tests
                 return oldCount + newCount;
             }).Trace();
 
-            var catchup = StreamCatchup.All(allChanges);
+            var catchup = StreamCatchup.All(streams);
 
             var count = 0;
             var store = ProjectionStore.Create<string, int>(async _ => count, async (_, newCount) => count = newCount);
             catchup.Subscribe(aggregator, store);
-            catchup.RunUntilCaughtUp().Wait();
-            count.Should().Be(2);
+            await catchup.RunUntilCaughtUp();
+            count.Should().Be(expectedCount);
+        }
+
+        [Test]
+        public async Task EventStream_PerAggregatePartitioned_doesnt_miss_aggregates()
+        {
+            var aggregateId1 = Guid.NewGuid();
+            var aggregateId2 = Guid.NewGuid();
+            var aggregateId3 = Guid.NewGuid();
+            var aggregateId4 = Guid.NewGuid();
+
+            var storableEvents = CreateStorableEvents(aggregateId1, aggregateId2, aggregateId3, aggregateId4).AsQueryable();
+            var expectedCount = storableEvents
+                .Select(e => e.ToDomainEvent())
+                .OfType<AggregateB.EventType14>()
+                .Count();
+            var streams = EventStream.PerAggregatePartitioned("per-aggregate", () => storableEvents);
+
+            var aggregator = Aggregator.Create<MatchingEvents, IEvent>((projection, batch) =>
+            {
+                var eventType14s = batch.OfType<AggregateB.EventType14>().ToList();
+                projection.Value.AddRange(eventType14s);
+            }).Trace();
+
+            var cursorStore = new InMemoryProjectionStore<ICursor<long>>(id => Cursor.New<long>());
+            var catchup = streams.DistributeAmong(
+                Partition.AllGuids().Among(10),
+                fetchAndSavePartitionCursor: cursorStore.Trace().AsHandler());
+
+            var store = new InMemoryProjectionStore<MatchingEvents>();
+            catchup.Subscribe(aggregator, store.Trace());
+            await catchup.RunUntilCaughtUp();
+            store.Sum(x => x.Value.Count).Should().Be(expectedCount);
         }
 
         [Test]
@@ -72,7 +110,6 @@ namespace Alluvial.ForItsCqrs.Tests
             var aggregator = Aggregator.Create<Projection<int, long>, IEvent>((p, b) =>
             {
                 p.Value++;
-                Console.WriteLine(b);
             });
 
             var store = new InMemoryProjectionStore<Projection<int, long>>();

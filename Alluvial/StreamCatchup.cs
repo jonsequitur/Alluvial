@@ -104,14 +104,33 @@ namespace Alluvial
             this IPartitionedStream<TData, TCursor, TPartition> streams,
             IEnumerable<IStreamQueryPartition<TPartition>> partitions,
             int? batchSize = null,
-            FetchAndSaveProjection<ICursor<TCursor>> cursorPerPartition = null,
+            FetchAndSaveProjection<ICursor<TCursor>> fetchAndSavePartitionCursor = null,
             IDistributor<IStreamQueryPartition<TPartition>> distributor = null)
         {
-            return new DistributedStreamCatchup<TData, TCursor, TPartition>(
+            return new DistributedSingleStreamCatchup<TData, TCursor, TPartition>(
                 streams,
                 partitions,
                 batchSize,
-                cursorPerPartition,
+                fetchAndSavePartitionCursor,
+                distributor);
+        }
+        
+        /// <summary>
+        /// Distributes a stream catchup the among one or more partitions using a specified distributor.
+        /// </summary>
+        /// <remarks>If no distributor is provided, then distribution is done in-process.</remarks>
+        public static IStreamCatchup<TData, TUpstreamCursor> DistributeAmong<TData, TUpstreamCursor, TDownstreamCursor, TPartition>(
+            this IPartitionedStream<IStream<TData, TDownstreamCursor>, TUpstreamCursor, TPartition> streams,
+            IEnumerable<IStreamQueryPartition<TPartition>> partitions,
+            int? batchSize = null,
+            FetchAndSaveProjection<ICursor<TUpstreamCursor>> fetchAndSavePartitionCursor = null,
+            IDistributor<IStreamQueryPartition<TPartition>> distributor = null)
+        {
+            return new DistributedMultiStreamCatchup<TData, TUpstreamCursor, TDownstreamCursor, TPartition>(
+                streams,
+                partitions,
+                batchSize,
+                fetchAndSavePartitionCursor,
                 distributor);
         }
 

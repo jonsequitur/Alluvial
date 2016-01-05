@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Data.Entity;
 using FluentAssertions;
 using Its.Log.Instrumentation;
@@ -50,33 +49,38 @@ namespace Alluvial.ForItsCqrs.Tests
         [Test]
         public async Task The_command_scheduler_queue_can_be_processed_as_a_stream()
         {
-            ScheduleSomeCommands();
+            ScheduleSomeCommands(50);
 
-            var catchup = ScheduledCommandStream()
-                .DistributeAmong(Partition.AllGuids()
-                                          .Among(15)
-                                          .ToArray());
+            var catchup = EventStream.ScheduledCommandStream(clockName)
+                                     .DistributeAmong(Partition.AllGuids()
+                                                               .Among(16)
+                                                               .ToArray());
 
             var store = new InMemoryProjectionStore<CommandsApplied>();
 
-            catchup.Subscribe(DeliverScheduledCommands().Trace(), store);
+            catchup.Subscribe(EventStream.DeliverScheduledCommands().Trace(), store);
 
             await catchup.RunSingleBatch();
 
             Console.WriteLine(store.ToLogString());
 
+            store.Sum(c => c.Value.Count).Should().Be(50);
+
             using (var db = new CommandSchedulerDbContext())
             {
-                store.Select(p => p.Value)
-                     .Sum(p => p.Count)
-                     .Should()
-                     .Be(await db.ScheduledCommands.Due().CountAsync());
+                var commandsDue = await db.ScheduledCommands
+                                          .Where(c => c.Clock.Name == clockName)
+                                          .Due()
+                                          .CountAsync();
+                commandsDue.Should().Be(0);
             }
         }
 
-        private static void ScheduleSomeCommands(DateTimeOffset? dueTime = null)
+        private static void ScheduleSomeCommands(
+            int howMany = 20,
+            DateTimeOffset? dueTime = null)
         {
-            Enumerable.Range(1, 20)
+            Enumerable.Range(1, howMany)
                       .Select(_ => Guid.NewGuid())
                       .ToList()
                       .ForEach(id =>
@@ -86,52 +90,6 @@ namespace Alluvial.ForItsCqrs.Tests
                                              new CreateAggregateA(),
                                              dueTime).Wait();
                       });
-        }
-
-        public static IStreamAggregator<CommandsApplied, ScheduledCommand> DeliverScheduledCommands()
-        {
-            return Aggregator.Create<CommandsApplied, ScheduledCommand>(
-                async (projection, batch) =>
-                {
-                    using (var commandSchedulerDb = new CommandSchedulerDbContext())
-                    {
-                        foreach (var cmd in batch)
-                        {
-                            await Configuration.Current.DeserializeAndDeliver(cmd, commandSchedulerDb);
-                            projection.Value.Add(cmd.Result);
-                        }
-                        await commandSchedulerDb.SaveChangesAsync();
-                    }
-
-                    return projection;
-                });
-        }
-
-        public IPartitionedStream<ScheduledCommand, long, Guid> ScheduledCommandStream()
-        {
-            return Stream.PartitionedByRange<ScheduledCommand, long, Guid>(
-                async (q, partition) =>
-                {
-                    using (var db = new CommandSchedulerDbContext())
-                    {
-                        var batchCount = q.BatchSize ?? 5;
-                        return await db.ScheduledCommands
-                                       .Where(c => c.Clock.Name == clockName)
-                                       .Due()
-                                       .WithinPartition(e => e.AggregateId, partition)
-                                       .Take(() => batchCount)
-                                       .ToArrayAsync();
-                    }
-                },
-                advanceCursor: (q, b) => q.Cursor.AdvanceTo(DateTime.Now.Ticks));
-        }
-    }
-
-    public class CommandsApplied : Projection<IList<ScheduledCommandResult>, long>
-    {
-        public CommandsApplied()
-        {
-            Value = new List<ScheduledCommandResult>();
         }
     }
 }

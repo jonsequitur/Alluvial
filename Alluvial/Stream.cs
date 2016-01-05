@@ -224,10 +224,10 @@ namespace Alluvial
         /// <summary>
         /// Splits a stream into many streams that can be independently caught up.
         /// </summary>
-        /// <typeparam name="TUpstream">The type of the upstream stream.</typeparam>
+        /// <typeparam name="TUpstream">The type of the partitionedStream stream.</typeparam>
         /// <typeparam name="TDownstream">The type of the downstream stream.</typeparam>
-        /// <typeparam name="TUpstreamCursor">The type of the upstream cursor.</typeparam>
-        /// <param name="upstream">The upstream.</param>
+        /// <typeparam name="TUpstreamCursor">The type of the partitionedStream cursor.</typeparam>
+        /// <param name="upstream">The partitionedStream.</param>
         /// <param name="queryDownstream">The query downstream.</param>
         /// <returns></returns>
         public static IStream<TDownstream, TUpstreamCursor> IntoMany<TUpstream, TDownstream, TUpstreamCursor>(
@@ -256,9 +256,42 @@ namespace Alluvial
                 },
                 advanceCursor: (query, batch) =>
                 {
-                    // we're passing the cursor through to the upstream query, so we don't want downstream queries to overwrite it
+                    // we're passing the cursor through to the partitionedStream query, so we don't want downstream queries to overwrite it
                 },
                 newCursor: upstream.NewCursor);
+        }
+        
+        public static IPartitionedStream<TDownstream, TUpstreamCursor, TPartition> IntoMany<TUpstream, TDownstream, TUpstreamCursor, TPartition>(
+            this IPartitionedStream<TUpstream, TUpstreamCursor, TPartition> partitionedStream,
+            QueryDownstream<TUpstream, TDownstream, TUpstreamCursor, TPartition> queryDownstream)
+        {
+            return PartitionedByRange<TDownstream, TUpstreamCursor, TPartition>(
+                id: string.Format("{0}->IntoMany(d:{1})", partitionedStream.Id, typeof (TDownstream).ReadableName()),
+                query: async (upstreamQuery, partition) =>
+                {
+                    var upstreamStream = await partitionedStream.GetStream(partition);
+
+                    var upstreamBatch = await upstreamStream.Fetch(
+                        upstreamStream.CreateQuery(upstreamQuery.Cursor,
+                                             upstreamQuery.BatchSize));
+
+                    var streams = upstreamBatch.Select(
+                        async x =>
+                        {
+                            TUpstreamCursor startingCursor = upstreamBatch.StartsAtCursorPosition;
+
+                            return await queryDownstream(x,
+                                                         startingCursor,
+                                                         upstreamQuery.Cursor.Position,
+                                                         partition);
+                        });
+
+                    return await streams.AwaitAll();
+                },
+                advanceCursor: (query, batch) =>
+                {
+                    // we're passing the cursor through to the partitionedStream query, so we don't want downstream queries to overwrite it
+                });
         }
 
         /// <summary>

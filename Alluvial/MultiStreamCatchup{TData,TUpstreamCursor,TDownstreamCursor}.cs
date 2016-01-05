@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Linq;
@@ -24,22 +25,31 @@ namespace Alluvial
         /// <param name="upstreamCursor">The upstream cursor.</param>
         public MultiStreamCatchup(
             IStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor> upstreamCatchup,
-            ICursor<TUpstreamCursor> upstreamCursor) : this(upstreamCatchup, (async (streamId, update) => await update(upstreamCursor)))
+            ICursor<TUpstreamCursor> upstreamCursor,
+            ConcurrentDictionary<Type, IAggregatorSubscription> subscriptions = null) :
+                this(upstreamCatchup,
+                     (async (streamId, update) => await update(upstreamCursor)),
+                     subscriptions)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MultiStreamCatchup{TData, TUpstreamCursor, TDownstreamCursor}"/> class.
+        /// Initializes a new instance of the <see cref="MultiStreamCatchup{TData, TUpstreamCursor, TDownstreamCursor}" /> class.
         /// </summary>
         /// <param name="upstreamCatchup">The upstream catchup.</param>
-        /// <exception cref="ArgumentNullException">
+        /// <param name="manageCursor">The manage cursor.</param>
+        /// <exception cref="System.ArgumentNullException">
         /// upstreamCatchup
         /// or
         /// manageCursor
         /// </exception>
+        /// <exception cref="ArgumentNullException">upstreamCatchup
+        /// or
+        /// manageCursor</exception>
         public MultiStreamCatchup(
             IStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor> upstreamCatchup,
-            FetchAndSaveProjection<ICursor<TUpstreamCursor>> manageCursor)
+            FetchAndSaveProjection<ICursor<TUpstreamCursor>> manageCursor,
+            ConcurrentDictionary<Type, IAggregatorSubscription> subscriptions = null) : base(aggregatorSubscriptions: subscriptions)
         {
             if (upstreamCatchup == null)
             {
