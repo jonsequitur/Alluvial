@@ -23,7 +23,8 @@ using System.Runtime.InteropServices;
 [assembly: Guid("ae1d48e9-ffcd-4e5e-b052-70e5446dfa23")]
 
 [assembly: AssemblyVersion("0.1.0")]
-[assembly: AssemblyFileVersion("0.1.19-alpha")]
+[assembly: AssemblyFileVersion("0.1.20-alpha")]
+[assembly: AssemblyInformationalVersion("0.1.20-alpha")]
 
 [assembly: InternalsVisibleTo("Alluvial.Tests")]
 
