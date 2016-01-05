@@ -8,7 +8,7 @@ namespace Alluvial
 
         public AggregatorSubscription(
             IStreamAggregator<TProjection, TData> aggregator,
-            FetchAndSaveProjection<TProjection> fetchAndSaveProjection = null,
+            FetchAndSave<TProjection> fetchAndSave = null,
             HandleAggregatorError<TProjection> onError = null)
         {
             if (aggregator == null)
@@ -20,10 +20,10 @@ namespace Alluvial
 
             if (onError != null)
             {
-                fetchAndSaveProjection = fetchAndSaveProjection.Catch(onError);
+                fetchAndSave = fetchAndSave.Catch(onError);
             }
 
-            FetchAndSaveProjection = fetchAndSaveProjection ??
+            FetchAndSave = fetchAndSave ??
                                      (async (streamId, aggregate) =>
                                      {
                                          await aggregate(Activator.CreateInstance<TProjection>());
@@ -33,7 +33,7 @@ namespace Alluvial
 
         public IStreamAggregator<TProjection, TData> Aggregator { get; private set; }
 
-        public FetchAndSaveProjection<TProjection> FetchAndSaveProjection { get; private set; }
+        public FetchAndSave<TProjection> FetchAndSave { get; private set; }
 
         public Type ProjectionType
         {

@@ -20,7 +20,7 @@ namespace Alluvial
         /// An <see cref="IDisposable" /> that, when disposed, unsubscribed the aggregator from the catchup.
         /// </returns>
         IDisposable SubscribeAggregator<TProjection>(IStreamAggregator<TProjection, TData> aggregator,
-                                                     FetchAndSaveProjection<TProjection> fetchAndSaveProjection,
+                                                     FetchAndSave<TProjection> fetchAndSave,
                                                      HandleAggregatorError<TProjection> onError);
 
         /// <summary>

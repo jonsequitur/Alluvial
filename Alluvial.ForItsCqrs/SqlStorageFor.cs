@@ -6,7 +6,7 @@ namespace Alluvial.ForItsCqrs
 {
     public static class SqlStorageFor
     {
-        public static FetchAndSaveProjection<TProjection> Projection<TProjection, TDbContext>(
+        public static FetchAndSave<TProjection> Projection<TProjection, TDbContext>(
             Func<TDbContext, string, Task<TProjection>> getSingle,
             Func<string, TProjection> createNew,
             Func<TDbContext> createDbContext = null)

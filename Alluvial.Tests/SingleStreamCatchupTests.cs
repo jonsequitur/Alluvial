@@ -388,7 +388,7 @@ namespace Alluvial.Tests
             BalanceProjection finalProjection = null;
 
             var catchup = StreamCatchup.Create(stream);
-            FetchAndSaveProjection<BalanceProjection> fetchAndSaveProjection = (async (id, callAggregatorPipeline) =>
+            FetchAndSave<BalanceProjection> fetchAndSave = (async (id, callAggregatorPipeline) =>
             {
                 using (var transaction = new TransactionScope())
                 {
@@ -407,7 +407,7 @@ namespace Alluvial.Tests
                 }
             });
 
-            catchup.Subscribe(new BalanceProjector(), fetchAndSaveProjection);
+            catchup.Subscribe(new BalanceProjector(), fetchAndSave);
 
             store.WriteEvents(streamId, amount: 100m, howMany: 5);
 

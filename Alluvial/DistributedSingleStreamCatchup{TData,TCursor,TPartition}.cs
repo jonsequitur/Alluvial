@@ -23,13 +23,13 @@ namespace Alluvial
 
         // FIX: (DistributedSingleStreamCatchup) need a way to dispose this distributor
         private readonly IDistributor<IStreamQueryPartition<TPartition>> distributor;
-        protected readonly FetchAndSaveProjection<ICursor<TCursor>> fetchAndSavePartitionCursor;
+        protected readonly FetchAndSave<ICursor<TCursor>> fetchAndSavePartitionCursor;
 
         public DistributedSingleStreamCatchup(
             IPartitionedStream<TData, TCursor, TPartition> partitionedStream,
             IEnumerable<IStreamQueryPartition<TPartition>> partitions,
             int? batchSize = null,
-            FetchAndSaveProjection<ICursor<TCursor>> fetchAndSavePartitionCursor = null,
+            FetchAndSave<ICursor<TCursor>> fetchAndSavePartitionCursor = null,
             IDistributor<IStreamQueryPartition<TPartition>> distributor = null) : base(batchSize)
         {
             if (partitions == null)

@@ -4,8 +4,8 @@ namespace Alluvial
 {
     internal static class AggregatorSubscription
     {
-        public static FetchAndSaveProjection<TProjection> Catch<TProjection>(
-            this FetchAndSaveProjection<TProjection> fetchAndSaveProjection,
+        public static FetchAndSave<TProjection> Catch<TProjection>(
+            this FetchAndSave<TProjection> fetchAndSave,
             HandleAggregatorError<TProjection> onError)
         {
             return async (id, aggregate) =>
@@ -14,7 +14,7 @@ namespace Alluvial
 
                 try
                 {
-                    await fetchAndSaveProjection(id, async projection =>
+                    await fetchAndSave(id, async projection =>
                     {
                         var resultingProjection = default(TProjection);
 

@@ -68,7 +68,7 @@ namespace Alluvial.Tests
 
             var numberOfSavingsAccounts = new Projection<int, int>();
             savingsAccountsCatchup.Subscribe<Projection<int, int>, IDomainEvent, string>(
-                manageProjection: async (streamId, aggregate) =>
+                manage: async (streamId, aggregate) =>
                 {
                     numberOfSavingsAccounts = await aggregate(numberOfSavingsAccounts);
                 },
@@ -102,7 +102,7 @@ namespace Alluvial.Tests
 
             var catchup = StreamCatchup.Create(dependentStream, batchSize: 50);
 
-            FetchAndSaveProjection<Projection<int, string>> manageProjection = async (id, aggregate) =>
+            FetchAndSave<Projection<int, string>> manage = async (id, aggregate) =>
             {
                 await aggregate(projection);
             };
@@ -110,7 +110,7 @@ namespace Alluvial.Tests
             {
                 p.Value += b.Sum();
                 return p;
-            }, manageProjection);
+            }, manage);
 
             await catchup.RunSingleBatch();
 

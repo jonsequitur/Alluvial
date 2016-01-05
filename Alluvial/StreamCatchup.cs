@@ -61,7 +61,7 @@ namespace Alluvial
         /// <param name="batchSize">The number of items to retrieve from the stream per batch.</param>
         public static IStreamCatchup<TData, TUpstreamCursor> All<TData, TUpstreamCursor, TDownstreamCursor>(
             IStream<IStream<TData, TDownstreamCursor>, TUpstreamCursor> stream,
-            FetchAndSaveProjection<ICursor<TUpstreamCursor>> manageUpstreamCursor,
+            FetchAndSave<ICursor<TUpstreamCursor>> manageUpstreamCursor,
             int? batchSize = null)
         {
             var upstreamCatchup = new SingleStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor>(
@@ -104,7 +104,7 @@ namespace Alluvial
             this IPartitionedStream<TData, TCursor, TPartition> streams,
             IEnumerable<IStreamQueryPartition<TPartition>> partitions,
             int? batchSize = null,
-            FetchAndSaveProjection<ICursor<TCursor>> fetchAndSavePartitionCursor = null,
+            FetchAndSave<ICursor<TCursor>> fetchAndSavePartitionCursor = null,
             IDistributor<IStreamQueryPartition<TPartition>> distributor = null)
         {
             return new DistributedSingleStreamCatchup<TData, TCursor, TPartition>(
@@ -123,7 +123,7 @@ namespace Alluvial
             this IPartitionedStream<IStream<TData, TDownstreamCursor>, TUpstreamCursor, TPartition> streams,
             IEnumerable<IStreamQueryPartition<TPartition>> partitions,
             int? batchSize = null,
-            FetchAndSaveProjection<ICursor<TUpstreamCursor>> fetchAndSavePartitionCursor = null,
+            FetchAndSave<ICursor<TUpstreamCursor>> fetchAndSavePartitionCursor = null,
             IDistributor<IStreamQueryPartition<TPartition>> distributor = null)
         {
             return new DistributedMultiStreamCatchup<TData, TUpstreamCursor, TDownstreamCursor, TPartition>(
@@ -231,7 +231,7 @@ namespace Alluvial
         /// <typeparam name="TCursor">The type of the cursor.</typeparam>
         /// <param name="catchup">The catchup.</param>
         /// <param name="aggregate">An aggregator function.</param>
-        /// <param name="manageProjection">A delegate to fetch and store the projection each time the query is performed.</param>
+        /// <param name="manage">A delegate to fetch and store the projection each time the query is performed.</param>
         /// <param name="onError">A function to handle exceptions thrown during aggregation.</param>
         /// <returns>
         /// A disposable that, when disposed, unsubscribes the aggregator.
@@ -239,10 +239,10 @@ namespace Alluvial
         public static IDisposable Subscribe<TProjection, TData, TCursor>(
             this IStreamCatchup<TData, TCursor> catchup,
             AggregateAsync<TProjection, TData> aggregate,
-            FetchAndSaveProjection<TProjection> manageProjection,
+            FetchAndSave<TProjection> manage,
             HandleAggregatorError<TProjection> onError = null)
         {
-            return catchup.Subscribe(Aggregator.Create(aggregate), manageProjection, onError);
+            return catchup.Subscribe(Aggregator.Create(aggregate), manage, onError);
         }
 
         /// <summary>
@@ -253,16 +253,16 @@ namespace Alluvial
         /// <typeparam name="TCursor">The type of the cursor.</typeparam>
         /// <param name="catchup">The catchup.</param>
         /// <param name="aggregator">The aggregator.</param>
-        /// <param name="manageProjection">A delegate to fetch and store the projection each time the query is performed.</param>
+        /// <param name="manage">A delegate to fetch and store the projection each time the query is performed.</param>
         /// <param name="onError">A function to handle exceptions thrown during aggregation.</param>
         /// <returns>A disposable that, when disposed, unsubscribes the aggregator.</returns>
         public static IDisposable Subscribe<TProjection, TData, TCursor>(
             this IStreamCatchup<TData, TCursor> catchup,
             IStreamAggregator<TProjection, TData> aggregator,
-            FetchAndSaveProjection<TProjection> manageProjection,
+            FetchAndSave<TProjection> manage,
             HandleAggregatorError<TProjection> onError = null)
         {
-            return catchup.SubscribeAggregator(aggregator, manageProjection, onError);
+            return catchup.SubscribeAggregator(aggregator, manage, onError);
         }
 
         /// <summary>
@@ -286,7 +286,7 @@ namespace Alluvial
                 new InMemoryProjectionStore<Projection<Unit, TCursor>>());
         }
 
-        private static FetchAndSaveProjection<TProjection> NoCursor<TProjection>(TProjection projection)
+        private static FetchAndSave<TProjection> NoCursor<TProjection>(TProjection projection)
         {
             return (streamId, aggregate) => aggregate(projection);
         }

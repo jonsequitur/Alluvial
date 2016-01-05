@@ -18,7 +18,7 @@ namespace Alluvial
             IPartitionedStream<IStream<TData, TDownstreamCursor>, TUpstreamCursor, TPartition> partitionedStream,
             IEnumerable<IStreamQueryPartition<TPartition>> partitions,
             int? batchSize = null,
-            FetchAndSaveProjection<ICursor<TUpstreamCursor>> fetchAndSavePartitionCursor = null,
+            FetchAndSave<ICursor<TUpstreamCursor>> fetchAndSavePartitionCursor = null,
             IDistributor<IStreamQueryPartition<TPartition>> distributor = null)
             : base(null,
                    partitions,

@@ -30,12 +30,12 @@ namespace Alluvial
 
         public IDisposable SubscribeAggregator<TProjection>(
             IStreamAggregator<TProjection, TData> aggregator,
-            FetchAndSaveProjection<TProjection> fetchAndSaveProjection,
+            FetchAndSave<TProjection> fetchAndSave,
             HandleAggregatorError<TProjection> onError)
         {
             var added = aggregatorSubscriptions.TryAdd(typeof (TProjection),
                                                        new AggregatorSubscription<TProjection, TData>(aggregator,
-                                                                                                      fetchAndSaveProjection,
+                                                                                                      fetchAndSave,
                                                                                                       onError));
 
             if (!added)
@@ -136,7 +136,7 @@ namespace Alluvial
             AggregatorSubscription<TProjection, TData> subscription,
             Func<object, Task<AggregationBatch<TCursor>>> getData)
         {
-            return subscription.FetchAndSaveProjection(
+            return subscription.FetchAndSave(
                 stream.Id,
                 async projection =>
                 {

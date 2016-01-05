@@ -70,7 +70,7 @@ namespace Alluvial
             }
         }
 
-        public static FetchAndSaveProjection<TProjection> AsHandler<TProjection>(this IProjectionStore<string, TProjection> store)
+        public static FetchAndSave<TProjection> AsHandler<TProjection>(this IProjectionStore<string, TProjection> store)
         {
             store = store ?? new InMemoryProjectionStore<TProjection>();
 

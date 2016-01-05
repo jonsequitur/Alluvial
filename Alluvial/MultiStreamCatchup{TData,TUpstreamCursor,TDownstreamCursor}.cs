@@ -48,7 +48,7 @@ namespace Alluvial
         /// manageCursor</exception>
         public MultiStreamCatchup(
             IStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor> upstreamCatchup,
-            FetchAndSaveProjection<ICursor<TUpstreamCursor>> manageCursor,
+            FetchAndSave<ICursor<TUpstreamCursor>> manageCursor,
             ConcurrentDictionary<Type, IAggregatorSubscription> subscriptions = null) : base(aggregatorSubscriptions: subscriptions)
         {
             if (upstreamCatchup == null)

@@ -3,10 +3,9 @@ using System.Threading.Tasks;
 
 namespace Alluvial
 {
-    // FIX: rename FetchAndSaveProjection
     // FIX: rename QueryDownstream
 
-    public delegate Task FetchAndSaveProjection<TProjection>(
+    public delegate Task FetchAndSave<TProjection>(
         string projectionId,
         Aggregate<TProjection> aggregate);
 
