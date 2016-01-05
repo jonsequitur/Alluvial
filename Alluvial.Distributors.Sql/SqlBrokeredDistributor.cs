@@ -108,7 +108,7 @@ namespace Alluvial.Distributors.Sql
                 cmd.CommandText = @"Alluvial.ExtendLease";
                 cmd.Parameters.AddWithValue(@"@resourceName", lease.ResourceName);
                 cmd.Parameters.AddWithValue(@"@byMilliseconds", by.TotalMilliseconds);
-                cmd.Parameters.AddWithValue(@"@token", (int) lease.OwnerToken);
+                cmd.Parameters.AddWithValue(@"@token", lease.OwnerToken);
 
                 await cmd.ExecuteNonQueryAsync();
             }
@@ -124,7 +124,7 @@ namespace Alluvial.Distributors.Sql
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.CommandText = @"Alluvial.ReleaseLease";
                 cmd.Parameters.AddWithValue(@"@resourceName", lease.ResourceName);
-                cmd.Parameters.AddWithValue(@"@token", (int) lease.OwnerToken);
+                cmd.Parameters.AddWithValue(@"@token", lease.OwnerToken);
 
                 try
                 {

@@ -5,19 +5,31 @@ using System.Threading.Tasks;
 
 namespace Alluvial.Distributors
 {
+    /// <summary>
+    /// A time-bound exclusive lease to a known resource.
+    /// </summary>
+    /// <typeparam name="T">The type of the resource.</typeparam>
     public class Lease<T>
     {
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly Leasable<T> leasable;
-        private readonly dynamic ownerToken;
+        private readonly int ownerToken;
         private readonly Func<TimeSpan, Task> extend;
         private bool completed = false;
         private TimeSpan duration;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Lease{T}"/> class.
+        /// </summary>
+        /// <param name="leasable">The leasable resource.</param>
+        /// <param name="duration">The duration of the lease.</param>
+        /// <param name="ownerToken">The owner token.</param>
+        /// <param name="extend">The extend.</param>
+        /// <exception cref="System.ArgumentNullException">leasable</exception>
         public Lease(
             Leasable<T> leasable,
             TimeSpan duration,
-            dynamic ownerToken = null,
+            int ownerToken,
             Func<TimeSpan, Task> extend = null)
         {
             if (leasable == null)
@@ -46,7 +58,7 @@ namespace Alluvial.Distributors
             }
         }
 
-        public dynamic OwnerToken
+        public int OwnerToken
         {
             get
             {

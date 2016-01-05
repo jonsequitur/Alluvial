@@ -261,7 +261,8 @@ namespace Alluvial.Tests.Distributors
 
             Console.WriteLine(tally.ToLogString());
 
-            tally.Should().ContainKey("5")
+            tally.Should()
+                 .ContainKey("5")
                  .And
                  .Subject["5"].Should().Be(1);
         }

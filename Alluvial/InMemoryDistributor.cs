@@ -46,7 +46,7 @@ namespace Alluvial
                 return null;
             }
 
-            var lease = new Lease<T>(resource, defaultLeaseDuration);
+            var lease = new Lease<T>(resource, defaultLeaseDuration, OwnerToken.Next());
 
             if (workInProgress.TryAdd(resource, lease))
             {
@@ -75,6 +75,30 @@ namespace Alluvial
             }
 
             lease.NotifyCompleted();
+        }
+
+        private static class OwnerToken
+        {
+            private static int value = int.MinValue;
+
+            private static readonly object lockObj = new object();
+
+            public static int Next()
+            {
+                lock (lockObj)
+                {
+                    if (value == int.MaxValue)
+                    {
+                        value = int.MinValue;
+                    }
+                    else
+                    {
+                        value++;
+                    }
+
+                    return value;
+                }
+            }
         }
     }
 }
