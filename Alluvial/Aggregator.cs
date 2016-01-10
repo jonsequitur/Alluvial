@@ -146,13 +146,15 @@ namespace Alluvial
             return Create(aggregate).Trace(write);
         }
 
-        private static void TraceDefault<TProjection, TData>(TProjection projection, IStreamBatch<TData> batch)
+        private static void TraceDefault<TProjection, TData>(
+            TProjection projection,
+            IStreamBatch<TData> batch)
         {
             System.Diagnostics.Trace.WriteLine(
                 string.Format("[Aggregate] {0} / batch of {1} starts @ {2}",
                               projection,
                               batch.Count,
-                              (string) batch.StartsAtCursorPosition.ToString()));
+                              (string) batch.StartsAtCursorPosition));
         }
     }
 }
