@@ -61,7 +61,7 @@ namespace Alluvial.Streams.ItsDomainSql.Tests
     public class SchemaTestDbContext : ReadModelDbContext
     {
         public static readonly string ConnectionString =
-            @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=AlluvialStreamsItsDomainSqlSchemaTest";
+            @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=AlluvialStreamsItsDomainSqlSchemaTest";
 
         public SchemaTestDbContext() : base(ConnectionString)
         {

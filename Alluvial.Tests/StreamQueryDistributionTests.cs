@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using FluentAssertions;
-using Its.Log.Instrumentation;
 using System.Linq;
 using System.Threading.Tasks;
+using Its.Log.Instrumentation;
 using NUnit.Framework;
 
 namespace Alluvial.Tests
@@ -83,7 +83,7 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task Distributed_catchups_can_store_a_cursor_per_partition()
+        public async Task Distributed_single_stream_catchups_can_store_a_cursor_per_partition()
         {
             var cursorStore = new InMemoryProjectionStore<ICursor<int>>(_ => Cursor.New<int>());
 
@@ -103,6 +103,53 @@ namespace Alluvial.Tests
             var catchup = partitionedStream
                 .DistributeAmong(partitions,
                                  batchSize: 73,
+                                 fetchAndSavePartitionCursor: cursorStore.Trace().AsHandler());
+
+            catchup.Subscribe(aggregator);
+
+            await catchup.RunUntilCaughtUp();
+
+            cursorStore.Count().Should().Be(26);
+            Enumerable.Range(1, 26).ToList().ForEach(i => { cursorStore.Should().Contain(c => c.Position == i*100); });
+        }
+
+        [Test]
+        public async Task Distributed_multi_stream_catchups_can_store_a_cursor_per_partition()
+        {
+            var cursorStore = new InMemoryProjectionStore<ICursor<int>>(_ => Cursor.New<int>());
+
+            var aggregator = Aggregator.Create<Projection<HashSet<string>, int>, string>((p, xs) =>
+            {
+                if (p.Value == null)
+                {
+                    p.Value = new HashSet<string>();
+                }
+
+                foreach (var x in xs)
+                {
+                    p.Value.Add(x);
+                }
+            }).Trace();
+
+            var catchup = partitionedStream
+                .IntoMany(async (word, b, c, p) =>
+                {
+                    return Stream.Create<string, int>(
+                        word,
+                        async q =>
+                            Values.AtoZ()
+                                  .Where(p.Contains)
+                                  .Where(x => x == word.Substring(0, 1))
+                                  .Skip(q.Cursor.Position)
+                                  .Take(q.BatchSize ?? 1000)
+                        ).Trace();
+                })
+                .DistributeAmong(new[]
+                {
+                    Partition.ByRange("a", "j"),
+                    Partition.ByRange("k", "z")
+                },
+                                 batchSize: 11,
                                  fetchAndSavePartitionCursor: cursorStore.Trace().AsHandler());
 
             catchup.Subscribe(aggregator);

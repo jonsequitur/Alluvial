@@ -27,10 +27,10 @@ namespace Alluvial.Streams.ItsDomainSql.Tests
         {
             // local
             EventStoreDbContext.NameOrConnectionString =
-                @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=BankingEventStore";
+                @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=BankingEventStore";
 
             CommandSchedulerDbContext.NameOrConnectionString =
-                @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=BankingScheduledCommands";
+                @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=BankingScheduledCommands";
         }
     }
 }

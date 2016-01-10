@@ -9,7 +9,7 @@ namespace Alluvial.Tests
             Database.SetInitializer(new AlluvialSqlTestsDbInitializer());
         }
 
-        public AlluvialSqlTestsDbContext() : base(@"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=AlluvialSqlTests")
+        public AlluvialSqlTestsDbContext() : base(@"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=AlluvialSqlTests")
         {
         }
 

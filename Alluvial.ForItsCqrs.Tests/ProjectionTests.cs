@@ -24,7 +24,7 @@ namespace Alluvial.Streams.ItsDomainSql.Tests
         {
             eventStream = new InMemoryEventStream();
             distributorDatabase = new SqlBrokeredDistributorDatabase(
-                @"Data Source=(localdb)\v11.0; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=AlluvialSqlDistributorTests");
+                @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=AlluvialSqlDistributorTests");
             distributorDatabase.CreateDatabase().Wait();
         }
 
