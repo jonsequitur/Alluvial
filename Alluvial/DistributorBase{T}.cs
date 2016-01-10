@@ -161,6 +161,10 @@ namespace Alluvial
 
         protected abstract Task ReleaseLease(Lease<T> lease);
 
+        /// <summary>
+        /// Attempts to acquire a lease.
+        /// </summary>
+        /// <returns></returns>
         protected abstract Task<Lease<T>> AcquireLease();
 
         public async Task Stop()

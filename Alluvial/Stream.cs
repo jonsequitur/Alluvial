@@ -265,7 +265,7 @@ namespace Alluvial
             this IPartitionedStream<TUpstream, TUpstreamCursor, TPartition> partitionedStream,
             QueryDownstream<TUpstream, TDownstream, TUpstreamCursor, TPartition> queryDownstream)
         {
-            return PartitionedByRange<TDownstream, TUpstreamCursor, TPartition>(
+            return Partitioned<TDownstream, TUpstreamCursor, TPartition>(
                 id: string.Format("{0}->IntoMany(d:{1})", partitionedStream.Id, typeof (TDownstream).ReadableName()),
                 query: async (upstreamQuery, partition) =>
                 {
