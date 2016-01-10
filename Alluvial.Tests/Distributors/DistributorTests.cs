@@ -174,7 +174,7 @@ namespace Alluvial.Tests.Distributors
         }
 
         [Test]
-        public async Task An_interval_can_be_specified_before_which_a_released_lease_will_be_granted_again()
+        public async Task A_wait_interval_can_be_specified_before_which_a_released_lease_will_be_granted_again()
         {
             var tally = new ConcurrentDictionary<string, int>();
             var distributor = CreateDistributor(waitInterval: TimeSpan.FromMilliseconds(5000)).Trace();
