@@ -52,6 +52,7 @@ namespace Alluvial.Tests
 
             var partitionedStream = Stream.Partitioned<EventMessage, int, string>(async (q, p) =>
             {
+                await Task.Delay(10); // work around for possible NEventStore consistency lag
                 var bucketId = ((IStreamQueryValuePartition<string>) p).Value;
                 var streamsToSnapshot = store.Advanced.GetStreamsToSnapshot(bucketId, 0);
                 var streamId = streamsToSnapshot.Select(s => s.StreamId).Single();
