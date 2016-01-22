@@ -1,5 +1,7 @@
-Alluvial [![Build Status](https://ci.appveyor.com/api/projects/status/github/jonsequitur/alluvial?svg=true&branch=master)](https://ci.appveyor.com/project/jonsequitur/alluvial) [![NuGet Status](http://img.shields.io/nuget/v/Alluvial.svg?style=flat)](https://www.nuget.org/packages/Alluvial/)
+Alluvial 
 ========
+
+[![Build Status](https://ci.appveyor.com/api/projects/status/github/jonsequitur/alluvial?svg=true&branch=master)](https://ci.appveyor.com/project/jonsequitur/alluvial) [![NuGet Status](http://img.shields.io/nuget/v/Alluvial.svg?style=flat)](https://www.nuget.org/packages/Alluvial/)
 
 [![Join the chat at https://gitter.im/jonsequitur/Alluvial](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/jonsequitur/Alluvial?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
