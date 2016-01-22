@@ -162,8 +162,8 @@ namespace Alluvial.Streams.ItsDomainSql
                 .Select(e => new EventStreamChange
                 {
                     AggregateId = e.Key,
-                    AggregateType = e.FirstOrDefault().StreamName,
-                    AbsoluteSequenceNumber = e.OrderByDescending(ee => ee.Id).FirstOrDefault().Id
+                    AggregateType = e.FirstOrDefault()?.StreamName,
+                    AbsoluteSequenceNumber = e.OrderByDescending(ee => ee.Id).FirstOrDefault()?.Id ?? 0
                 })
                 .OrderBy(e => e.AbsoluteSequenceNumber)
                 .ToArray();
