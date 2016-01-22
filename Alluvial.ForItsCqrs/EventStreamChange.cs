@@ -35,9 +35,6 @@ namespace Alluvial.Streams.ItsDomainSql
             return Equals((EventStreamChange)obj);
         }
 
-        public override int GetHashCode()
-        {
-            return AggregateId.GetHashCode();
-        }
+        public override int GetHashCode() => AggregateId.GetHashCode();
     }
 }

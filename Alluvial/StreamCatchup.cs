@@ -21,13 +21,11 @@ namespace Alluvial
         public static IStreamCatchup<TData, TCursor> Create<TData, TCursor>(
             IStream<TData, TCursor> stream,
             ICursor<TCursor> initialCursor = null,
-            int? batchSize = null)
-        {
-            return new SingleStreamCatchup<TData, TCursor>(
-                stream,
-                initialCursor,
-                batchSize);
-        }
+            int? batchSize = null) =>
+                new SingleStreamCatchup<TData, TCursor>(
+                    stream,
+                    initialCursor,
+                    batchSize);
 
         /// <summary>
         /// Creates a multiple-stream catchup.
@@ -275,21 +273,17 @@ namespace Alluvial
         /// <returns>A disposable that, when disposed, unsubscribes the aggregator.</returns>
         public static IDisposable Subscribe<TData, TCursor>(
             this IStreamCatchup<TData, TCursor> catchup,
-            Func<IStreamBatch<TData>, Task> aggregate)
-        {
-            return catchup.Subscribe(
-                Aggregator.Create<Projection<Unit, TCursor>, TData>(async (p, b) =>
-                {
-                    await aggregate(b);
-                    return p;
-                }),
-                new InMemoryProjectionStore<Projection<Unit, TCursor>>());
-        }
+            Func<IStreamBatch<TData>, Task> aggregate) =>
+                catchup.Subscribe(
+                    Aggregator.Create<Projection<Unit, TCursor>, TData>(async (p, b) =>
+                    {
+                        await aggregate(b);
+                        return p;
+                    }),
+                    new InMemoryProjectionStore<Projection<Unit, TCursor>>());
 
-        private static FetchAndSave<TProjection> NoCursor<TProjection>(TProjection projection)
-        {
-            return (streamId, aggregate) => aggregate(projection);
-        }
+        private static FetchAndSave<TProjection> NoCursor<TProjection>(TProjection projection) =>
+            (streamId, aggregate) => aggregate(projection);
 
         internal class Counter<TCursor> : Projection<int>
         {

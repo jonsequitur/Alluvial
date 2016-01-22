@@ -26,9 +26,6 @@ namespace Alluvial
         /// <summary>
         /// Notified the catchup that the it should continue despite the error.
         /// </summary>
-        public void Continue()
-        {
-            ShouldContinue = true;
-        }
+        public void Continue() => ShouldContinue = true;
     }
 }

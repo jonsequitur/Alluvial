@@ -15,30 +15,21 @@ namespace Alluvial
         {
             if (stream == null)
             {
-                throw new ArgumentNullException("stream");
+                throw new ArgumentNullException(nameof(stream));
             }
             if (cursor == null)
             {
-                throw new ArgumentNullException("cursor");
+                throw new ArgumentNullException(nameof(cursor));
             }
             this.stream = stream;
             this.cursor = cursor;
         }
 
-        public ICursor<TCursor> Cursor
-        {
-            get
-            {
-                return cursor;
-            }
-        }
+        public ICursor<TCursor> Cursor => cursor;
 
         public int? BatchSize { get; set; }
 
-        public async Task<IStreamBatch<TData>> NextBatch()
-        {
-            return await stream.Fetch(this);
-        }
+        public async Task<IStreamBatch<TData>> NextBatch() => await stream.Fetch(this);
 
         private dynamic BatchSizeDescription
         {
@@ -55,7 +46,7 @@ namespace Alluvial
 
         public override string ToString()
         {
-            return string.Format("query:take {0} after {1} from {2}", BatchSizeDescription, cursor.Position, stream);
+            return $"query:take {BatchSizeDescription} after {cursor.Position} from {stream}";
         }
     }
 }

@@ -33,7 +33,7 @@ namespace Alluvial
 
         public override string ToString()
         {
-            return string.Format("stream:{0}", Id);
+            return $"stream:{Id}";
         }
     }
 }

@@ -20,25 +20,16 @@ namespace Alluvial
         {
             if (fetch == null)
             {
-                throw new ArgumentNullException("fetch");
+                throw new ArgumentNullException(nameof(fetch));
             }
 
             this.id = id ??
-                      string.Format(@"{0}(d:{1} / c:{2})",
-                                    fetch.GetHashCode(),
-                                    typeof (TData).ReadableName(),
-                                    typeof (TCursor).ReadableName());
+                      $"{fetch.GetHashCode()}(d:{typeof (TData).ReadableName()} / c:{typeof (TCursor).ReadableName()})";
             this.fetch = fetch;
             this.source = source;
         }
 
-        public override string Id
-        {
-            get
-            {
-                return id;
-            }
-        }
+        public override string Id => id;
 
         public override async Task<IStreamBatch<TData>> Fetch(IStreamQuery<TCursor> query)
         {
@@ -49,12 +40,6 @@ namespace Alluvial
             return batch;
         }
 
-        public IEnumerable<TData> Source
-        {
-            get
-            {
-                return source;
-            }
-        }
+        public IEnumerable<TData> Source => source;
     }
 }

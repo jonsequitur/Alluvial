@@ -16,7 +16,7 @@ namespace Alluvial
                 {
                     await fetchAndSave(id, async projection =>
                     {
-                        var resultingProjection = default(TProjection);
+                        TProjection resultingProjection;
 
                         try
                         {

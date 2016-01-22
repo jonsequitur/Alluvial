@@ -53,11 +53,11 @@ namespace Alluvial
         {
             if (upstreamCatchup == null)
             {
-                throw new ArgumentNullException("upstreamCatchup");
+                throw new ArgumentNullException(nameof(upstreamCatchup));
             }
             if (manageCursor == null)
             {
-                throw new ArgumentNullException("manageCursor");
+                throw new ArgumentNullException(nameof(manageCursor));
             }
             this.upstreamCatchup = upstreamCatchup;
 
@@ -91,11 +91,7 @@ namespace Alluvial
         /// </returns>
         public override string ToString()
         {
-            return string.Format("{0}->{1}->{2}",
-                                 catchupTypeDescription,
-                                 upstreamCatchup,
-                                 string.Join(" + ",
-                                             aggregatorSubscriptions.Select(s => s.Value.ProjectionType.ReadableName())));
+            return $"{catchupTypeDescription}->{upstreamCatchup}->{string.Join(" + ", aggregatorSubscriptions.Select(s => s.Value.ProjectionType.ReadableName()))}";
         }
     }
 }

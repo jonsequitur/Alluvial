@@ -39,7 +39,7 @@ namespace Alluvial
                 valueString = "null";
             }
 
-            return string.Format("{0}: {1}", ProjectionName, valueString);
+            return $"{ProjectionName}: {valueString}";
         }
 
         /// <summary>
@@ -48,12 +48,6 @@ namespace Alluvial
         /// <value>
         /// The name of the projection.
         /// </value>
-        protected virtual string ProjectionName
-        {
-            get
-            {
-                return projectionName;
-            }
-        }
+        protected virtual string ProjectionName => projectionName;
     }
 }

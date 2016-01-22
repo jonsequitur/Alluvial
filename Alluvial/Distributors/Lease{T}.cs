@@ -34,7 +34,7 @@ namespace Alluvial.Distributors
         {
             if (leasable == null)
             {
-                throw new ArgumentNullException("leasable");
+                throw new ArgumentNullException(nameof(leasable));
             }
 
             this.leasable = leasable;
@@ -46,33 +46,15 @@ namespace Alluvial.Distributors
             cancellationTokenSource.CancelAfter(Duration);
         }
 
-        public DateTimeOffset LastReleased { get; private set; }
+        public DateTimeOffset LastReleased { get; }
 
-        public DateTimeOffset LastGranted { get; private set; }
+        public DateTimeOffset LastGranted { get; }
 
-        public TimeSpan Duration
-        {
-            get
-            {
-                return duration;
-            }
-        }
+        public TimeSpan Duration => duration;
 
-        public int OwnerToken
-        {
-            get
-            {
-                return ownerToken;
-            }
-        }
+        public int OwnerToken => ownerToken;
 
-        public CancellationToken CancellationToken
-        {
-            get
-            {
-                return cancellationTokenSource.Token;
-            }
-        }
+        public CancellationToken CancellationToken => cancellationTokenSource.Token;
 
         public async Task Extend(TimeSpan by)
         {
@@ -83,48 +65,24 @@ namespace Alluvial.Distributors
                 throw new InvalidOperationException("The lease cannot be extended.");
             }
 
-            if (extend != null)
-            {
-                extend(by);
-            }
+            extend?.Invoke(@by);
 
             duration += by;
             cancellationTokenSource.CancelAfter(by);
 
-            Debug.WriteLine(string.Format("[Distribute] extended: {0}: ", this) + duration);
+            Debug.WriteLine($"[Distribute] extended: {this}: " + duration);
         }
 
         public override string ToString()
         {
-            return string.Format("lease:{0} (last granted @ {1}, last released @ {2})",
-                                 ResourceName,
-                                 LastGranted,
-                                 LastReleased) + " (" + ownerToken + ")";
+            return $"lease:{ResourceName} (last granted @ {LastGranted}, last released @ {LastReleased}) ({OwnerToken})";
         }
 
-        internal Leasable<T> Leasable
-        {
-            get
-            {
-                return leasable;
-            }
-        }
+        internal Leasable<T> Leasable => leasable;
 
-        public T Resource
-        {
-            get
-            {
-                return leasable.Resource;
-            }
-        }
+        public T Resource => leasable.Resource;
 
-        public string ResourceName
-        {
-            get
-            {
-                return leasable.Name;
-            }
-        }
+        public string ResourceName => leasable.Name;
 
         internal void NotifyCompleted()
         {

@@ -27,7 +27,7 @@ namespace Alluvial
         {
             if (stream == null)
             {
-                throw new ArgumentNullException("stream");
+                throw new ArgumentNullException(nameof(stream));
             }
 
             this.stream = stream;
@@ -53,10 +53,7 @@ namespace Alluvial
         /// </returns>
         public override string ToString()
         {
-            return string.Format("{0}->{1}->{2}",
-                                 catchupTypeDescription,
-                                 stream.Id, string.Join(" + ",
-                                                        aggregatorSubscriptions.Select(s => s.Value.ProjectionType.ReadableName())));
+            return $"{catchupTypeDescription}->{stream.Id}->{string.Join(" + ", aggregatorSubscriptions.Select(s => s.Value.ProjectionType.ReadableName()))}";
         }
     }
 }

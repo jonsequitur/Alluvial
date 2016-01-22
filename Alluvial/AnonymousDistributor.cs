@@ -19,19 +19,19 @@ namespace Alluvial
         {
             if (start == null)
             {
-                throw new ArgumentNullException("start");
+                throw new ArgumentNullException(nameof(start));
             }
             if (onReceived == null)
             {
-                throw new ArgumentNullException("onReceived");
+                throw new ArgumentNullException(nameof(onReceived));
             }
             if (stop == null)
             {
-                throw new ArgumentNullException("stop");
+                throw new ArgumentNullException(nameof(stop));
             }
             if (distribute == null)
             {
-                throw new ArgumentNullException("distribute");
+                throw new ArgumentNullException(nameof(distribute));
             }
             this.start = start;
             this.onReceived = onReceived;

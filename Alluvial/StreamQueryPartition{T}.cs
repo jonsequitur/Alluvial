@@ -16,24 +16,18 @@ namespace Alluvial
         {
             if (contains == null)
             {
-                throw new ArgumentNullException("contains");
+                throw new ArgumentNullException(nameof(contains));
             }
             if (name == null)
             {
-                throw new ArgumentNullException("name");
+                throw new ArgumentNullException(nameof(name));
             }
             this.contains = contains;
             this.name = name;
         }
 
-        public bool Contains(TPartition value)
-        {
-            return contains(value);
-        }
+        public bool Contains(TPartition value) => contains(value);
 
-        public override string ToString()
-        {
-            return string.Format("partition:{0}", name);
-        }
+        public override string ToString() => $"partition:{name}";
     }
 }

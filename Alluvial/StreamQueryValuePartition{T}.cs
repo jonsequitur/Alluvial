@@ -16,18 +16,12 @@ namespace Alluvial
         {
             if (value == null)
             {
-                throw new ArgumentNullException("value");
+                throw new ArgumentNullException(nameof(value));
             }
 
             this.value = value;
         }
 
-        public TPartition Value
-        {
-            get
-            {
-                return value;
-            }
-        }
+        public TPartition Value => value;
     }
 }

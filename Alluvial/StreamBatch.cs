@@ -31,11 +31,11 @@ namespace Alluvial
         {
             if (source == null)
             {
-                throw new ArgumentNullException("source");
+                throw new ArgumentNullException(nameof(source));
             }
             if (cursor == null)
             {
-                throw new ArgumentNullException("cursor");
+                throw new ArgumentNullException(nameof(cursor));
             }
 
             var results = source.ToArray();
@@ -56,7 +56,7 @@ namespace Alluvial
         {
             if (cursor == null)
             {
-                throw new ArgumentNullException("cursor");
+                throw new ArgumentNullException(nameof(cursor));
             }
 
             return new StreamBatch<TData>(Enumerable.Empty<TData>().ToArray(),

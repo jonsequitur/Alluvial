@@ -12,17 +12,9 @@ namespace Alluvial
 
         public TPartition UpperBoundInclusive { get; set; }
 
-        public virtual bool Contains(TPartition value)
-        {
-            return value.CompareTo(LowerBoundExclusive) > 0 &&
-                   value.CompareTo(UpperBoundInclusive) <= 0;
-        }
+        public virtual bool Contains(TPartition value) => value.CompareTo(LowerBoundExclusive) > 0 &&
+                                                          value.CompareTo(UpperBoundInclusive) <= 0;
 
-        public override string ToString()
-        {
-            return string.Format("partition:{0}-{1}",
-                                 LowerBoundExclusive,
-                                 UpperBoundInclusive);
-        }
+        public override string ToString() => $"partition:{LowerBoundExclusive}-{UpperBoundInclusive}";
     }
 }

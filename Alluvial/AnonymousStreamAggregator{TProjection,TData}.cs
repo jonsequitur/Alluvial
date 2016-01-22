@@ -13,7 +13,7 @@ namespace Alluvial
         {
             if (aggregate == null)
             {
-                throw new ArgumentNullException("aggregate");
+                throw new ArgumentNullException(nameof(aggregate));
             }
             this.aggregate = aggregate;
         }

@@ -41,7 +41,7 @@ namespace Alluvial
         {
             if (partitions == null)
             {
-                throw new ArgumentNullException("partitions");
+                throw new ArgumentNullException(nameof(partitions));
             }
 
             named = named ?? (p => p.ToString());
@@ -57,7 +57,7 @@ namespace Alluvial
         {
             if (distributor == null)
             {
-                throw new ArgumentNullException("distributor");
+                throw new ArgumentNullException(nameof(distributor));
             }
 
             return Create(

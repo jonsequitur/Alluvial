@@ -59,15 +59,9 @@ namespace Alluvial
 
         public override string ToString()
         {
-            return string.Format("@{0}", Position);
+            return $"{Position}";
         }
 
-        public bool CursorWasAdvanced
-        {
-            get
-            {
-                return originalPosition.Equals(Position);
-            }
-        }
+        public bool CursorWasAdvanced => originalPosition.Equals(Position);
     }
 }

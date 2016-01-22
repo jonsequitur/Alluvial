@@ -13,7 +13,7 @@ namespace Alluvial
         {
             if (aggregator == null)
             {
-                throw new ArgumentNullException("aggregator");
+                throw new ArgumentNullException(nameof(aggregator));
             }
             
             OnError = onError ?? (error => { });
@@ -35,20 +35,8 @@ namespace Alluvial
 
         public FetchAndSave<TProjection> FetchAndSave { get; private set; }
 
-        public Type ProjectionType
-        {
-            get
-            {
-                return typeof (TProjection);
-            }
-        }
+        public Type ProjectionType => typeof (TProjection);
 
-        public Type StreamDataType
-        {
-            get
-            {
-                return typeof (TData);
-            }
-        }
+        public Type StreamDataType => typeof (TData);
     }
 }
