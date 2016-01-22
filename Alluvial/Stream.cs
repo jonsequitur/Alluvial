@@ -15,20 +15,18 @@ namespace Alluvial
         /// Creates a stream based on an enumerable sequence.
         /// </summary>
         public static IStream<TData, TData> AsStream<TData>(
-            this IEnumerable<TData> source)
-        {
-            return Create(query => source.SkipWhile(x => query.Cursor.HasReached(x))
-                                         .Take(query.BatchSize ?? StreamBatch.MaxSize),
-                          advanceCursor: (q, b) =>
-                          {
-                              var last = b.LastOrDefault();
-                              if (last != null)
-                              {
-                                  q.Cursor.AdvanceTo(last);
-                              }
-                          },
-                          newCursor: () => Cursor.New<TData>(), source: source);
-        }
+            this IEnumerable<TData> source) =>
+                Create(query => source.SkipWhile(x => query.Cursor.HasReached(x))
+                                      .Take(query.BatchSize ?? StreamBatch.MaxSize),
+                       advanceCursor: (q, b) =>
+                       {
+                           var last = b.LastOrDefault();
+                           if (last != null)
+                           {
+                               q.Cursor.AdvanceTo(last);
+                           }
+                       },
+                       newCursor: () => Cursor.New<TData>(), source: source);
 
         /// <summary>
         /// Creates a stream based on an enumerable sequence.
@@ -40,7 +38,7 @@ namespace Alluvial
         {
             if (cursorPosition == null)
             {
-                throw new ArgumentNullException("cursorPosition");
+                throw new ArgumentNullException(nameof(cursorPosition));
             }
 
             return Create(query: query => source.SkipWhile(x =>
@@ -49,7 +47,7 @@ namespace Alluvial
                 id: id,
                 advanceCursor: (q, b) =>
                 {
-                    var last = b.LastOrDefault<TData>();
+                    var last = b.LastOrDefault();
                     if (last != null)
                     {
                         q.Cursor.AdvanceTo(cursorPosition(last));
@@ -66,7 +64,7 @@ namespace Alluvial
         {
             return Create(query => source.Skip(query.Cursor.Position)
                                          .Take(query.BatchSize ?? StreamBatch.MaxSize),
-                          string.Format("{0}({1})", typeof (TData), source.GetHashCode()), newCursor: () => Cursor.New<int>());
+                          $"{typeof (TData)}({source.GetHashCode()})", newCursor: () => Cursor.New<int>());
         }
 
         /// <summary>
@@ -182,7 +180,7 @@ namespace Alluvial
             string id = null)
         {
             return Create<TTo, TCursor>(
-                id: id ?? string.Format("{0}->Map(d:{1})", source.Id, typeof (TTo).ReadableName()),
+                id: id ?? $"{source.Id}->Map(d:{typeof (TTo).ReadableName()})",
                 query: async q =>
                 {
                     var query = source.CreateQuery(q.Cursor, q.BatchSize);
@@ -235,7 +233,7 @@ namespace Alluvial
             QueryDownstream<TUpstream, TDownstream, TUpstreamCursor> queryDownstream)
         {
             return Create(
-                id: string.Format("{0}->IntoMany(d:{1})", upstream.Id, typeof (TDownstream).ReadableName()),
+                id: $"{upstream.Id}->IntoMany(d:{typeof (TDownstream).ReadableName()})",
                 query: async upstreamQuery =>
                 {
                     var upstreamBatch = await upstream.Fetch(
@@ -266,7 +264,7 @@ namespace Alluvial
             QueryDownstream<TUpstream, TDownstream, TUpstreamCursor, TPartition> queryDownstream)
         {
             return Partitioned<TDownstream, TUpstreamCursor, TPartition>(
-                id: string.Format("{0}->IntoMany(d:{1})", partitionedStream.Id, typeof (TDownstream).ReadableName()),
+                id: $"{partitionedStream.Id}->IntoMany(d:{typeof (TDownstream).ReadableName()})",
                 query: async (upstreamQuery, partition) =>
                 {
                     var upstreamStream = await partitionedStream.GetStream(partition);
@@ -425,18 +423,13 @@ namespace Alluvial
         {
             onSendQuery = onSendQuery ??
                           (q => trace.WriteLine(
-                              string.Format("[Query] stream {0} @ cursor {1}",
-                                            stream.Id,
-                                            q.Cursor.Position)));
+                              $"[Query] stream {stream.Id} @ cursor {q.Cursor.Position}"));
 
             onResults = onResults ??
                         ((q, streamBatch) =>
                         {
                             trace.WriteLine(
-                                string.Format("      [Fetched] stream {0} batch of {1}, now @ cursor {2}",
-                                              stream.Id,
-                                              streamBatch.Count,
-                                              q.Cursor.Position));
+                                $"      [Fetched] stream {stream.Id} batch of {streamBatch.Count}, now @ cursor {q.Cursor.Position}");
                         });
 
             return Create<TData, TCursor>(

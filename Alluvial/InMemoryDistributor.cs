@@ -27,13 +27,17 @@ namespace Alluvial
         {
             if (pool == null)
             {
-                throw new ArgumentNullException("pool");
+                throw new ArgumentNullException(nameof(pool));
             }
 
             workInProgress = workInProgressGlobal.GetOrAdd(pool, s => new ConcurrentDictionary<Leasable<T>, Lease<T>>());
             this.defaultLeaseDuration = defaultLeaseDuration ?? TimeSpan.FromMinutes(1);
         }
 
+        /// <summary>
+        /// Attempts to acquire a lease.
+        /// </summary>
+        /// <returns></returns>
         protected override async Task<Lease<T>> AcquireLease()
         {
             var resource = leasables
@@ -62,7 +66,7 @@ namespace Alluvial
         {
             if (!workInProgress.Values.Any(l => l.GetHashCode().Equals(lease.GetHashCode())))
             {
-                Debug.WriteLine("[Distribute] ReleaseLease (failed): " + lease);
+                Debug.WriteLine($"[Distribute] ReleaseLease (failed): {lease}");
                 return;
             }
 
@@ -71,7 +75,7 @@ namespace Alluvial
             if (workInProgress.TryRemove(lease.Leasable, out _))
             {
                 lease.NotifyReleased();
-                Debug.WriteLine("[Distribute] ReleaseLease: " + lease);
+                Debug.WriteLine($"[Distribute] ReleaseLease: {lease}");
             }
 
             lease.NotifyCompleted();

@@ -20,11 +20,11 @@ namespace Alluvial.Distributors
         {
             if (resource == null)
             {
-                throw new ArgumentNullException("resource");
+                throw new ArgumentNullException(nameof(resource));
             }
             if (name == null)
             {
-                throw new ArgumentNullException("name");
+                throw new ArgumentNullException(nameof(name));
             }
             Resource = resource;
             Name = name;
@@ -33,7 +33,7 @@ namespace Alluvial.Distributors
         /// <summary>
         /// Gets the name of the resource.
         /// </summary>
-        public string Name { get; private set; }
+        public string Name { get; }
 
         /// <summary>
         /// Gets or sets the time at which the lease was last granted.
@@ -58,10 +58,7 @@ namespace Alluvial.Distributors
         /// </returns>
         public override string ToString()
         {
-            return string.Format("leasable resource:{0} (last granted @ {1}, last released @ {2})",
-                                 Name,
-                                 LeaseLastGranted,
-                                 LeaseLastReleased);
+            return $"leasable resource:{Name} (last granted @ {LeaseLastGranted}, last released @ {LeaseLastReleased})";
         }
     }
 }

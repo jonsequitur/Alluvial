@@ -175,7 +175,7 @@ namespace Alluvial
                 return partitions;
             }
 
-            throw new ArgumentException(string.Format("Partitions of type {0} cannot be generated dynamically.", typeof (TPartition)));
+            throw new ArgumentException($"Partitions of type {typeof (TPartition)} cannot be generated dynamically.");
         }
 
         private static class MethodInfoFor<T>

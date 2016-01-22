@@ -25,7 +25,7 @@ namespace Alluvial
         {
             if (leasables == null)
             {
-                throw new ArgumentNullException("leasables");
+                throw new ArgumentNullException(nameof(leasables));
             }
             if (leasables.Length ==0)
             {
@@ -40,6 +40,11 @@ namespace Alluvial
             this.waitInterval = waitInterval ?? TimeSpan.FromSeconds(.5);
         }
 
+        /// <summary>
+        /// Called when a lease is available.
+        /// </summary>
+        /// <param name="onReceive">The delegate called when work is available to be done.</param>
+        /// <remarks>For the duration of the lease, the leased resource will not be available to any other instance.</remarks>
         public void OnReceive(Func<Lease<T>, Task> onReceive)
         {
             if (this.onReceive != null)
@@ -49,6 +54,10 @@ namespace Alluvial
             this.onReceive = onReceive;
         }
 
+        /// <summary>
+        /// Distributes the specified number of leases.
+        /// </summary>
+        /// <param name="count">The number of leases to distribute.</param>
         public virtual async Task<IEnumerable<T>> Distribute(int count)
         {
             var acquired = new List<T>();
@@ -120,7 +129,7 @@ namespace Alluvial
                 }
                 catch (Exception exception)
                 {
-                    Debug.WriteLine(string.Format("[Distribute] Exception during OnReceive for lease {0}:\n{1}", lease, exception));
+                    Debug.WriteLine($"[Distribute] Exception during OnReceive for lease {lease}:\n{exception}");
                 }
 
                 try
@@ -129,7 +138,7 @@ namespace Alluvial
                 }
                 catch (Exception exception)
                 {
-                    Debug.WriteLine(string.Format("[Distribute] Exception during ReleaseLease for lease {0}:\n{1}", lease, exception));
+                    Debug.WriteLine($"[Distribute] Exception during ReleaseLease for lease {lease}:\n{exception}");
                 }
 
                 Interlocked.Decrement(ref leasesHeld);
@@ -173,15 +182,12 @@ namespace Alluvial
 
             while (leasesHeld > 0)
             {
-                Debug.WriteLine(string.Format("[Distribute] Stop: waiting for {0} to complete", leasesHeld));
+                Debug.WriteLine($"[Distribute] Stop: waiting for {leasesHeld} to complete");
                 await Task.Delay(waitInterval);
             }
         }
 
-        public void Dispose()
-        {
-            Stop();
-        }
+        public void Dispose() => Stop();
 
         private struct LeaseAcquisitionAttempt
         {
@@ -207,10 +213,13 @@ namespace Alluvial
             }
         }
 
-        public IEnumerator<T> GetEnumerator()
-        {
-            return leasables.Select(l => l.Resource).GetEnumerator();
-        }
+        /// <summary>
+        /// Returns an enumerator that iterates through the collection.
+        /// </summary>
+        /// <returns>
+        /// An enumerator that can be used to iterate through the collection.
+        /// </returns>
+        public IEnumerator<T> GetEnumerator() => leasables.Select(l => l.Resource).GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator()
         {

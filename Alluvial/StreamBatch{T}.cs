@@ -17,31 +17,17 @@ namespace Alluvial
             this.results = results ?? new TData[0];
         }
 
-        public IEnumerator<TData> GetEnumerator()
-        {
-            return results.Cast<TData>().GetEnumerator();
-        }
+        public IEnumerator<TData> GetEnumerator() => results.Cast<TData>().GetEnumerator();
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-        public int Count
-        {
-            get
-            {
-                return results.Length;
-            }
-        }
+        public int Count => results.Length;
 
-        public dynamic StartsAtCursorPosition { get; private set; }
+        public dynamic StartsAtCursorPosition { get; }
 
         public override string ToString()
         {
-            return string.Format("batch: {0} items starting at {1}",
-                                 Count,
-                                 StartsAtCursorPosition);
+            return $"batch: {Count} items starting at {StartsAtCursorPosition}";
         }
     }
 }

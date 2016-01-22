@@ -150,10 +150,7 @@ namespace Alluvial
             TProjection projection,
             IStreamBatch<TData> batch)
         {
-            string message = string.Format("[Aggregate] {0} / batch of {1} starts @ {2}",
-                                           projection,
-                                           batch.Count,
-                                           batch.StartsAtCursorPosition);
+            var message = $"[Aggregate] {projection} / batch of {batch.Count} starts @ {batch.StartsAtCursorPosition}";
 
             System.Diagnostics.Trace.WriteLine(message);
         }

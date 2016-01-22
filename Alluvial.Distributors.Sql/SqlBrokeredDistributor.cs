@@ -42,11 +42,11 @@ namespace Alluvial.Distributors.Sql
         {
             if (database == null)
             {
-                throw new ArgumentNullException("database");
+                throw new ArgumentNullException(nameof(database));
             }
             if (pool == null)
             {
-                throw new ArgumentNullException("pool");
+                throw new ArgumentNullException(nameof(pool));
             }
             this.database = database;
             this.pool = pool;
@@ -97,7 +97,7 @@ namespace Alluvial.Distributors.Sql
             }
         }
 
-        private async Task ExtendLease<T>(Lease<T> lease, TimeSpan by)
+        private async Task ExtendLease(Lease<T> lease, TimeSpan by)
         {
             using (var connection = new SqlConnection(database.ConnectionString))
             {
@@ -130,11 +130,11 @@ namespace Alluvial.Distributors.Sql
                 {
                     var leaseLastReleased = (DateTimeOffset) await cmd.ExecuteScalarAsync();
                     lease.NotifyReleased(leaseLastReleased);
-                    Debug.WriteLine("[Distribute] ReleaseLease: " + lease);
+                    Debug.WriteLine($"[Distribute] ReleaseLease: {lease}");
                 }
-                catch (Exception ex)
+                catch (Exception exception)
                 {
-                    Debug.WriteLine("[Distribute] ReleaseLease (failed): " + lease + "\n" + ex);
+                    Debug.WriteLine($"[Distribute] ReleaseLease (failed): {lease}\n{exception}");
                 }
             }
         }

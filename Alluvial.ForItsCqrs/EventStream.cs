@@ -12,9 +12,8 @@ namespace Alluvial.Streams.ItsDomainSql
 {
     public static class EventStream
     {
-        public static IStreamAggregator<CommandsApplied, ScheduledCommand> DeliverScheduledCommands()
-        {
-            return Aggregator.Create<CommandsApplied, ScheduledCommand>(
+        public static IStreamAggregator<CommandsApplied, ScheduledCommand> DeliverScheduledCommands() =>
+            Aggregator.Create<CommandsApplied, ScheduledCommand>(
                 async (projection, batch) =>
                 {
                     using (var commandSchedulerDb = new CommandSchedulerDbContext())
@@ -29,16 +28,14 @@ namespace Alluvial.Streams.ItsDomainSql
 
                     return projection;
                 });
-        }
 
         public static IStream<IStream<IEvent, long>, long> PerAggregate(
             string streamId,
-            Func<IQueryable<StorableEvent>> storableEvents)
-        {
-            return AllChanges(streamId, storableEvents)
-                .IntoMany(
-                    // for each EventStreamChange, return a stream of IEvent
-                    async (update, fromCursor, toCursor) =>
+            Func<IQueryable<StorableEvent>> storableEvents) =>
+                AllChanges(streamId, storableEvents)
+                    .IntoMany(
+                        // for each EventStreamChange, return a stream of IEvent
+                        async (update, fromCursor, toCursor) =>
                         Stream.Create<IEvent, long>(
                             update.AggregateId.ToString(),
                             q => QueryAsync(storableEvents,
@@ -47,64 +44,58 @@ namespace Alluvial.Streams.ItsDomainSql
                                             fromCursor,
                                             toCursor),
                             (query, batch) => AdvanceCursor(batch, query, toCursor)));
-        }
 
         public static IPartitionedStream<IStream<IEvent, long>, long, Guid> PerAggregatePartitioned(
             string streamId,
-            Func<IQueryable<StorableEvent>> storableEvents)
-        {
-            return AllChangesPartitioned(streamId, storableEvents)
+            Func<IQueryable<StorableEvent>> storableEvents) => AllChangesPartitioned(streamId, storableEvents)
                 .Trace()
                 .IntoMany(async (update, fromCursor, toCursor, partition) =>
-                              Stream.Create<IEvent, long>(
-                                  update.AggregateId.ToString(),
-                                  q => QueryAsync(storableEvents,
-                                                  q.BatchSize,
-                                                  update.AggregateId,
-                                                  fromCursor,
-                                                  toCursor),
-                                  (query, batch) => AdvanceCursor(batch, query, toCursor))
-                                    .Trace());
-        }
+                          Stream.Create<IEvent, long>(
+                              update.AggregateId.ToString(),
+                              q => QueryAsync(storableEvents,
+                                              q.BatchSize,
+                                              update.AggregateId,
+                                              fromCursor,
+                                              toCursor),
+                              (query, batch) => AdvanceCursor(batch, query, toCursor))
+                                .Trace());
 
-        public static IPartitionedStream<ScheduledCommand, long, Guid> ScheduledCommandStream(string clockName = "default")
-        {
-            return Stream.PartitionedByRange<ScheduledCommand, long, Guid>(
-                async (q, partition) =>
+        public static IPartitionedStream<ScheduledCommand, long, Guid> ScheduledCommandStream(string clockName = "default") =>
+            Stream.PartitionedByRange<ScheduledCommand, long, Guid>(
+            async (q, partition) =>
+            {
+                using (var db = new CommandSchedulerDbContext())
                 {
-                    using (var db = new CommandSchedulerDbContext())
-                    {
-                        var batchCount = q.BatchSize ?? 5;
-                        var query = db.ScheduledCommands
-                                      .Due()
-                                      .Where(c => c.Clock.Name == clockName)
-                                      .WithinPartition(e => e.AggregateId, partition)
-                                      .Take(() => batchCount);
-                        var scheduledCommands = await query.ToArrayAsync();
-                        return scheduledCommands;
-                    }
-                },
-                advanceCursor: (q, b) =>
-                {
-                    q.Cursor.AdvanceTo(DateTimeOffset.UtcNow.Ticks);
+                    var batchCount = q.BatchSize ?? 5;
+                    var query = db.ScheduledCommands
+                                  .Due()
+                                  .Where(c => c.Clock.Name == clockName)
+                                  .WithinPartition(e => e.AggregateId, partition)
+                                  .Take(() => batchCount);
+                    var scheduledCommands = await query.ToArrayAsync();
+                    return scheduledCommands;
+                }
+            },
+            advanceCursor: (q, b) =>
+            {
+                q.Cursor.AdvanceTo(DateTimeOffset.UtcNow.Ticks);
 
-                    // advance the cursor to the latest due time
-                    //                    var latestDuetime = b
-                    //                        .Select(c => c.DueTime)
-                    //                        .Where(d => d != null)
-                    //                        .Select(d => d.Value)
-                    //                        .OrderBy(d => d)
-                    //                        .LastOrDefault();
-                    //                    if (latestDuetime != default(DateTimeOffset))
-                    //                    {
-                    //                        q.Cursor.AdvanceTo(latestDuetime);
-                    //                    }
-                    //                    else
-                    //                    {
-                    //                        q.Cursor.AdvanceTo(DateTimeOffset.UtcNow);
-                    //                    }
-                });
-        }
+                // advance the cursor to the latest due time
+                //                    var latestDuetime = b
+                //                        .Select(c => c.DueTime)
+                //                        .Where(d => d != null)
+                //                        .Select(d => d.Value)
+                //                        .OrderBy(d => d)
+                //                        .LastOrDefault();
+                //                    if (latestDuetime != default(DateTimeOffset))
+                //                    {
+                //                        q.Cursor.AdvanceTo(latestDuetime);
+                //                    }
+                //                    else
+                //                    {
+                //                        q.Cursor.AdvanceTo(DateTimeOffset.UtcNow);
+                //                    }
+            });
 
         private static IStream<EventStreamChange, long> AllChanges(
             string streamId,
@@ -112,7 +103,7 @@ namespace Alluvial.Streams.ItsDomainSql
         {
             Func<IStreamQuery<long>, Task<IEnumerable<EventStreamChange>>> query =
                 async streamQuery =>
-                    await EventStreamChanges(getStorableEvents(), streamQuery);
+                await EventStreamChanges(getStorableEvents(), streamQuery);
 
             return Stream
                 .Create(
@@ -129,9 +120,9 @@ namespace Alluvial.Streams.ItsDomainSql
         {
             Func<IStreamQuery<long>, IStreamQueryRangePartition<Guid>, Task<IEnumerable<EventStreamChange>>> query =
                 async (streamQuery, partition) =>
-                    await EventStreamChanges(getStorableEvents(),
-                                             streamQuery,
-                                             partition);
+                await EventStreamChanges(getStorableEvents(),
+                                         streamQuery,
+                                         partition);
 
             return Stream
                 .PartitionedByRange(
@@ -183,12 +174,10 @@ namespace Alluvial.Streams.ItsDomainSql
         private static void AdvanceCursor(
             IStreamBatch<IEvent> batch,
             IStreamQuery<long> query,
-            long toCursor)
-        {
-            batch.LastOrDefault()
-                 .IfNotNull()
-                 .ThenDo(e => query.Cursor.AdvanceTo(toCursor));
-        }
+            long toCursor) =>
+                batch.LastOrDefault()
+                     .IfNotNull()
+                     .ThenDo(e => query.Cursor.AdvanceTo(toCursor));
 
         private static async Task<IEnumerable<IEvent>> QueryAsync(
             Func<IQueryable<StorableEvent>> storableEvents,

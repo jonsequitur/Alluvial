@@ -104,11 +104,7 @@ namespace Alluvial
         /// </returns>
         public override string ToString()
         {
-            return string.Format("{0}->{1}->{2}",
-                                 catchupTypeDescription,
-                                 partitionedStream,
-                                 string.Join(" + ",
-                                             aggregatorSubscriptions.Select(s => s.Value.ProjectionType.ReadableName())));
+            return $"{catchupTypeDescription}->{partitionedStream}->{string.Join(" + ", aggregatorSubscriptions.Select(s => s.Value.ProjectionType.ReadableName()))}";
         }
     }
 }

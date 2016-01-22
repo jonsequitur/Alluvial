@@ -12,11 +12,11 @@ namespace Alluvial
         {
             if (put == null)
             {
-                throw new ArgumentNullException("put");
+                throw new ArgumentNullException(nameof(put));
             }
             if (get == null)
             {
-                throw new ArgumentNullException("get");
+                throw new ArgumentNullException(nameof(get));
             }
             this.put = put;
             this.get = get;

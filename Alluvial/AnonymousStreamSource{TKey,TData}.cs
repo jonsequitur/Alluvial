@@ -10,7 +10,7 @@ namespace Alluvial
         {
             if (open == null)
             {
-                throw new ArgumentNullException("open");
+                throw new ArgumentNullException(nameof(open));
             }
             this.open = open;
         }

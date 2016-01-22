@@ -21,12 +21,12 @@ namespace Alluvial.Distributors.Sql
         {
             if (connectionString == null)
             {
-                throw new ArgumentNullException("connectionString");
+                throw new ArgumentNullException(nameof(connectionString));
             }
             ConnectionString = connectionString;
         }
 
-        internal string ConnectionString { get; private set; }
+        internal string ConnectionString { get; }
 
         /// <summary>
         /// Creates the distributor database and initializes its schema.
@@ -43,18 +43,17 @@ namespace Alluvial.Distributors.Sql
                 await connection.OpenAsync();
 
                 var cmd = connection.CreateCommand();
-                cmd.CommandText = string.Format(
-                    @"
-IF db_id('{0}') IS NULL
+                cmd.CommandText = 
+                    $@"
+IF db_id('{distributorDatabaseName}') IS NULL
     BEGIN
-        CREATE DATABASE [{0}]
+        CREATE DATABASE [{distributorDatabaseName}]
         SELECT 'created'
     END
 ELSE
     BEGIN
         SELECT 'already exists'
-    END",
-                    distributorDatabaseName);
+    END";
                 cmd.CommandType = CommandType.Text;
 
                 var result = await cmd.ExecuteScalarAsync() as string;
@@ -74,17 +73,13 @@ ELSE
         /// Initializes the SQL distributor schema.
         /// </summary>
         /// <remarks>This can be used to create the necessary database objects within an existing database. They are created in the "Alluvial" namespace.</remarks>
-        public async Task InitializeSchema(SqlConnection connection)
-        {
+        public async Task InitializeSchema(SqlConnection connection) =>
             await InitializeSchema(connection, connection.Database);
-        }
 
-        private async Task InitializeSchema(SqlConnection connection, string distributorDatabaseName)
-        {
+        private async Task InitializeSchema(SqlConnection connection, string distributorDatabaseName) =>
             await RunScript(connection,
                             @"Alluvial.Distributors.Sql.InitializeSchema.sql",
                             distributorDatabaseName);
-        }
 
         /// <summary>
         /// Creates records for leasable resources in the distributor database, which can then be acquired and leased out via a <see cref="SqlBrokeredDistributor{T}" />.
@@ -136,7 +131,7 @@ IF NOT EXISTS (SELECT * FROM [Alluvial].[Leases]
 
             var scripts = new StreamReader(scriptStream)
                 .ReadToEnd()
-                .Replace(@"[{DatabaseName}]", string.Format(@"[{0}]", databaseName))
+                .Replace(@"[{DatabaseName}]", $@"[{databaseName}]")
                 .Split(new[] { "GO" }, StringSplitOptions.RemoveEmptyEntries);
 
             if (connection.State != ConnectionState.Open)

@@ -37,15 +37,9 @@ namespace Alluvial
         /// <summary>
         /// Gets the position of the cursor.
         /// </summary>
-        TCursor ICursor<TCursor>.Position
-        {
-            get
-            {
-                return CursorPosition;
-            }
-        }
+        TCursor ICursor<TCursor>.Position => CursorPosition;
 
-        public bool CursorWasAdvanced { get; private set; }
+        public bool CursorWasAdvanced { get; set; }
 
         bool ICursor<TCursor>.HasReached(TCursor point)
         {
@@ -53,15 +47,9 @@ namespace Alluvial
                                      true);
         }
 
-        protected override string ProjectionName
-        {
-            get
-            {
-                return projectionName;
-            }
-        }
-    
-       public override string ToString()
+        protected override string ProjectionName => projectionName;
+
+        public override string ToString()
         {
             string valueString;
 
@@ -75,7 +63,7 @@ namespace Alluvial
                 valueString = "null";
             }
 
-            return string.Format("{0}: {1} @ cursor {2}", ProjectionName, valueString, CursorPosition);
+            return $"{ProjectionName}: {valueString} @ cursor {CursorPosition}";
         }
     }
 }

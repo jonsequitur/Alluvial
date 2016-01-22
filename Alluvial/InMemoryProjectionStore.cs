@@ -26,11 +26,11 @@ namespace Alluvial
 
             if (streamId == null)
             {
-                throw new ArgumentNullException("streamId");
+                throw new ArgumentNullException(nameof(streamId));
             }
             if (projection == null)
             {
-                throw new ArgumentNullException("projection");
+                throw new ArgumentNullException(nameof(projection));
             }
             store[streamId] = projection;
         }
@@ -48,10 +48,7 @@ namespace Alluvial
             return projection;
         }
 
-        public IEnumerator<TProjection> GetEnumerator()
-        {
-            return store.Values.GetEnumerator();
-        }
+        public IEnumerator<TProjection> GetEnumerator() => store.Values.GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator()
         {

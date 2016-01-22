@@ -10,7 +10,7 @@ namespace Alluvial
         {
             if (dispose == null)
             {
-                throw new ArgumentNullException("dispose");
+                throw new ArgumentNullException(nameof(dispose));
             }
             this.dispose = dispose;
         }

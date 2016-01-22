@@ -26,7 +26,7 @@ namespace Alluvial
                                            new ConcurrentDictionary<Type, IAggregatorSubscription>();
         }
 
-        protected int? BatchSize { get; private set; }
+        protected int? BatchSize { get; }
 
         public IDisposable SubscribeAggregator<TProjection>(
             IStreamAggregator<TProjection, TData> aggregator,
@@ -40,7 +40,7 @@ namespace Alluvial
 
             if (!added)
             {
-                throw new InvalidOperationException(string.Format("Aggregator for projection of type {0} is already subscribed.", typeof (TProjection)));
+                throw new InvalidOperationException($"Aggregator for projection of type {typeof (TProjection)} is already subscribed.");
             }
 
             return Disposable.Create(() =>
@@ -149,10 +149,7 @@ namespace Alluvial
                         projection = await subscription.Aggregator.Aggregate(projection, data);
 
                         var cursor = projection as ICursor<TCursor>;
-                        if (cursor != null)
-                        {
-                            cursor.AdvanceTo(aggregationBatch.Cursor.Position);
-                        }
+                        cursor?.AdvanceTo(aggregationBatch.Cursor.Position);
                     }
                     catch (Exception exception)
                     {
