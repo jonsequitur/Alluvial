@@ -146,7 +146,7 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task IntPartitionBuilder_creates_the_even_partitions_when_possible()
+        public void IntPartitionBuilder_creates_the_even_partitions_when_possible()
         {
             var partitions = Partition.ByRange(
                 lowerBoundExclusive: 0,

@@ -24,6 +24,18 @@ namespace Alluvial
         private readonly Leasable<T>[] leasables;
         private int leasesHeld;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DistributorBase{T}"/> class.
+        /// </summary>
+        /// <param name="leasables">The leasable resources to be distributed by the distributor.</param>
+        /// <param name="maxDegreesOfParallelism">The maximum number of leases to be distributed at one time by this distributor instance.</param>
+        /// <param name="waitInterval">The interval to wait after a lease is released before which leased resource should not become available again.</param>
+        /// <exception cref="System.ArgumentNullException"></exception>
+        /// <exception cref="System.ArgumentException">
+        /// There must be at least one leasable.
+        /// or
+        /// maxDegreesOfParallelism must be at least 1.
+        /// </exception>
         protected DistributorBase(
             Leasable<T>[] leasables,
             int maxDegreesOfParallelism = 5,
@@ -59,18 +71,18 @@ namespace Alluvial
         /// <summary>
         /// Called when a lease is available.
         /// </summary>
-        /// <param name="onReceive">The delegate called when work is available to be done.</param>
+        /// <param name="receive">The delegate called when work is available to be done.</param>
         /// <exception cref="System.InvalidOperationException">OnReceive has already been called. It can only be called once per distributor.</exception>
         /// <remarks>
         /// For the duration of the lease, the leased resource will not be available to any other instance.
         /// </remarks>
-        public void OnReceive(Func<Lease<T>, Task> onReceive)
+        public void OnReceive(Func<Lease<T>, Task> receive)
         {
-            if (this.onReceive != null)
+            if (onReceive != null)
             {
                 throw new InvalidOperationException("OnReceive has already been called. It can only be called once per distributor.");
             }
-            this.onReceive = onReceive;
+            onReceive = receive;
         }
 
         /// <summary>
@@ -100,7 +112,7 @@ namespace Alluvial
         /// <summary>
         /// Starts distributing work.
         /// </summary>
-        public virtual async Task Start()
+        public virtual Task Start()
         {
             if (onReceive == null)
             {
@@ -111,13 +123,7 @@ namespace Alluvial
                          maxDegreesOfParallelism,
                          async _ => await TryRunOne(loop: true));
 
-            for (var i = 0; i < maxDegreesOfParallelism; i++)
-            {
-#pragma warning disable 4014
-                // deliberately fire and forget so that the tasks can run in parallel
-             ;
-#pragma warning restore 4014
-            }
+            return Unit.Default.CompletedTask();
         }
 
         private async Task<LeaseAcquisitionAttempt> TryRunOne(bool loop)
@@ -187,21 +193,32 @@ namespace Alluvial
             {
 #pragma warning disable 4014
                 // async recursion. we don't await in order to truncate the call stack.
-                Task.Run(() => TryRunOne(loop));
+                Task.Run(() => TryRunOne(true));
 #pragma warning restore 4014
             }
-            
-            return LeaseAcquisitionAttempt.Succeeded(lease.Resource);
+
+            if (lease != null)
+            {
+                return LeaseAcquisitionAttempt.Succeeded(lease.Resource);
+            }
+
+            return LeaseAcquisitionAttempt.Failed();
         }
 
+        /// <summary>
+        /// Releases the specified lease.
+        /// </summary>
         protected abstract Task ReleaseLease(Lease<T> lease);
 
         /// <summary>
         /// Attempts to acquire a lease.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A task whose result is either a lease (if acquired) or null.</returns>
         protected abstract Task<Lease<T>> AcquireLease();
 
+        /// <summary>
+        /// Completes all currently leased work and stops distributing further work.
+        /// </summary>
         public async Task Stop()
         {
             stopped = true;
@@ -213,7 +230,10 @@ namespace Alluvial
             }
         }
 
-        public void Dispose() => Stop();
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        public void Dispose() => Task.Run(() => Stop());
 
         private struct LeaseAcquisitionAttempt
         {
@@ -247,6 +267,12 @@ namespace Alluvial
         /// </returns>
         public IEnumerator<T> GetEnumerator() => leasables.Select(l => l.Resource).GetEnumerator();
 
+        /// <summary>
+        /// Returns an enumerator that iterates through a collection.
+        /// </summary>
+        /// <returns>
+        /// An <see cref="T:System.Collections.IEnumerator"/> object that can be used to iterate through the collection.
+        /// </returns>
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();

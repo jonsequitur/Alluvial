@@ -10,7 +10,8 @@ namespace Alluvial
 
         public AnonymousPartitionedStream(
             string id,
-            Func<IStreamQueryPartition<TPartition>, Task<IStream<TData, TCursor>>> getStream) : this(id, fetch: async (q, p) => await (await getStream(p)).Fetch(q))
+            Func<IStreamQueryPartition<TPartition>, Task<IStream<TData, TCursor>>> getStream) : this(id,
+                                                                                                     fetch: async (q, p) => await (await getStream(p)).Fetch(q))
         {
         }
 
@@ -24,12 +25,14 @@ namespace Alluvial
             this.id = id ??
                       $"{fetch.GetHashCode()}(d:{typeof (TData).ReadableName()} / c:{typeof (TCursor).ReadableName()} / p:{typeof (TPartition).ReadableName()})";
 
-            getStream = async partition => new StreamPartition(
-                PartitionIdFor(partition),
-                fetch,
-                partition,
-                advanceCursor,
-                newCursor);
+            getStream = partition =>
+                        ((IStream<TData, TCursor>) new StreamPartition(
+                                                       PartitionIdFor(partition),
+                                                       fetch,
+                                                       partition,
+                                                       advanceCursor,
+                                                       newCursor))
+                            .CompletedTask();
         }
 
         public string Id => id;

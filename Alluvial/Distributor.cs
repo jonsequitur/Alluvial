@@ -24,10 +24,8 @@ namespace Alluvial
             Func<Task> start,
             Action<Func<Lease<T>, Task>> onReceive,
             Func<Task> stop,
-            Func<int, Task<IEnumerable<T>>> distribute)
-        {
-            return new AnonymousDistributor<T>(start, onReceive, stop, distribute);
-        }
+            Func<int, Task<IEnumerable<T>>> distribute) =>
+                new AnonymousDistributor<T>(start, onReceive, stop, distribute);
 
         internal static IDistributor<IStreamQueryPartition<TPartition>> DistributeQueriesInProcess<TPartition>(
             this IEnumerable<IStreamQueryPartition<TPartition>> partitions,
@@ -101,14 +99,10 @@ namespace Alluvial
                 }, distribute: distributor.Distribute);
         }
 
-        private static void TraceOnLeaseAcquired<T>(Lease<T> lease)
-        {
+        private static void TraceOnLeaseAcquired<T>(Lease<T> lease) =>
             System.Diagnostics.Trace.WriteLine("[Distribute] OnReceive " + lease);
-        }
 
-        private static void TraceOnLeaseReleasing<T>(Lease<T> lease)
-        {
+        private static void TraceOnLeaseReleasing<T>(Lease<T> lease) =>
             System.Diagnostics.Trace.WriteLine("[Distribute] OnReceive (done) " + lease);
-        }
     }
 }

@@ -82,6 +82,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\Alluvial\TaskExtensions.cs">
+      <Link>TaskExtensions.cs</Link>
+    </Compile>
     <Compile Include="CommandsApplied.cs" />
     <Compile Include="EventStream.cs" />
     <Compile Include="EventStreamChange.cs" />

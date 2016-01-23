@@ -34,7 +34,7 @@ namespace Alluvial
         {
             if (partitions == null)
             {
-                throw new ArgumentNullException("partitions");
+                throw new ArgumentNullException(nameof(partitions));
             }
 
             this.partitionedStream = partitionedStream;
