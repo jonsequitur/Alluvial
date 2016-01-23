@@ -49,8 +49,7 @@ namespace Alluvial
                 .OnReceive(OnReceiveLease);
         }
 
-        protected virtual async Task OnReceiveLease(Lease<IStreamQueryPartition<TPartition>> lease)
-        {
+        protected virtual async Task OnReceiveLease(Lease<IStreamQueryPartition<TPartition>> lease) =>
             await fetchAndSavePartitionCursor(
                 lease.ResourceName,
                 async cursor =>
@@ -63,7 +62,6 @@ namespace Alluvial
 
                     return await upstreamCatchup.RunSingleBatch();
                 });
-        }
 
         /// <summary>
         /// Consumes a single batch from the source stream and updates the subscribed aggregators.
@@ -102,9 +100,7 @@ namespace Alluvial
         /// <returns>
         /// A <see cref="System.String" /> that represents this instance.
         /// </returns>
-        public override string ToString()
-        {
-            return $"{catchupTypeDescription}->{partitionedStream}->{string.Join(" + ", aggregatorSubscriptions.Select(s => s.Value.ProjectionType.ReadableName()))}";
-        }
+        public override string ToString() =>
+            $"{catchupTypeDescription}->{partitionedStream}->{string.Join(" + ", aggregatorSubscriptions.Select(s => s.Value.ProjectionType.ReadableName()))}";
     }
 }

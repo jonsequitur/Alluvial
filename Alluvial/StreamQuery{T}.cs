@@ -31,18 +31,7 @@ namespace Alluvial
 
         public async Task<IStreamBatch<TData>> NextBatch() => await stream.Fetch(this);
 
-        private dynamic BatchSizeDescription
-        {
-            get
-            {
-                if (BatchSize == null)
-                {
-                    return "all";
-                }
-
-                return BatchSize.Value;
-            }
-        }
+        private dynamic BatchSizeDescription => BatchSize ?? (dynamic) "all";
 
         public override string ToString()
         {

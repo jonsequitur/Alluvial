@@ -34,15 +34,10 @@ namespace Alluvial
 
         public string Id => id;
 
-        public async Task<IStream<TData, TCursor>> GetStream(IStreamQueryPartition<TPartition> partition)
-        {
-            return await getStream(partition);
-        }
+        public async Task<IStream<TData, TCursor>> GetStream(IStreamQueryPartition<TPartition> partition) =>
+            await getStream(partition);
 
-        private string PartitionIdFor(IStreamQueryPartition<TPartition> partition)
-        {
-            return $"{id}/{partition}";
-        }
+        private string PartitionIdFor(IStreamQueryPartition<TPartition> partition) => $"{id}/{partition}";
 
         private class StreamPartition : AnonymousStreamBase<TData, TCursor>
         {

@@ -10,7 +10,7 @@ namespace Alluvial.Distributors.Sql
     /// <summary>
     /// Distributes time-bound work across machines using leases stored in a SQL database.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The type of of the distributed resource.</typeparam>
     public class SqlBrokeredDistributor<T> : DistributorBase<T>
     {
         private readonly SqlBrokeredDistributorDatabase database;
@@ -62,7 +62,7 @@ namespace Alluvial.Distributors.Sql
                 var cmd = connection.CreateCommand();
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.CommandText = @"Alluvial.AcquireLease";
-                cmd.Parameters.AddWithValue(@"@waitIntervalMilliseconds", waitInterval.TotalMilliseconds);
+                cmd.Parameters.AddWithValue(@"@waitIntervalMilliseconds", WaitInterval.TotalMilliseconds);
                 cmd.Parameters.AddWithValue(@"@leaseDurationMilliseconds", defaultLeaseDuration.TotalMilliseconds);
                 cmd.Parameters.AddWithValue(@"@pool", pool);
 
@@ -75,7 +75,7 @@ namespace Alluvial.Distributors.Sql
                         var leaseLastReleased = await reader.GetFieldValueAsync<dynamic>(3);
                         var token = await reader.GetFieldValueAsync<dynamic>(5);
 
-                        var resource = this.leasables.Single(l => l.Name == resourceName);
+                        var resource = Leasables.Single(l => l.Name == resourceName);
 
                         resource.LeaseLastGranted = leaseLastGranted is DBNull
                             ? DateTimeOffset.MinValue

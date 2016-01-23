@@ -21,10 +21,9 @@ namespace Alluvial
         /// <param name="where">A predicate that evaluates whether a given value falls within the partition.</param>
         /// <param name="named">The name of the partition.</param>
         public static IStreamQueryPartition<TPartition> Where<TPartition>(
-            Func<TPartition, bool> where, string named)
-        {
-            return new StreamQueryPartition<TPartition>(@where, named);
-        }
+            Func<TPartition, bool> where,
+            string named) =>
+                new StreamQueryPartition<TPartition>(@where, named);
 
         /// <summary>
         /// Determines whether a value is within the specified partition.
@@ -33,10 +32,9 @@ namespace Alluvial
         /// <param name="value">The value.</param>
         /// <param name="partition">The partition.</param>
         public static bool IsWithinPartition<TPartition>(
-            this TPartition value, IStreamQueryPartition<TPartition> partition)
-        {
-            return partition.Contains(value);
-        }
+            this TPartition value,
+            IStreamQueryPartition<TPartition> partition) =>
+                partition.Contains(value);
 
         /// <summary>
         /// Filters a queryable to the data within a specified range partition.
@@ -118,19 +116,15 @@ namespace Alluvial
         /// </summary>
         /// <typeparam name="TPartition">The type of the partition.</typeparam>
         /// <param name="value">The value.</param>
-        public static IStreamQueryPartition<TPartition> ByValue<TPartition>(TPartition value)
-        {
-            return new StreamQueryValuePartition<TPartition>(value);
-        }
+        public static IStreamQueryPartition<TPartition> ByValue<TPartition>(TPartition value) =>
+            new StreamQueryValuePartition<TPartition>(value);
 
         /// <summary>
         /// Creates a partition containing the full range of guids.
         /// </summary>
-        public static IStreamQueryRangePartition<Guid> AllGuids()
-        {
-            return ByRange(Guid.Empty,
-                           Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff"));
-        } 
+        public static IStreamQueryRangePartition<Guid> AllGuids() =>
+            ByRange(Guid.Empty,
+                    Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff"));
 
         /// <summary>
         /// Splits a query partition into several smaller, non-overlapping, gapless partitions.

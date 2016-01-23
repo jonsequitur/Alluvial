@@ -63,14 +63,14 @@ namespace Alluvial
             int? batchSize = null)
         {
             var upstreamCatchup = new SingleStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor>(
-                stream, 
+                stream,
                 batchSize: batchSize);
 
             return new MultiStreamCatchup<TData, TUpstreamCursor, TDownstreamCursor>(
                 upstreamCatchup,
                 manageUpstreamCursor);
         }
-        
+
         /// <summary>
         /// Creates a multiple-stream catchup.
         /// </summary>
@@ -86,7 +86,7 @@ namespace Alluvial
             int? batchSize = null)
         {
             var upstreamCatchup = new SingleStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor>(
-                stream, 
+                stream,
                 batchSize: batchSize);
 
             return new MultiStreamCatchup<TData, TUpstreamCursor, TDownstreamCursor>(
@@ -103,16 +103,14 @@ namespace Alluvial
             IEnumerable<IStreamQueryPartition<TPartition>> partitions,
             int? batchSize = null,
             FetchAndSave<ICursor<TCursor>> fetchAndSavePartitionCursor = null,
-            IDistributor<IStreamQueryPartition<TPartition>> distributor = null)
-        {
-            return new DistributedSingleStreamCatchup<TData, TCursor, TPartition>(
-                streams,
-                partitions,
-                batchSize,
-                fetchAndSavePartitionCursor,
-                distributor);
-        }
-        
+            IDistributor<IStreamQueryPartition<TPartition>> distributor = null) =>
+                new DistributedSingleStreamCatchup<TData, TCursor, TPartition>(
+                    streams,
+                    partitions,
+                    batchSize,
+                    fetchAndSavePartitionCursor,
+                    distributor);
+
         /// <summary>
         /// Distributes a stream catchup the among one or more partitions using a specified distributor.
         /// </summary>
@@ -122,15 +120,13 @@ namespace Alluvial
             IEnumerable<IStreamQueryPartition<TPartition>> partitions,
             int? batchSize = null,
             FetchAndSave<ICursor<TUpstreamCursor>> fetchAndSavePartitionCursor = null,
-            IDistributor<IStreamQueryPartition<TPartition>> distributor = null)
-        {
-            return new DistributedMultiStreamCatchup<TData, TUpstreamCursor, TDownstreamCursor, TPartition>(
-                streams,
-                partitions,
-                batchSize,
-                fetchAndSavePartitionCursor,
-                distributor);
-        }
+            IDistributor<IStreamQueryPartition<TPartition>> distributor = null) =>
+                new DistributedMultiStreamCatchup<TData, TUpstreamCursor, TDownstreamCursor, TPartition>(
+                    streams,
+                    partitions,
+                    batchSize,
+                    fetchAndSavePartitionCursor,
+                    distributor);
 
         /// <summary>
         /// Runs the catchup query until it reaches an empty batch, then stops.
@@ -140,9 +136,7 @@ namespace Alluvial
             ICursor<TCursor> cursor;
             var counter = new Counter<TData>();
 
-#pragma warning disable 1998
-            using (catchup.Subscribe(async (_, batch) => counter.Count(batch), NoCursor(counter)))
-#pragma warning restore 1998
+            using (catchup.Subscribe((_, batch) => counter.Count(batch).CompletedTask(), NoCursor(counter)))
             {
                 int countBefore;
                 do
@@ -194,11 +188,9 @@ namespace Alluvial
         public static IDisposable Subscribe<TProjection, TData, TCursor>(
             this IStreamCatchup<TData, TCursor> catchup,
             IStreamAggregator<TProjection, TData> aggregator,
-            IProjectionStore<string, TProjection> projectionStore = null)
-        {
-            return catchup.Subscribe(aggregator,
-                                     projectionStore.AsHandler());
-        }
+            IProjectionStore<string, TProjection> projectionStore = null) =>
+                catchup.Subscribe(aggregator,
+                                  projectionStore.AsHandler());
 
         /// <summary>
         /// Subscribes the specified aggregator to a catchup.
@@ -215,11 +207,9 @@ namespace Alluvial
         public static IDisposable Subscribe<TProjection, TData, TCursor>(
             this IStreamCatchup<TData, TCursor> catchup,
             AggregateAsync<TProjection, TData> aggregate,
-            IProjectionStore<string, TProjection> projectionStore = null)
-        {
-            return catchup.Subscribe(Aggregator.Create(aggregate),
-                                     projectionStore.AsHandler());
-        }
+            IProjectionStore<string, TProjection> projectionStore = null) =>
+                catchup.Subscribe(Aggregator.Create(aggregate),
+                                  projectionStore.AsHandler());
 
         /// <summary>
         /// Subscribes the specified aggregator to a catchup.
@@ -238,10 +228,8 @@ namespace Alluvial
             this IStreamCatchup<TData, TCursor> catchup,
             AggregateAsync<TProjection, TData> aggregate,
             FetchAndSave<TProjection> manage,
-            HandleAggregatorError<TProjection> onError = null)
-        {
-            return catchup.Subscribe(Aggregator.Create(aggregate), manage, onError);
-        }
+            HandleAggregatorError<TProjection> onError = null) =>
+                catchup.Subscribe(Aggregator.Create(aggregate), manage, onError);
 
         /// <summary>
         /// Subscribes the specified aggregator to a catchup.
@@ -258,10 +246,8 @@ namespace Alluvial
             this IStreamCatchup<TData, TCursor> catchup,
             IStreamAggregator<TProjection, TData> aggregator,
             FetchAndSave<TProjection> manage,
-            HandleAggregatorError<TProjection> onError = null)
-        {
-            return catchup.SubscribeAggregator(aggregator, manage, onError);
-        }
+            HandleAggregatorError<TProjection> onError = null) =>
+                catchup.SubscribeAggregator(aggregator, manage, onError);
 
         /// <summary>
         /// Subscribes the specified aggregator to a catchup.

@@ -19,10 +19,8 @@ namespace Alluvial
         /// <returns></returns>
         public static IProjectionStore<TKey, TProjection> Create<TKey, TProjection>(
             Func<TKey, Task<TProjection>> get,
-            Func<TKey, TProjection, Task> put)
-        {
-            return new AnonymousProjectionStore<TKey, TProjection>(get, put);
-        }
+            Func<TKey, TProjection, Task> put) =>
+                new AnonymousProjectionStore<TKey, TProjection>(get, put);
 
         /// <summary>
         /// Traces calls to a projection store instance.
@@ -58,22 +56,13 @@ namespace Alluvial
                 });
         }
 
-        private static void TracePut<TKey, TProjection>(TKey key, TProjection projection)
-        {
+        private static void TracePut<TKey, TProjection>(TKey key, TProjection projection) =>
             trace.WriteLine($"[Store.Put] {projection} for stream {key}");
-        }
 
-        private static void TraceGet<TKey, TProjection>(TKey key, TProjection projection)
-        {
-            if (projection == null)
-            {
-                trace.WriteLine($"[Store.Get] no projection for stream {key}");
-            }
-            else
-            {
-                trace.WriteLine($"[Store.Get] {projection} for stream {key}");
-            }
-        }
+        private static void TraceGet<TKey, TProjection>(TKey key, TProjection projection) =>
+            trace.WriteLine(projection == null
+                                ? $"[Store.Get] no projection for stream {key}"
+                                : $"[Store.Get] {projection} for stream {key}");
 
         public static FetchAndSave<TProjection> AsHandler<TProjection>(this IProjectionStore<string, TProjection> store)
         {

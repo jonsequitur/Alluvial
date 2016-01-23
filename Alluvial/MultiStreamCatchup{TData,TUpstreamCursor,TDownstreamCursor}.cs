@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Threading.Tasks;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Alluvial
 {
@@ -78,10 +78,7 @@ namespace Alluvial
         /// <returns>
         /// The updated cursor position after the batch is consumed.
         /// </returns>
-        public override async Task<ICursor<TUpstreamCursor>> RunSingleBatch()
-        {
-            return await upstreamCatchup.RunSingleBatch();
-        }
+        public override async Task<ICursor<TUpstreamCursor>> RunSingleBatch() => await upstreamCatchup.RunSingleBatch();
 
         /// <summary>
         /// Returns a <see cref="System.String" /> that represents this instance.
@@ -89,9 +86,7 @@ namespace Alluvial
         /// <returns>
         /// A <see cref="System.String" /> that represents this instance.
         /// </returns>
-        public override string ToString()
-        {
-            return $"{catchupTypeDescription}->{upstreamCatchup}->{string.Join(" + ", aggregatorSubscriptions.Select(s => s.Value.ProjectionType.ReadableName()))}";
-        }
+        public override string ToString() =>
+            $"{catchupTypeDescription}->{upstreamCatchup}->{string.Join(" + ", aggregatorSubscriptions.Select(s => s.Value.ProjectionType.ReadableName()))}";
     }
 }

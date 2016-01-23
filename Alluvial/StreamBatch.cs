@@ -71,9 +71,7 @@ namespace Alluvial
         /// <param name="cursor">The cursor.</param>
         public static IStreamBatch<TData> Prune<TData>(
             this IStreamBatch<TData> batch,
-            ICursor<TData> cursor)
-        {
-            return Create(batch.Where(x => !cursor.HasReached(x)), cursor);
-        }
+            ICursor<TData> cursor) =>
+                Create(batch.Where(x => !cursor.HasReached(x)), cursor);
     }
 }

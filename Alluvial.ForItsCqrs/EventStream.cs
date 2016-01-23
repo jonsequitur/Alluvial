@@ -62,40 +62,40 @@ namespace Alluvial.Streams.ItsDomainSql
 
         public static IPartitionedStream<ScheduledCommand, long, Guid> ScheduledCommandStream(string clockName = "default") =>
             Stream.PartitionedByRange<ScheduledCommand, long, Guid>(
-            async (q, partition) =>
-            {
-                using (var db = new CommandSchedulerDbContext())
+                async (q, partition) =>
                 {
-                    var batchCount = q.BatchSize ?? 5;
-                    var query = db.ScheduledCommands
-                                  .Due()
-                                  .Where(c => c.Clock.Name == clockName)
-                                  .WithinPartition(e => e.AggregateId, partition)
-                                  .Take(() => batchCount);
-                    var scheduledCommands = await query.ToArrayAsync();
-                    return scheduledCommands;
-                }
-            },
-            advanceCursor: (q, b) =>
-            {
-                q.Cursor.AdvanceTo(DateTimeOffset.UtcNow.Ticks);
+                    using (var db = new CommandSchedulerDbContext())
+                    {
+                        var batchCount = q.BatchSize ?? 5;
+                        var query = db.ScheduledCommands
+                                      .Due()
+                                      .Where(c => c.Clock.Name == clockName)
+                                      .WithinPartition(e => e.AggregateId, partition)
+                                      .Take(() => batchCount);
+                        var scheduledCommands = await query.ToArrayAsync();
+                        return scheduledCommands;
+                    }
+                },
+                advanceCursor: (q, b) =>
+                {
+                    q.Cursor.AdvanceTo(DateTimeOffset.UtcNow.Ticks);
 
-                // advance the cursor to the latest due time
-                //                    var latestDuetime = b
-                //                        .Select(c => c.DueTime)
-                //                        .Where(d => d != null)
-                //                        .Select(d => d.Value)
-                //                        .OrderBy(d => d)
-                //                        .LastOrDefault();
-                //                    if (latestDuetime != default(DateTimeOffset))
-                //                    {
-                //                        q.Cursor.AdvanceTo(latestDuetime);
-                //                    }
-                //                    else
-                //                    {
-                //                        q.Cursor.AdvanceTo(DateTimeOffset.UtcNow);
-                //                    }
-            });
+                    // advance the cursor to the latest due time
+                    //                    var latestDuetime = b
+                    //                        .Select(c => c.DueTime)
+                    //                        .Where(d => d != null)
+                    //                        .Select(d => d.Value)
+                    //                        .OrderBy(d => d)
+                    //                        .LastOrDefault();
+                    //                    if (latestDuetime != default(DateTimeOffset))
+                    //                    {
+                    //                        q.Cursor.AdvanceTo(latestDuetime);
+                    //                    }
+                    //                    else
+                    //                    {
+                    //                        q.Cursor.AdvanceTo(DateTimeOffset.UtcNow);
+                    //                    }
+                });
 
         private static IStream<EventStreamChange, long> AllChanges(
             string streamId,
@@ -159,9 +159,8 @@ namespace Alluvial.Streams.ItsDomainSql
                 .ToArray();
 
             var eventStreamChanges = fetchedFromEventStore
-                .Select(e => new EventStreamChange
+                .Select(e => new EventStreamChange(e.Key)
                 {
-                    AggregateId = e.Key,
                     AggregateType = e.FirstOrDefault()?.StreamName,
                     AbsoluteSequenceNumber = e.OrderByDescending(ee => ee.Id).FirstOrDefault()?.Id ?? 0
                 })
@@ -186,18 +185,16 @@ namespace Alluvial.Streams.ItsDomainSql
             long fromCursor,
             long toCursor)
         {
-            {
-                var query = storableEvents()
-                    .Where(e => e.AggregateId == aggregateId)
-                    .Where(e => e.Id >= fromCursor && e.Id <= toCursor);
+            var query = storableEvents()
+                .Where(e => e.AggregateId == aggregateId)
+                .Where(e => e.Id >= fromCursor && e.Id <= toCursor);
 
-                query = query.OrderBy(e => e.Id)
-                             .Take(batchSize ?? 1000);
+            query = query.OrderBy(e => e.Id)
+                         .Take(batchSize ?? 1000);
 
-                var events = query.ToArray();
+            var events = query.ToArray();
 
-                return events.Select(e => e.ToDomainEvent());
-            }
+            return events.Select(e => e.ToDomainEvent());
         }
     }
 }

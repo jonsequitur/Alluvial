@@ -12,18 +12,14 @@ namespace Alluvial
         /// <summary>
         /// Creates a new cursor.
         /// </summary>
-        public static ICursor<TCursor> New<TCursor>(TCursor position = default(TCursor))
-        {
-            return new Cursor<TCursor>(position);
-        }
+        public static ICursor<TCursor> New<TCursor>(TCursor position = default(TCursor)) =>
+            new Cursor<TCursor>(position);
 
         /// <summary>
         /// Creates a non-movable cursor based on the position of another cursor.
         /// </summary>
-        public static ICursor<T> ReadOnly<T>(this ICursor<T> cursor)
-        {
-            return new ReadOnlyCursor<T>(cursor);
-        }
+        public static ICursor<T> ReadOnly<T>(this ICursor<T> cursor) =>
+            new ReadOnlyCursor<T>(cursor);
 
         internal static ICursor<TCursor> MinOrDefault<TCursor>(this IEnumerable<ICursor<TCursor>> cursors)
         {
@@ -45,10 +41,8 @@ namespace Alluvial
             return firstOrDefault;
         }
 
-        internal static ICursor<TCursor> Clone<TCursor>(this ICursor<TCursor> cursor)
-        {
-            return New(cursor.Position);
-        }
+        internal static ICursor<TCursor> Clone<TCursor>(this ICursor<TCursor> cursor) =>
+            New(cursor.Position);
 
         /// <summary>
         /// Determines whether the specified comparison has reached a specific point.
@@ -56,11 +50,9 @@ namespace Alluvial
         /// <param name="comparison">The result of a call to <see cref="IComparable.CompareTo" />, comparing the cursor to .</param>
         /// <param name="ascending"></param>
         /// <returns></returns>
-        public static bool HasReached(int comparison, bool ascending)
-        {
-            return ascending
+        public static bool HasReached(int comparison, bool ascending) =>
+            @ascending
                 ? comparison >= 0
                 : comparison <= 0;
-        }
     }
 }

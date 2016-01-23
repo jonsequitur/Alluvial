@@ -40,10 +40,8 @@ namespace Alluvial
         /// <returns>
         /// The updated cursor position after the batch is consumed.
         /// </returns>
-        public override async Task<ICursor<TCursor>> RunSingleBatch()
-        {
-            return await RunSingleBatch(stream, true, initialCursor);
-        }
+        public override async Task<ICursor<TCursor>> RunSingleBatch() =>
+            await RunSingleBatch(stream, true, initialCursor);
 
         /// <summary>
         /// Returns a <see cref="System.String" /> that represents this instance.
@@ -51,9 +49,7 @@ namespace Alluvial
         /// <returns>
         /// A <see cref="System.String" /> that represents this instance.
         /// </returns>
-        public override string ToString()
-        {
-            return $"{catchupTypeDescription}->{stream.Id}->{string.Join(" + ", aggregatorSubscriptions.Select(s => s.Value.ProjectionType.ReadableName()))}";
-        }
+        public override string ToString() =>
+            $"{catchupTypeDescription}->{stream.Id}->{string.Join(" + ", aggregatorSubscriptions.Select(s => s.Value.ProjectionType.ReadableName()))}";
     }
 }

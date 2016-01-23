@@ -8,8 +8,9 @@ namespace Alluvial
         private readonly Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor;
         protected Func<ICursor<TCursor>> newCursor;
 
-        protected AnonymousStreamBase(Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor,
-                                      Func<ICursor<TCursor>> newCursor = null)
+        protected AnonymousStreamBase(
+            Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor,
+            Func<ICursor<TCursor>> newCursor = null)
         {
             this.newCursor = newCursor ?? (() => Cursor.New<TCursor>());
 
@@ -19,21 +20,13 @@ namespace Alluvial
 
         public abstract string Id { get; }
 
-        public ICursor<TCursor> NewCursor()
-        {
-            return newCursor();
-        }
+        public ICursor<TCursor> NewCursor() => newCursor();
 
-        protected void AdvanceCursor(IStreamQuery<TCursor> query, IStreamBatch<TData> batch)
-        {
+        protected void AdvanceCursor(IStreamQuery<TCursor> query, IStreamBatch<TData> batch) =>
             advanceCursor(query, batch);
-        }
 
         public abstract Task<IStreamBatch<TData>> Fetch(IStreamQuery<TCursor> query);
 
-        public override string ToString()
-        {
-            return $"stream:{Id}";
-        }
+        public override string ToString() => $"stream:{Id}";
     }
 }

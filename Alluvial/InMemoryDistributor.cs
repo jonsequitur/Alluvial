@@ -40,8 +40,10 @@ namespace Alluvial
         /// <returns></returns>
         protected override async Task<Lease<T>> AcquireLease()
         {
-            var resource = leasables
-                .Where(l => l.LeaseLastReleased + waitInterval < DateTimeOffset.UtcNow)
+            await Task.Yield();
+
+            var resource = Leasables
+                .Where(l => l.LeaseLastReleased + WaitInterval < DateTimeOffset.UtcNow)
                 .OrderBy(l => l.LeaseLastReleased)
                 .FirstOrDefault(l => !workInProgress.ContainsKey(l));
 

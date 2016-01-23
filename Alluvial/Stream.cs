@@ -42,30 +42,28 @@ namespace Alluvial
             }
 
             return Create(query: query => source.SkipWhile(x =>
-                                                               query.Cursor.HasReached(cursorPosition(x)))
+                                                           query.Cursor.HasReached(cursorPosition(x)))
                                                 .Take(query.BatchSize ?? StreamBatch.MaxSize),
-                id: id,
-                advanceCursor: (q, b) =>
-                {
-                    var last = b.LastOrDefault();
-                    if (last != null)
-                    {
-                        q.Cursor.AdvanceTo(cursorPosition(last));
-                    }
-                },
-                newCursor: () => Cursor.New<TCursor>(), source: source);
+                          id: id,
+                          advanceCursor: (q, b) =>
+                          {
+                              var last = b.LastOrDefault();
+                              if (last != null)
+                              {
+                                  q.Cursor.AdvanceTo(cursorPosition(last));
+                              }
+                          },
+                          newCursor: () => Cursor.New<TCursor>(), source: source);
         }
 
         /// <summary>
         /// Creates a stream based on an enumerable sequence, whose cursor is an integer.
         /// </summary>
         public static IStream<TData, int> AsSequentialStream<TData>(
-            this IEnumerable<TData> source)
-        {
-            return Create(query => source.Skip(query.Cursor.Position)
-                                         .Take(query.BatchSize ?? StreamBatch.MaxSize),
-                          $"{typeof (TData)}({source.GetHashCode()})", newCursor: () => Cursor.New<int>());
-        }
+            this IEnumerable<TData> source) =>
+                Create(query => source.Skip(query.Cursor.Position)
+                                      .Take(query.BatchSize ?? StreamBatch.MaxSize),
+                       $"{typeof (TData)}({source.GetHashCode()})", newCursor: () => Cursor.New<int>());
 
         /// <summary>
         /// Creates a stream based on a queryable data source.
@@ -78,13 +76,11 @@ namespace Alluvial
         public static IStream<TData, TCursor> Create<TData, TCursor>(
             Func<IStreamQuery<TCursor>, Task<IEnumerable<TData>>> query,
             Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor = null,
-            Func<ICursor<TCursor>> newCursor = null)
-        {
-            return Create(null,
-                          query,
-                          advanceCursor,
-                          newCursor);
-        }
+            Func<ICursor<TCursor>> newCursor = null) =>
+                Create(null,
+                       query,
+                       advanceCursor,
+                       newCursor);
 
         /// <summary>
         /// Creates a stream based on a queryable data source.
@@ -100,19 +96,17 @@ namespace Alluvial
             string id,
             Func<IStreamQuery<TCursor>, Task<IEnumerable<TData>>> query,
             Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor = null,
-            Func<ICursor<TCursor>> newCursor = null)
-        {
-            return new AnonymousStream<TData, TCursor>(
-                id,
-                async q =>
-                {
-                    var cursor = q.Cursor.Clone();
-                    var data = await query(q);
-                    return data as IStreamBatch<TData> ?? StreamBatch.Create(data, cursor);
-                },
-                advanceCursor,
-                newCursor);
-        }
+            Func<ICursor<TCursor>> newCursor = null) =>
+                new AnonymousStream<TData, TCursor>(
+                    id,
+                    async q =>
+                    {
+                        var cursor = q.Cursor.Clone();
+                        var data = await query(q);
+                        return data as IStreamBatch<TData> ?? StreamBatch.Create(data, cursor);
+                    },
+                    advanceCursor,
+                    newCursor);
 
         /// <summary>
         /// Creates a stream based on a queryable data source.
@@ -125,13 +119,11 @@ namespace Alluvial
         public static IStream<TData, TCursor> Create<TData, TCursor>(
             Func<IStreamQuery<TCursor>, IEnumerable<TData>> query,
             Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor,
-            Func<ICursor<TCursor>> newCursor = null)
-        {
-            return Create(query,
-                          null,
-                          advanceCursor,
-                          newCursor);
-        }
+            Func<ICursor<TCursor>> newCursor = null) =>
+                Create(query,
+                       null,
+                       advanceCursor,
+                       newCursor);
 
         /// <summary>
         /// Creates a stream based on a queryable data source where the stream data and cursor are of the same type.
@@ -143,9 +135,7 @@ namespace Alluvial
         public static IStream<TData, TData> Create<TData>(
             Func<IStreamQuery<TData>, IEnumerable<TData>> query,
             Action<IStreamQuery<TData>, IStreamBatch<TData>> advanceCursor = null,
-            Func<ICursor<TData>> newCursor = null)
-        {
-            return Create<TData, TData>(
+            Func<ICursor<TData>> newCursor = null) => Create<TData, TData>(
                 query,
                 advanceCursor ?? ((q, batch) =>
                 {
@@ -155,21 +145,18 @@ namespace Alluvial
                         q.Cursor.AdvanceTo(last);
                     }
                 }), newCursor);
-        }
 
         private static IStream<TData, TCursor> Create<TData, TCursor>(
-            Func<IStreamQuery<TCursor>, IEnumerable<TData>> query, 
+            Func<IStreamQuery<TCursor>, IEnumerable<TData>> query,
             string id = null,
             Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor = null,
-            Func<ICursor<TCursor>> newCursor = null, IEnumerable<TData> source = null)
-        {
-            return new AnonymousStream<TData, TCursor>(
+            Func<ICursor<TCursor>> newCursor = null,
+            IEnumerable<TData> source = null) => new AnonymousStream<TData, TCursor>(
                 id,
-                async q => StreamBatch.Create(query(q), q.Cursor),
+                q => StreamBatch.Create(query(q), q.Cursor).CompletedTask(),
                 advanceCursor,
                 newCursor,
                 source);
-        }
 
         /// <summary>
         /// Maps data from a stream into a new form.
@@ -177,9 +164,7 @@ namespace Alluvial
         public static IStream<TTo, TCursor> Map<TFrom, TTo, TCursor>(
             this IStream<TFrom, TCursor> source,
             Func<IEnumerable<TFrom>, IEnumerable<TTo>> map,
-            string id = null)
-        {
-            return Create<TTo, TCursor>(
+            string id = null) => Create<TTo, TCursor>(
                 id: id ?? $"{source.Id}->Map(d:{typeof (TTo).ReadableName()})",
                 query: async q =>
                 {
@@ -200,7 +185,6 @@ namespace Alluvial
                     // don't advance the cursor in the map operation, since sourceStream.Fetch will already have done it
                 },
                 newCursor: source.NewCursor);
-        }
 
         /// <summary>
         /// Maps data from a stream into a new form.
@@ -208,16 +192,14 @@ namespace Alluvial
         public static IPartitionedStream<TTo, TCursor, TPartition> Map<TFrom, TTo, TCursor, TPartition>(
             this IPartitionedStream<TFrom, TCursor, TPartition> source,
             Func<IEnumerable<TFrom>, IEnumerable<TTo>> map,
-            string id = null)
-        {
-            return new AnonymousPartitionedStream<TTo, TCursor, TPartition>(
-                id: id,
-                getStream: async partition =>
-                {
-                    var stream = await source.GetStream(partition);
-                    return stream.Map(map);
-                });
-        }
+            string id = null) =>
+                new AnonymousPartitionedStream<TTo, TCursor, TPartition>(
+                    id: id,
+                    getStream: async partition =>
+                    {
+                        var stream = await source.GetStream(partition);
+                        return stream.Map(map);
+                    });
 
         /// <summary>
         /// Splits a stream into many streams that can be independently caught up.
@@ -230,67 +212,63 @@ namespace Alluvial
         /// <returns></returns>
         public static IStream<TDownstream, TUpstreamCursor> IntoMany<TUpstream, TDownstream, TUpstreamCursor>(
             this IStream<TUpstream, TUpstreamCursor> upstream,
-            QueryDownstream<TUpstream, TDownstream, TUpstreamCursor> queryDownstream)
-        {
-            return Create(
-                id: $"{upstream.Id}->IntoMany(d:{typeof (TDownstream).ReadableName()})",
-                query: async upstreamQuery =>
-                {
-                    var upstreamBatch = await upstream.Fetch(
-                        upstream.CreateQuery(upstreamQuery.Cursor,
-                                             upstreamQuery.BatchSize));
+            QueryDownstream<TUpstream, TDownstream, TUpstreamCursor> queryDownstream) =>
+                Create(
+                    id: $"{upstream.Id}->IntoMany(d:{typeof (TDownstream).ReadableName()})",
+                    query: async upstreamQuery =>
+                    {
+                        var upstreamBatch = await upstream.Fetch(
+                            upstream.CreateQuery(upstreamQuery.Cursor,
+                                                 upstreamQuery.BatchSize));
 
-                    var streams = upstreamBatch.Select(
-                        async x =>
-                        {
-                            TUpstreamCursor startingCursor = upstreamBatch.StartsAtCursorPosition;
+                        var streams = upstreamBatch.Select(
+                            async x =>
+                            {
+                                TUpstreamCursor startingCursor = upstreamBatch.StartsAtCursorPosition;
 
-                            return await queryDownstream(x,
-                                                         startingCursor,
-                                                         upstreamQuery.Cursor.Position);
-                        });
+                                return await queryDownstream(x,
+                                                             startingCursor,
+                                                             upstreamQuery.Cursor.Position);
+                            });
 
-                    return await streams.AwaitAll();
-                },
-                advanceCursor: (query, batch) =>
-                {
-                    // we're passing the cursor through to the partitionedStream query, so we don't want downstream queries to overwrite it
-                },
-                newCursor: upstream.NewCursor);
-        }
-        
+                        return await streams.AwaitAll();
+                    },
+                    advanceCursor: (query, batch) =>
+                    {
+                        // we're passing the cursor through to the partitionedStream query, so we don't want downstream queries to overwrite it
+                    },
+                    newCursor: upstream.NewCursor);
+
         public static IPartitionedStream<TDownstream, TUpstreamCursor, TPartition> IntoMany<TUpstream, TDownstream, TUpstreamCursor, TPartition>(
             this IPartitionedStream<TUpstream, TUpstreamCursor, TPartition> partitionedStream,
-            QueryDownstream<TUpstream, TDownstream, TUpstreamCursor, TPartition> queryDownstream)
-        {
-            return Partitioned<TDownstream, TUpstreamCursor, TPartition>(
-                id: $"{partitionedStream.Id}->IntoMany(d:{typeof (TDownstream).ReadableName()})",
-                query: async (upstreamQuery, partition) =>
-                {
-                    var upstreamStream = await partitionedStream.GetStream(partition);
+            QueryDownstream<TUpstream, TDownstream, TUpstreamCursor, TPartition> queryDownstream) =>
+                Partitioned<TDownstream, TUpstreamCursor, TPartition>(
+                    id: $"{partitionedStream.Id}->IntoMany(d:{typeof (TDownstream).ReadableName()})",
+                    query: async (upstreamQuery, partition) =>
+                    {
+                        var upstreamStream = await partitionedStream.GetStream(partition);
 
-                    var upstreamBatch = await upstreamStream.Fetch(
-                        upstreamStream.CreateQuery(upstreamQuery.Cursor,
-                                             upstreamQuery.BatchSize));
+                        var upstreamBatch = await upstreamStream.Fetch(
+                            upstreamStream.CreateQuery(upstreamQuery.Cursor,
+                                                       upstreamQuery.BatchSize));
 
-                    var streams = upstreamBatch.Select(
-                        async x =>
-                        {
-                            TUpstreamCursor startingCursor = upstreamBatch.StartsAtCursorPosition;
+                        var streams = upstreamBatch.Select(
+                            async x =>
+                            {
+                                TUpstreamCursor startingCursor = upstreamBatch.StartsAtCursorPosition;
 
-                            return await queryDownstream(x,
-                                                         startingCursor,
-                                                         upstreamQuery.Cursor.Position,
-                                                         partition);
-                        });
+                                return await queryDownstream(x,
+                                                             startingCursor,
+                                                             upstreamQuery.Cursor.Position,
+                                                             partition);
+                            });
 
-                    return await streams.AwaitAll();
-                },
-                advanceCursor: (query, batch) =>
-                {
-                    // we're passing the cursor through to the partitionedStream query, so we don't want downstream queries to overwrite it
-                });
-        }
+                        return await streams.AwaitAll();
+                    },
+                    advanceCursor: (query, batch) =>
+                    {
+                        // we're passing the cursor through to the partitionedStream query, so we don't want downstream queries to overwrite it
+                    });
 
         /// <summary>
         /// Aggregates a single batch of data from a stream using the specified aggregator and projection.
@@ -338,19 +316,17 @@ namespace Alluvial
             Func<IStreamQuery<TCursor>, IStreamQueryPartition<TPartition>, Task<IEnumerable<TData>>> query,
             string id = null,
             Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor = null,
-            Func<ICursor<TCursor>> newCursor = null)
-        {
-            return new AnonymousPartitionedStream<TData, TCursor, TPartition>(
-                id: id,
-                fetch: async (q, partition) =>
-                {
-                    q.BatchSize = q.BatchSize ?? StreamBatch.MaxSize;
-                    var batch = await query(q, partition);
-                    return StreamBatch.Create(batch, q.Cursor);
-                },
-                advanceCursor: advanceCursor,
-                newCursor: newCursor);
-        }
+            Func<ICursor<TCursor>> newCursor = null) =>
+                new AnonymousPartitionedStream<TData, TCursor, TPartition>(
+                    id: id,
+                    fetch: async (q, partition) =>
+                    {
+                        q.BatchSize = q.BatchSize ?? StreamBatch.MaxSize;
+                        var batch = await query(q, partition);
+                        return StreamBatch.Create(batch, q.Cursor);
+                    },
+                    advanceCursor: advanceCursor,
+                    newCursor: newCursor);
 
         /// <summary>
         /// Creates a partitioned stream, partitioned by query ranges.
@@ -366,19 +342,17 @@ namespace Alluvial
             Func<IStreamQuery<TCursor>, IStreamQueryRangePartition<TPartition>, Task<IEnumerable<TData>>> query,
             string id = null,
             Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor = null,
-            Func<ICursor<TCursor>> newCursor = null)
-        {
-            return new AnonymousPartitionedStream<TData, TCursor, TPartition>(
-                id: id,
-                fetch: async (q, partition) =>
-                {
-                    q.BatchSize = q.BatchSize ?? StreamBatch.MaxSize;
-                    var batch = await query(q, (IStreamQueryRangePartition<TPartition>) partition);
-                    return StreamBatch.Create(batch, q.Cursor);
-                },
-                advanceCursor: advanceCursor,
-                newCursor: newCursor);
-        }
+            Func<ICursor<TCursor>> newCursor = null) =>
+                new AnonymousPartitionedStream<TData, TCursor, TPartition>(
+                    id: id,
+                    fetch: async (q, partition) =>
+                    {
+                        q.BatchSize = q.BatchSize ?? StreamBatch.MaxSize;
+                        var batch = await query(q, (IStreamQueryRangePartition<TPartition>) partition);
+                        return StreamBatch.Create(batch, q.Cursor);
+                    },
+                    advanceCursor: advanceCursor,
+                    newCursor: newCursor);
 
         /// <summary>
         /// Creates a partitioned stream.
@@ -394,19 +368,17 @@ namespace Alluvial
             Func<IStreamQuery<TCursor>, IStreamQueryValuePartition<TPartition>, Task<IEnumerable<TData>>> query,
             string id = null,
             Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor = null,
-            Func<ICursor<TCursor>> newCursor = null)
-        {
-            return new AnonymousPartitionedStream<TData, TCursor, TPartition>(
-                id: id,
-                fetch: async (q, partition) =>
-                {
-                    q.BatchSize = q.BatchSize ?? StreamBatch.MaxSize;
-                    var batch = await query(q, (IStreamQueryValuePartition<TPartition>) partition);
-                    return StreamBatch.Create(batch, q.Cursor);
-                },
-                advanceCursor: advanceCursor,
-                newCursor: newCursor);
-        }
+            Func<ICursor<TCursor>> newCursor = null) =>
+                new AnonymousPartitionedStream<TData, TCursor, TPartition>(
+                    id: id,
+                    fetch: async (q, partition) =>
+                    {
+                        q.BatchSize = q.BatchSize ?? StreamBatch.MaxSize;
+                        var batch = await query(q, (IStreamQueryValuePartition<TPartition>) partition);
+                        return StreamBatch.Create(batch, q.Cursor);
+                    },
+                    advanceCursor: advanceCursor,
+                    newCursor: newCursor);
 
         /// <summary>
         /// Traces queries sent and and data received on a stream.
@@ -449,11 +421,9 @@ namespace Alluvial
         }
 
         public static IPartitionedStream<TData, TCursor, TPartition> Trace<TData, TCursor, TPartition>(
-            this IPartitionedStream<TData, TCursor, TPartition> stream)
-        {
-            return new AnonymousPartitionedStream<TData, TCursor, TPartition>(
-                stream.Id,
-                async p => (await stream.GetStream(p)).Trace());
-        }
+            this IPartitionedStream<TData, TCursor, TPartition> stream) =>
+                new AnonymousPartitionedStream<TData, TCursor, TPartition>(
+                    stream.Id,
+                    async p => (await stream.GetStream(p)).Trace());
     }
 }
