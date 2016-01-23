@@ -11,7 +11,7 @@ namespace Alluvial
     public interface IDistributor<T> : IDisposable
     {
         /// <summary>
-        /// Called when a lease is available.
+        /// Specifies a delegate to be called when a lease is available.
         /// </summary>
         /// <param name="onReceive">The delegate called when work is available to be done.</param>
         /// <remarks>For the duration of the lease, the leased resource will not be available to any other instance.</remarks>

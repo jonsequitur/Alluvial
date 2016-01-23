@@ -44,24 +44,12 @@ namespace Alluvial
             onReceived(onReceive);
         }
 
-        public Task Start()
-        {
-            return start();
-        }
+        public Task Start() => start();
 
-        public Task<IEnumerable<T>> Distribute(int count)
-        {
-            return distribute(count);
-        }
+        public Task<IEnumerable<T>> Distribute(int count) => distribute(count);
 
-        public Task Stop()
-        {
-            return stop();
-        }
+        public Task Stop() => stop();
 
-        public void Dispose()
-        {
-            Stop();
-        }
+        public void Dispose() => Stop();
     }
 }

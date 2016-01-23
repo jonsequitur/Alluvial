@@ -9,13 +9,19 @@ using Alluvial.Distributors;
 
 namespace Alluvial
 {
+    /// <summary>
+    /// Provides common distributor functionality.
+    /// </summary>
+    /// <typeparam name="T">The type of the resources distributed by the distributor.</typeparam>
+    /// <seealso cref="Alluvial.IDistributor{T}" />
+    /// <seealso cref="System.Collections.Generic.IEnumerable{T}" />
     public abstract class DistributorBase<T> : IDistributor<T>, IEnumerable<T>
     {
         private Func<Lease<T>, Task> onReceive;
         private readonly int maxDegreesOfParallelism;
         private bool stopped;
-        protected readonly TimeSpan waitInterval;
-        protected readonly Leasable<T>[] leasables;
+        private readonly TimeSpan waitInterval;
+        private readonly Leasable<T>[] leasables;
         private int leasesHeld;
 
         protected DistributorBase(
@@ -36,15 +42,28 @@ namespace Alluvial
                 throw new ArgumentException("maxDegreesOfParallelism must be at least 1.");
             }
             this.leasables = leasables;
-            this.maxDegreesOfParallelism = Math.Min(maxDegreesOfParallelism, leasables.Count());
+            this.maxDegreesOfParallelism = Math.Min(maxDegreesOfParallelism, leasables.Length);
             this.waitInterval = waitInterval ?? TimeSpan.FromSeconds(.5);
         }
+
+        /// <summary>
+        /// Gets the interval to wait after a lease is released before which leased resource should not become available again.
+        /// </summary>
+        protected TimeSpan WaitInterval => waitInterval;
+
+        /// <summary>
+        /// Gets the leasables that the distributor can distribute.
+        /// </summary>
+        protected Leasable<T>[] Leasables => leasables;
 
         /// <summary>
         /// Called when a lease is available.
         /// </summary>
         /// <param name="onReceive">The delegate called when work is available to be done.</param>
-        /// <remarks>For the duration of the lease, the leased resource will not be available to any other instance.</remarks>
+        /// <exception cref="System.InvalidOperationException">OnReceive has already been called. It can only be called once per distributor.</exception>
+        /// <remarks>
+        /// For the duration of the lease, the leased resource will not be available to any other instance.
+        /// </remarks>
         public void OnReceive(Func<Lease<T>, Task> onReceive)
         {
             if (this.onReceive != null)
@@ -78,6 +97,9 @@ namespace Alluvial
             return acquired;
         }
 
+        /// <summary>
+        /// Starts distributing work.
+        /// </summary>
         public virtual async Task Start()
         {
             if (onReceive == null)
@@ -85,11 +107,15 @@ namespace Alluvial
                 throw new InvalidOperationException("You must call OnReceive before calling Start.");
             }
 
+            Parallel.For(0,
+                         maxDegreesOfParallelism,
+                         async _ => await TryRunOne(loop: true));
+
             for (var i = 0; i < maxDegreesOfParallelism; i++)
             {
 #pragma warning disable 4014
                 // deliberately fire and forget so that the tasks can run in parallel
-                TryRunOne(loop: true);
+             ;
 #pragma warning restore 4014
             }
         }

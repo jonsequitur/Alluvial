@@ -22,14 +22,8 @@ namespace Alluvial
             this.get = get;
         }
 
-        public async Task Put(TKey key, TProjection projection)
-        {
-            await put(key, projection);
-        }
+        public async Task Put(TKey key, TProjection projection) => await put(key, projection);
 
-        public async Task<TProjection> Get(TKey key)
-        {
-            return await @get(key);
-        }
+        public async Task<TProjection> Get(TKey key) => await @get(key);
     }
 }

@@ -18,9 +18,7 @@ namespace Alluvial
             this.aggregate = aggregate;
         }
 
-        public Task<TProjection> Aggregate(TProjection projection, IStreamBatch<TData> events)
-        {
-            return aggregate(projection, events);
-        }
+        public Task<TProjection> Aggregate(TProjection projection, IStreamBatch<TData> events) =>
+            aggregate(projection, events);
     }
 }

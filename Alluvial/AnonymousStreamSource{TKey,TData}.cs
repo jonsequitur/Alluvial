@@ -15,9 +15,6 @@ namespace Alluvial
             this.open = open;
         }
 
-        public IStream<TData, TCursor> Open(TKey key)
-        {
-            return open(key);
-        }
+        public IStream<TData, TCursor> Open(TKey key) => open(key);
     }
 }

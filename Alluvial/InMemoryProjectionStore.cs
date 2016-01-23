@@ -50,9 +50,6 @@ namespace Alluvial
 
         public IEnumerator<TProjection> GetEnumerator() => store.Values.GetEnumerator();
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }

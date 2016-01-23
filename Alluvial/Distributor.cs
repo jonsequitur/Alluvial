@@ -6,8 +6,20 @@ using Alluvial.Distributors;
 
 namespace Alluvial
 {
+    /// <summary>
+    /// Methods for working with distributors.
+    /// </summary>
     public static class Distributor
     {
+        /// <summary>
+        /// Creates an anonymous distributor.
+        /// </summary>
+        /// <typeparam name="T">The type of the distributed resource.</typeparam>
+        /// <param name="start">A delegate that when called starts the distributor.</param>
+        /// <param name="onReceive">A delegate to be called when a lease becomes available.</param>
+        /// <param name="stop">A delegate that when called stops the distributor.</param>
+        /// <param name="distribute">A delegate that when called distributes the specified number of leases.</param>
+        /// <returns>An anonymous distributor instance.</returns>
         public static IDistributor<T> Create<T>(
             Func<Task> start,
             Action<Func<Lease<T>, Task>> onReceive,
@@ -50,6 +62,10 @@ namespace Alluvial
                              .ToArray();
         }
 
+        /// <summary>
+        /// Wraps a distributor with tracing behaviors when leases are acquired and released.
+        /// </summary>
+        /// <exception cref="System.ArgumentNullException"></exception>
         public static IDistributor<T> Trace<T>(
             this IDistributor<T> distributor,
             Action<Lease<T>> onLeaseAcquired = null,

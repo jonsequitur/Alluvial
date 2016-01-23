@@ -12,7 +12,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("Alluvial")]
-[assembly: AssemblyCopyright("Copyright © 2015 Jon Sequeira")]
+[assembly: AssemblyCopyright("Copyright © 2016 Jon Sequeira")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 [assembly: ComVisible(false)]
@@ -23,7 +23,6 @@ using System.Runtime.InteropServices;
 [assembly: Guid("ae1d48e9-ffcd-4e5e-b052-70e5446dfa23")]
 
 [assembly: AssemblyVersion("0.1.0")]
-[assembly: AssemblyFileVersion("0.1.20-alpha")]
 [assembly: AssemblyInformationalVersion("0.1.20-alpha")]
 
 [assembly: InternalsVisibleTo("Alluvial.Tests")]

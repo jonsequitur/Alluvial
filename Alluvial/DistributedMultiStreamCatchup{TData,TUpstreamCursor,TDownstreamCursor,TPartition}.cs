@@ -29,8 +29,7 @@ namespace Alluvial
             partitionedStreams = partitionedStream;
         }
 
-        protected override async Task OnReceiveLease(Lease<IStreamQueryPartition<TPartition>> lease)
-        {
+        protected override async Task OnReceiveLease(Lease<IStreamQueryPartition<TPartition>> lease) =>
             await fetchAndSavePartitionCursor(
                 lease.ResourceName,
                 async cursor =>
@@ -47,6 +46,5 @@ namespace Alluvial
 
                     return await upstreamCatchup.RunUntilCaughtUp();
                 });
-        }
     }
 }

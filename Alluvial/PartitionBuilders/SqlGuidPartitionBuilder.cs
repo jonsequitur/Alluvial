@@ -46,10 +46,8 @@ namespace Alluvial.PartitionBuilders
             MaxUnsigned128BitBigInt = (MaxSigned128BitBigInt*2);
         }
 
-        public static IEnumerable<Guid> OrderBySqlServer(this IEnumerable<Guid> source)
-        {
-            return source.OrderBy(g => new SqlGuid(g));
-        }
+        public static IEnumerable<Guid> OrderBySqlServer(this IEnumerable<Guid> source) =>
+            source.OrderBy(g => new SqlGuid(g));
 
         /// <summary>
         /// Transforms a Guid into a naturally-sortable unsigned integer according to SQL server sort order

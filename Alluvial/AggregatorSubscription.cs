@@ -6,53 +6,51 @@ namespace Alluvial
     {
         public static FetchAndSave<TProjection> Catch<TProjection>(
             this FetchAndSave<TProjection> fetchAndSave,
-            HandleAggregatorError<TProjection> onError)
-        {
-            return async (id, aggregate) =>
-            {
-                Exception innerException = null;
-
-                try
+            HandleAggregatorError<TProjection> onError) =>
+                async (id, aggregate) =>
                 {
-                    await fetchAndSave(id, async projection =>
-                    {
-                        TProjection resultingProjection;
+                    Exception innerException = null;
 
-                        try
+                    try
+                    {
+                        await fetchAndSave(id, async projection =>
                         {
-                            resultingProjection = await aggregate(projection);
-                        }
-                        catch (Exception exception)
+                            TProjection resultingProjection;
+
+                            try
+                            {
+                                resultingProjection = await aggregate(projection);
+                            }
+                            catch (Exception exception)
+                            {
+                                var error = CheckErrorHandler(onError, exception, projection);
+
+                                if (!error.ShouldContinue)
+                                {
+                                    throw;
+                                }
+
+                                innerException = exception;
+
+                                return error.Projection;
+                            }
+
+                            return resultingProjection;
+                        });
+                    }
+                    catch (Exception exception)
+                    {
+                        if (exception != innerException)
                         {
-                            var error = CheckErrorHandler(onError, exception, projection);
+                            var error = CheckErrorHandler(onError, exception);
 
                             if (!error.ShouldContinue)
                             {
                                 throw;
                             }
-
-                            innerException = exception;
-
-                            return error.Projection;
-                        }
-
-                        return resultingProjection;
-                    });
-                }
-                catch (Exception exception)
-                {
-                    if (exception != innerException)
-                    {
-                        var error = CheckErrorHandler(onError, exception);
-
-                        if (!error.ShouldContinue)
-                        {
-                            throw;
                         }
                     }
-                }
-            };
-        }
+                };
 
         internal static StreamCatchupError<TProjection> CheckErrorHandler<TProjection>(
             this HandleAggregatorError<TProjection> onError,

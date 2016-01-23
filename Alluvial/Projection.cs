@@ -15,13 +15,11 @@ namespace Alluvial
         /// <param name="value">The value.</param>
         /// <param name="cursorPosition">The cursor position.</param>
         /// <returns></returns>
-        public static Projection<TValue, TCursor> Create<TValue, TCursor>(TValue value, TCursor cursorPosition)
-        {
-            return new Projection<TValue, TCursor>
+        public static Projection<TValue, TCursor> Create<TValue, TCursor>(TValue value, TCursor cursorPosition) =>
+            new Projection<TValue, TCursor>
             {
                 Value = value,
                 CursorPosition = cursorPosition
             };
-        }
     }
 }

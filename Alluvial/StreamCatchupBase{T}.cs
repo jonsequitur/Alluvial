@@ -134,36 +134,34 @@ namespace Alluvial
         private static Task Aggregate<TProjection, TCursor>(
             IStream<TData, TCursor> stream,
             AggregatorSubscription<TProjection, TData> subscription,
-            Func<object, Task<AggregationBatch<TCursor>>> getData)
-        {
-            return subscription.FetchAndSave(
-                stream.Id,
-                async projection =>
-                {
-                    try
+            Func<object, Task<AggregationBatch<TCursor>>> getData) =>
+                subscription.FetchAndSave(
+                    stream.Id,
+                    async projection =>
                     {
-                        var aggregationBatch = await getData(projection);
-
-                        var data = aggregationBatch.Batch;
-
-                        projection = await subscription.Aggregator.Aggregate(projection, data);
-
-                        var cursor = projection as ICursor<TCursor>;
-                        cursor?.AdvanceTo(aggregationBatch.Cursor.Position);
-                    }
-                    catch (Exception exception)
-                    {
-                        var error = subscription.OnError.CheckErrorHandler(exception, projection);
-
-                        if (!error.ShouldContinue)
+                        try
                         {
-                            throw;
-                        }
-                    }
+                            var aggregationBatch = await getData(projection);
 
-                    return projection;
-                });
-        }
+                            var data = aggregationBatch.Batch;
+
+                            projection = await subscription.Aggregator.Aggregate(projection, data);
+
+                            var cursor = projection as ICursor<TCursor>;
+                            cursor?.AdvanceTo(aggregationBatch.Cursor.Position);
+                        }
+                        catch (Exception exception)
+                        {
+                            var error = subscription.OnError.CheckErrorHandler(exception, projection);
+
+                            if (!error.ShouldContinue)
+                            {
+                                throw;
+                            }
+                        }
+
+                        return projection;
+                    });
 
         protected struct AggregationBatch<TCursor>
         {

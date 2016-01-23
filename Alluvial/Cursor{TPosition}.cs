@@ -45,22 +45,13 @@ namespace Alluvial
             originalPosition = position;
         }
 
-        public virtual bool HasReached(T point)
-        {
-            return hasCursorReached(this, point);
-        }
+        public virtual bool HasReached(T point) => hasCursorReached(this, point);
 
-        public virtual void AdvanceTo(T point)
-        {
-            Position = point;
-        }
+        public virtual void AdvanceTo(T point) => Position = point;
 
         public virtual T Position { get; protected set; }
 
-        public override string ToString()
-        {
-            return $"{Position}";
-        }
+        public override string ToString() => $"{Position}";
 
         public bool CursorWasAdvanced => originalPosition.Equals(Position);
     }

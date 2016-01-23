@@ -41,11 +41,9 @@ namespace Alluvial
 
         public bool CursorWasAdvanced { get; set; }
 
-        bool ICursor<TCursor>.HasReached(TCursor point)
-        {
-            return Cursor.HasReached(((IComparable<TCursor>) CursorPosition).CompareTo(point),
-                                     true);
-        }
+        bool ICursor<TCursor>.HasReached(TCursor point) =>
+            Cursor.HasReached(((IComparable<TCursor>) CursorPosition).CompareTo(point),
+                              true);
 
         protected override string ProjectionName => projectionName;
 

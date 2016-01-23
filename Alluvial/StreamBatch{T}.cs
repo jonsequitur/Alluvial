@@ -25,9 +25,7 @@ namespace Alluvial
 
         public dynamic StartsAtCursorPosition { get; }
 
-        public override string ToString()
-        {
-            return $"batch: {Count} items starting at {StartsAtCursorPosition}";
-        }
+        public override string ToString() =>
+            $"batch: {Count} items starting at {StartsAtCursorPosition}";
     }
 }
