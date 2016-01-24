@@ -58,14 +58,14 @@ namespace Alluvial
         /// </returns>
         public abstract Task<ICursor<TCursor>> RunSingleBatch();
 
-        protected async Task<ICursor<TCursor>> RunSingleBatch<TCursor>(
-            IStream<TData, TCursor> stream,
+        protected async Task<ICursor<TUpstreamCursor>> RunSingleBatch<TUpstreamCursor>(
+            IStream<TData, TUpstreamCursor> stream,
             bool synchronize,
-            ICursor<TCursor> initialCursor = null)
+            ICursor<TUpstreamCursor> initialCursor = null)
         {
-            TaskCompletionSource<AggregationBatch<TCursor>> tcs = null;
+            TaskCompletionSource<AggregationBatch<TUpstreamCursor>> tcs;
 
-            tcs = new TaskCompletionSource<AggregationBatch<TCursor>>();
+            tcs = new TaskCompletionSource<AggregationBatch<TUpstreamCursor>>();
 
             if (synchronize)
             {
@@ -74,18 +74,18 @@ namespace Alluvial
                 if (exchange != null)
                 {
                     Debug.WriteLine("[Catchup] RunSingleBatch returning early");
-                    var batch = await ((TaskCompletionSource<AggregationBatch<TCursor>>) batchTaskCompletionSource).Task;
+                    var batch = await ((TaskCompletionSource<AggregationBatch<TUpstreamCursor>>) batchTaskCompletionSource).Task;
                     return batch.Cursor;
                 }
             }
 
-            ICursor<TCursor> upstreamCursor = null;
+            ICursor<TUpstreamCursor> upstreamCursor = null;
 
             var projections = new ConcurrentBag<object>();
 
             Action runQuery = async () =>
             {
-                var cursor = initialCursor ?? projections.OfType<ICursor<TCursor>>().MinOrDefault();
+                var cursor = initialCursor ?? projections.OfType<ICursor<TUpstreamCursor>>().MinOrDefault();
                 upstreamCursor = cursor;
                 var query = stream.CreateQuery(cursor, BatchSize);
 
@@ -95,7 +95,7 @@ namespace Alluvial
 
                     if (!tcs.Task.IsCompleted)
                     {
-                        tcs.SetResult(new AggregationBatch<TCursor>
+                        tcs.SetResult(new AggregationBatch<TUpstreamCursor>
                         {
                             Cursor = query.Cursor,
                             Batch = batch
@@ -108,7 +108,7 @@ namespace Alluvial
                 }
             };
 
-            Func<object, Task<AggregationBatch<TCursor>>> awaitData = c =>
+            Func<object, Task<AggregationBatch<TUpstreamCursor>>> awaitData = c =>
             {
                 projections.Add(c);
 
@@ -131,10 +131,10 @@ namespace Alluvial
             return upstreamCursor;
         }
 
-        private static Task Aggregate<TProjection, TCursor>(
-            IStream<TData, TCursor> stream,
+        private static Task Aggregate<TProjection, TUpstreamCursor>(
+            IStream<TData, TUpstreamCursor> stream,
             AggregatorSubscription<TProjection, TData> subscription,
-            Func<object, Task<AggregationBatch<TCursor>>> getData) =>
+            Func<object, Task<AggregationBatch<TUpstreamCursor>>> getData) =>
                 subscription.FetchAndSave(
                     stream.Id,
                     async projection =>
@@ -147,7 +147,7 @@ namespace Alluvial
 
                             projection = await subscription.Aggregator.Aggregate(projection, data);
 
-                            var cursor = projection as ICursor<TCursor>;
+                            var cursor = projection as ICursor<TUpstreamCursor>;
                             cursor?.AdvanceTo(aggregationBatch.Cursor.Position);
                         }
                         catch (Exception exception)
@@ -163,9 +163,9 @@ namespace Alluvial
                         return projection;
                     });
 
-        protected struct AggregationBatch<TCursor>
+        protected struct AggregationBatch<TUpstreamCursor>
         {
-            public ICursor<TCursor> Cursor;
+            public ICursor<TUpstreamCursor> Cursor;
             public IStreamBatch<TData> Batch;
         }
     }

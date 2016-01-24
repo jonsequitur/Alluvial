@@ -53,7 +53,9 @@ namespace Alluvial.Tests
             var aggregagator = Aggregator.Create<Projection<int, int>, string>((p, es) =>
             {
                 throw new Exception("OUCH!");
+#pragma warning disable 162
                 return p;
+#pragma warning restore 162
             }).Trace();
 
             try
