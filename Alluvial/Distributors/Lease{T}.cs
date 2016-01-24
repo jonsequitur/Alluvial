@@ -106,8 +106,14 @@ namespace Alluvial.Distributors
 
         internal Leasable<T> Leasable => leasable;
 
+        /// <summary>
+        /// Gets the resource to which exclusive access is being leased.
+        /// </summary>
         public T Resource => leasable.Resource;
 
+        /// <summary>
+        /// Gets the name of the resource to which exclusive access is being leased.
+        /// </summary>
         public string ResourceName => leasable.Name;
 
         internal void NotifyCompleted()
@@ -115,11 +121,12 @@ namespace Alluvial.Distributors
             completed = true;
         }
 
-        internal void NotifyGranted(DateTimeOffset? at = null)
-        {
+        internal void NotifyGranted(DateTimeOffset? at = null) => 
             leasable.LeaseLastGranted = at ?? DateTimeOffset.UtcNow;
-        }
 
+        /// <summary>
+        /// Used by the distributor to notify release of the lease.
+        /// </summary>
         public void NotifyReleased(DateTimeOffset? at = null)
         {
             leasable.LeaseLastReleased = at ?? DateTimeOffset.UtcNow;

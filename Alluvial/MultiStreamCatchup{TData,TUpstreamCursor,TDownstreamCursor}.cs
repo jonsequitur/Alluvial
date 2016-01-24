@@ -19,10 +19,11 @@ namespace Alluvial
         private static readonly string catchupTypeDescription = typeof (MultiStreamCatchup<TData, TUpstreamCursor, TDownstreamCursor>).ReadableName();
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MultiStreamCatchup{TData, TUpstreamCursor, TDownstreamCursor}"/> class.
+        /// Initializes a new instance of the <see cref="MultiStreamCatchup{TData, TUpstreamCursor, TDownstreamCursor}" /> class.
         /// </summary>
         /// <param name="upstreamCatchup">The upstream catchup.</param>
         /// <param name="upstreamCursor">The upstream cursor.</param>
+        /// <param name="subscriptions">The aggregator subscriptions to the data being caught up.</param>
         public MultiStreamCatchup(
             IStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor> upstreamCatchup,
             ICursor<TUpstreamCursor> upstreamCursor,
@@ -37,7 +38,8 @@ namespace Alluvial
         /// Initializes a new instance of the <see cref="MultiStreamCatchup{TData, TUpstreamCursor, TDownstreamCursor}" /> class.
         /// </summary>
         /// <param name="upstreamCatchup">The upstream catchup.</param>
-        /// <param name="manageCursor">The manage cursor.</param>
+        /// <param name="manageCursor">The manage cursor.</param>  
+        /// <param name="subscriptions">The aggregator subscriptions to the data being caught up.</param>
         /// <exception cref="System.ArgumentNullException">
         /// upstreamCatchup
         /// or

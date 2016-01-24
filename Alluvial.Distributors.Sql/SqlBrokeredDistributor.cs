@@ -53,6 +53,10 @@ namespace Alluvial.Distributors.Sql
             this.defaultLeaseDuration = defaultLeaseDuration ?? TimeSpan.FromMinutes(5);
         }
 
+        /// <summary>
+        /// Attempts to acquire a lease.
+        /// </summary>
+        /// <returns>A task whose result is either a lease (if acquired) or null.</returns>
         protected override async Task<Lease<T>> AcquireLease()
         {
             using (var connection = new SqlConnection(database.ConnectionString))
@@ -114,6 +118,9 @@ namespace Alluvial.Distributors.Sql
             }
         }
 
+        /// <summary>
+        /// Releases the specified lease.
+        /// </summary>
         protected override async Task ReleaseLease(Lease<T> lease)
         {
             using (var connection = new SqlConnection(database.ConnectionString))

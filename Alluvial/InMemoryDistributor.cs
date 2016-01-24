@@ -1,12 +1,15 @@
 using System;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Alluvial.Distributors;
 
 namespace Alluvial
 {
+    /// <summary>
+    /// An in-memory distributor.
+    /// </summary>
+    /// <typeparam name="T">The type of the resources distributed by the distributor.</typeparam>
     public class InMemoryDistributor<T> : DistributorBase<T>
     {
         private static readonly ConcurrentDictionary<string, ConcurrentDictionary<Leasable<T>, Lease<T>>> workInProgressGlobal =
@@ -15,6 +18,15 @@ namespace Alluvial
         private readonly ConcurrentDictionary<Leasable<T>, Lease<T>> workInProgress;
         private readonly TimeSpan defaultLeaseDuration;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="InMemoryDistributor{T}"/> class.
+        /// </summary>
+        /// <param name="leasables">The leasables.</param>
+        /// <param name="pool">The pool.</param>
+        /// <param name="maxDegreesOfParallelism">The maximum degrees of parallelism.</param>
+        /// <param name="waitInterval">The wait interval.</param>
+        /// <param name="defaultLeaseDuration">Default duration of the lease.</param>
+        /// <exception cref="System.ArgumentNullException"></exception>
         public InMemoryDistributor(
             Leasable<T>[] leasables,
             string pool,
@@ -64,23 +76,24 @@ namespace Alluvial
             return null;
         }
 
-        protected override async Task ReleaseLease(Lease<T> lease)
+        /// <summary>
+        /// Releases the specified lease.
+        /// </summary>
+        protected override Task ReleaseLease(Lease<T> lease)
         {
-            if (!workInProgress.Values.Any(l => l.GetHashCode().Equals(lease.GetHashCode())))
+            if (workInProgress.Values.Any(l => l.GetHashCode().Equals(lease.GetHashCode())))
             {
-                Debug.WriteLine($"[Distribute] ReleaseLease (failed): {lease}");
-                return;
+                Lease<T> _;
+
+                if (workInProgress.TryRemove(lease.Leasable, out _))
+                {
+                    lease.NotifyReleased();
+                }
+
+                lease.NotifyCompleted();
             }
 
-            Lease<T> _;
-
-            if (workInProgress.TryRemove(lease.Leasable, out _))
-            {
-                lease.NotifyReleased();
-                Debug.WriteLine($"[Distribute] ReleaseLease: {lease}");
-            }
-
-            lease.NotifyCompleted();
+            return Unit.Default.CompletedTask();
         }
 
         private static class OwnerToken

@@ -204,11 +204,11 @@ namespace Alluvial
         /// <summary>
         /// Splits a stream into many streams that can be independently caught up.
         /// </summary>
-        /// <typeparam name="TUpstream">The type of the partitionedStream stream.</typeparam>
-        /// <typeparam name="TDownstream">The type of the downstream stream.</typeparam>
-        /// <typeparam name="TUpstreamCursor">The type of the partitionedStream cursor.</typeparam>
-        /// <param name="upstream">The partitionedStream.</param>
-        /// <param name="queryDownstream">The query downstream.</param>
+        /// <typeparam name="TUpstream">The type of the partitioned stream.</typeparam>
+        /// <typeparam name="TDownstream">The type of the downstream streams.</typeparam>
+        /// <typeparam name="TUpstreamCursor">The type of the upstream cursor.</typeparam>
+        /// <param name="upstream">The partitioned stream.</param>
+        /// <param name="queryDownstream">The downstream query.</param>
         /// <returns></returns>
         public static IStream<TDownstream, TUpstreamCursor> IntoMany<TUpstream, TDownstream, TUpstreamCursor>(
             this IStream<TUpstream, TUpstreamCursor> upstream,
@@ -239,6 +239,16 @@ namespace Alluvial
                     },
                     newCursor: upstream.NewCursor);
 
+        /// <summary>
+        /// Splits a partitioned stream into many streams that can be independently caught up.
+        /// </summary>
+        /// <typeparam name="TUpstream">The type of the upstream, partitioned stream.</typeparam>
+        /// <typeparam name="TDownstream">The type of the downstream streams.</typeparam>
+        /// <typeparam name="TPartition">The type of the partition.</typeparam>
+        /// <typeparam name="TUpstreamCursor">The type of the partitionedStream cursor.</typeparam>
+        /// <param name="partitionedStream">The partitioned stream.</param>
+        /// <param name="queryDownstream">The query downstream.</param>
+        /// <returns></returns>
         public static IPartitionedStream<TDownstream, TUpstreamCursor, TPartition> IntoMany<TUpstream, TDownstream, TUpstreamCursor, TPartition>(
             this IPartitionedStream<TUpstream, TUpstreamCursor, TPartition> partitionedStream,
             QueryDownstream<TUpstream, TDownstream, TUpstreamCursor, TPartition> queryDownstream) =>
@@ -384,7 +394,7 @@ namespace Alluvial
         /// Traces queries sent and and data received on a stream.
         /// </summary>
         /// <typeparam name="TData">The type of the stream's data.</typeparam>
-        /// <typeparam name="TCursor">The type of the cursor.</typeparam>
+        /// <typeparam name="TCursor">The type of the stream's cursor.</typeparam>
         /// <param name="stream">The stream.</param>
         /// <param name="onSendQuery">Specifies how to trace information about queries sent to the stream.</param>
         /// <param name="onResults">Specifies how to trace data received from the stream.</param>
@@ -420,10 +430,21 @@ namespace Alluvial
                 newCursor: stream.NewCursor);
         }
 
+        /// <summary>
+        /// Traces queries sent and and data received on a partitioned stream.
+        /// </summary>
+        /// <typeparam name="TData">The type of the stream's data.</typeparam>
+        /// <typeparam name="TCursor">The type of the stream's cursor.</typeparam>
+        /// <typeparam name="TPartition">The type of the partition.</typeparam>
+        /// <param name="stream">The stream.</param>
+        /// <param name="onSendQuery">Specifies how to trace information about queries sent to the stream.</param>
+        /// <param name="onResults">Specifies how to trace data received from the stream.</param>
         public static IPartitionedStream<TData, TCursor, TPartition> Trace<TData, TCursor, TPartition>(
-            this IPartitionedStream<TData, TCursor, TPartition> stream) =>
+            this IPartitionedStream<TData, TCursor, TPartition> stream,
+            Action<IStreamQuery<TCursor>> onSendQuery = null,
+            Action<IStreamQuery<TCursor>, IStreamBatch<TData>> onResults = null) =>
                 new AnonymousPartitionedStream<TData, TCursor, TPartition>(
                     stream.Id,
-                    async p => (await stream.GetStream(p)).Trace());
+                    async p => (await stream.GetStream(p)).Trace(onSendQuery, onResults));
     }
 }

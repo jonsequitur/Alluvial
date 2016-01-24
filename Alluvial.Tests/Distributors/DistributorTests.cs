@@ -293,7 +293,9 @@ namespace Alluvial.Tests.Distributors
                 mre.Set();
             });
 
+#pragma warning disable 4014
             distributor.Distribute(1);
+#pragma warning restore 4014
             await mre.WaitAsync().Timeout();
             await Task.Delay(1000);
 
@@ -392,9 +394,9 @@ namespace Alluvial.Tests.Distributors
 
             var distributor = CreateDistributor(async l => { received.Add(l.Resource); });
 
-            var returned = await distributor.Distribute(3);
+            var returned = (await distributor.Distribute(3)).ToArray();
 
-            returned.Count().Should().Be(3);
+            returned.Length.Should().Be(3);
 
             foreach (var leasable in received)
             {

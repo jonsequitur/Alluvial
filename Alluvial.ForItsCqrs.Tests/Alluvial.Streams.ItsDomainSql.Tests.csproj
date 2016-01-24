@@ -27,6 +27,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <LangVersion>6</LangVersion>
+    <NoWarn>CS1998</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -133,6 +134,10 @@
     <ProjectReference Include="..\Alluvial.ForItsCqrs\Alluvial.Streams.ItsDomainSql.csproj">
       <Project>{91d10713-fc52-4744-9cb2-16b6dfecdbe2}</Project>
       <Name>Alluvial.Streams.ItsDomainSql</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Alluvial.Tests\Alluvial.Tests.csproj">
+      <Project>{1B232E18-21DD-4DCD-8262-CC0FDAFBA7D1}</Project>
+      <Name>Alluvial.Tests</Name>
     </ProjectReference>
     <ProjectReference Include="..\Alluvial\Alluvial.csproj">
       <Project>{04e9b45a-0459-491f-a812-31fe37237770}</Project>

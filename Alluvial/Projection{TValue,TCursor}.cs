@@ -39,14 +39,32 @@ namespace Alluvial
         /// </summary>
         TCursor ICursor<TCursor>.Position => CursorPosition;
 
+        /// <summary>
+        /// Gets a value indicating whether the cursor was advanced from its initial position at the time the instance was created.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if the cursor was advanced; otherwise, <c>false</c>.
+        /// </value>
         public bool CursorWasAdvanced { get; set; }
 
         bool ICursor<TCursor>.HasReached(TCursor point) =>
             Cursor.HasReached(((IComparable<TCursor>) CursorPosition).CompareTo(point),
                               true);
 
+        /// <summary>
+        /// Gets the name of the projection.
+        /// </summary>
+        /// <value>
+        /// The name of the projection.
+        /// </value>
         protected override string ProjectionName => projectionName;
 
+        /// <summary>
+        /// Returns a <see cref="System.String" /> that represents this instance.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="System.String" /> that represents this instance.
+        /// </returns>
         public override string ToString()
         {
             string valueString;

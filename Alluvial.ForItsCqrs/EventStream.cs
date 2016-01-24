@@ -35,7 +35,7 @@ namespace Alluvial.Streams.ItsDomainSql
                 AllChanges(streamId, storableEvents)
                     .IntoMany(
                         // for each EventStreamChange, return a stream of IEvent
-                        async (update, fromCursor, toCursor) =>
+                        (update, fromCursor, toCursor) =>
                         Stream.Create<IEvent, long>(
                             update.AggregateId.ToString(),
                             q => QueryAsync(storableEvents,
@@ -43,22 +43,23 @@ namespace Alluvial.Streams.ItsDomainSql
                                             update.AggregateId,
                                             fromCursor,
                                             toCursor),
-                            (query, batch) => AdvanceCursor(batch, query, toCursor)));
+                            (query, batch) => AdvanceCursor(batch, query, toCursor)).CompletedTask());
 
         public static IPartitionedStream<IStream<IEvent, long>, long, Guid> PerAggregatePartitioned(
             string streamId,
-            Func<IQueryable<StorableEvent>> storableEvents) => AllChangesPartitioned(streamId, storableEvents)
-                .Trace()
-                .IntoMany(async (update, fromCursor, toCursor, partition) =>
-                          Stream.Create<IEvent, long>(
-                              update.AggregateId.ToString(),
-                              q => QueryAsync(storableEvents,
-                                              q.BatchSize,
-                                              update.AggregateId,
-                                              fromCursor,
-                                              toCursor),
-                              (query, batch) => AdvanceCursor(batch, query, toCursor))
-                                .Trace());
+            Func<IQueryable<StorableEvent>> storableEvents) =>
+                AllChangesPartitioned(streamId, storableEvents)
+                    .Trace()
+                    .IntoMany((update, fromCursor, toCursor, partition) =>
+                              Stream.Create<IEvent, long>(
+                                  update.AggregateId.ToString(),
+                                  q => QueryAsync(storableEvents,
+                                                  q.BatchSize,
+                                                  update.AggregateId,
+                                                  fromCursor,
+                                                  toCursor),
+                                  (query, batch) => AdvanceCursor(batch, query, toCursor))
+                                    .CompletedTask());
 
         public static IPartitionedStream<ScheduledCommand, long, Guid> ScheduledCommandStream(string clockName = "default") =>
             Stream.PartitionedByRange<ScheduledCommand, long, Guid>(
@@ -146,7 +147,7 @@ namespace Alluvial.Streams.ItsDomainSql
                 query = query.WithinPartition(e => e.AggregateId, partition);
             }
 
-            var fetchedFromEventStore = query
+            var fetchedFromEventStore = await query
                 .OrderBy(e => e.Id)
                 .Select(e => new
                 {
@@ -156,7 +157,7 @@ namespace Alluvial.Streams.ItsDomainSql
                 })
                 .Take(streamQuery.BatchSize ?? 10)
                 .GroupBy(e => e.AggregateId)
-                .ToArray();
+                .ToArrayAsync();
 
             var eventStreamChanges = fetchedFromEventStore
                 .Select(e => new EventStreamChange(e.Key)
@@ -192,7 +193,7 @@ namespace Alluvial.Streams.ItsDomainSql
             query = query.OrderBy(e => e.Id)
                          .Take(batchSize ?? 1000);
 
-            var events = query.ToArray();
+            var events = await query.ToArrayAsync();
 
             return events.Select(e => e.ToDomainEvent());
         }

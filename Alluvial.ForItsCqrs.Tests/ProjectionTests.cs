@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Alluvial.Distributors;
 using Alluvial.Distributors.Sql;
+using Alluvial.Tests;
 using FluentAssertions;
 using Microsoft.Its.Domain;
 using Microsoft.Its.Domain.Sql;
@@ -36,7 +37,7 @@ namespace Alluvial.Streams.ItsDomainSql.Tests
             var aggregateId3 = Guid.NewGuid();
             var aggregateId4 = Guid.NewGuid();
 
-            var storableEvents = CreateStorableEvents(aggregateId1, aggregateId2, aggregateId3, aggregateId4).AsQueryable();
+            var storableEvents = CreateStorableEvents(aggregateId1, aggregateId2, aggregateId3, aggregateId4).AsAsyncQueryable();
 
             var expectedCount = storableEvents
                 .Select(e => e.ToDomainEvent())
@@ -55,7 +56,9 @@ namespace Alluvial.Streams.ItsDomainSql.Tests
             var catchup = StreamCatchup.All(streams);
 
             var count = 0;
-            var store = ProjectionStore.Create<string, int>(async _ => count, async (_, newCount) => count = newCount);
+            var store = ProjectionStore.Create<string, int>(
+                async _ => count, 
+                async (_, newCount) => count = newCount);
             catchup.Subscribe(aggregator, store);
             await catchup.RunUntilCaughtUp();
             count.Should().Be(expectedCount);
@@ -69,7 +72,7 @@ namespace Alluvial.Streams.ItsDomainSql.Tests
             var aggregateId3 = Guid.NewGuid();
             var aggregateId4 = Guid.NewGuid();
 
-            var storableEvents = CreateStorableEvents(aggregateId1, aggregateId2, aggregateId3, aggregateId4).AsQueryable();
+            var storableEvents = CreateStorableEvents(aggregateId1, aggregateId2, aggregateId3, aggregateId4).AsAsyncQueryable();
             var expectedCount = storableEvents
                 .Select(e => e.ToDomainEvent())
                 .OfType<AggregateB.EventType14>()
@@ -101,7 +104,7 @@ namespace Alluvial.Streams.ItsDomainSql.Tests
             var allChanges = EventStream.PerAggregate("All",
                                                       () => eventStream
                                                           .Select(e => e.ToStorableEvent())
-                                                          .AsQueryable());
+                                                          .AsAsyncQueryable());
 
             var catchup = StreamCatchup.All(allChanges);
 
@@ -133,7 +136,7 @@ namespace Alluvial.Streams.ItsDomainSql.Tests
             var allChanges = EventStream.PerAggregate("All",
                                                       () => eventStream
                                                           .Select(e => e.ToStorableEvent())
-                                                          .AsQueryable());
+                                                          .AsAsyncQueryable());
 
             var catchup = StreamCatchup.All(allChanges);
 

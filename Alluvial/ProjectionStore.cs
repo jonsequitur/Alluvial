@@ -64,6 +64,11 @@ namespace Alluvial
                                 ? $"[Store.Get] no projection for stream {key}"
                                 : $"[Store.Get] {projection} for stream {key}");
 
+        /// <summary>
+        /// Returns a fetch and save function wrapping the specified projection store's <see cref="IProjectionStore{TKey,TProjection}.Get" /> and <see cref="IProjectionStore{TKey,TProjection}.Put" /> operations.
+        /// </summary>
+        /// <typeparam name="TProjection">The type of the projection.</typeparam>
+        /// <param name="store">The store.</param>
         public static FetchAndSave<TProjection> AsHandler<TProjection>(this IProjectionStore<string, TProjection> store)
         {
             store = store ?? new InMemoryProjectionStore<TProjection>();

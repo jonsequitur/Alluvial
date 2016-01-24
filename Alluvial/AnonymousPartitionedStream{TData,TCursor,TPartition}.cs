@@ -69,7 +69,7 @@ namespace Alluvial
                     throw new ArgumentNullException(nameof(partition));
                 }   
                 
-                this.Id = id;
+                Id = id;
                 this.fetch = fetch;
                 this.partition = partition;
             }

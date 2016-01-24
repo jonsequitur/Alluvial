@@ -19,7 +19,7 @@ namespace Alluvial.Tests
 
         protected override IQueryable<Event> Events()
         {
-            return events.AsQueryable();
+            return events.AsAsyncQueryable();
         }
     }
 }

@@ -27,6 +27,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <LangVersion>6</LangVersion>
+    <NoWarn>CS1998</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -112,6 +113,7 @@
     <Compile Include="Distributors\InMemoryDistributorTests.cs" />
     <Compile Include="Infrastructure\Event.cs" />
     <Compile Include="Infrastructure\Values.cs" />
+    <Compile Include="Infrastructure\AsyncQueryable.cs" />
     <Compile Include="PipelineTests.cs" />
     <Compile Include="Distributors\SqlBrokeredDistributorTests.cs" />
     <Compile Include="QueryableTests.cs" />
