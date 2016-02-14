@@ -44,30 +44,32 @@ namespace Alluvial.Distributors.Sql
             {
                 await connection.OpenAsync();
 
-                var cmd = connection.CreateCommand();
-                cmd.CommandText =
-                    $@"
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandText =
+                        $@"
 IF db_id('{distributorDatabaseName}') IS NULL
     BEGIN
         CREATE DATABASE [{distributorDatabaseName
-                        }]
+                            }]
         SELECT 'created'
     END
 ELSE
     BEGIN
         SELECT 'already exists'
     END";
-                cmd.CommandType = CommandType.Text;
+                    cmd.CommandType = CommandType.Text;
 
-                var result = await cmd.ExecuteScalarAsync() as string;
+                    var result = await cmd.ExecuteScalarAsync() as string;
 
-                if (result == "created")
-                {
-                    await RunScript(connection,
-                                    @"Alluvial.Distributors.Sql.CreateDatabase.sql",
-                                    distributorDatabaseName);
+                    if (result == "created")
+                    {
+                        await RunScript(connection,
+                                        @"Alluvial.Distributors.Sql.CreateDatabase.sql",
+                                        distributorDatabaseName);
 
-                    await InitializeSchema(connection, distributorDatabaseName);
+                        await InitializeSchema(connection, distributorDatabaseName);
+                    }
                 }
             }
         }
@@ -163,9 +165,10 @@ ELSE
         {
             foreach (var resource in leasables)
             {
-                var cmd = connection.CreateCommand();
-                cmd.CommandType = CommandType.Text;
-                cmd.CommandText = @"
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandType = CommandType.Text;
+                    cmd.CommandText = @"
 IF NOT EXISTS (SELECT * FROM [Alluvial].[Leases] 
                WHERE Pool = @pool AND 
                ResourceName = @resourceName)
@@ -184,13 +187,14 @@ IF NOT EXISTS (SELECT * FROM [Alluvial].[Leases]
                          @expires)
     END";
 
-                AddParameter(cmd, @"@resourceName", resource.Name);
-                AddParameter(cmd, @"@pool", pool);
-                AddParameter(cmd, @"@lastGranted", resource.LeaseLastGranted);
-                AddParameter(cmd, @"@lastReleased", resource.LeaseLastReleased);
-                AddParameter(cmd, @"@expires", DateTimeOffset.MinValue);
+                    AddParameter(cmd, @"@resourceName", resource.Name);
+                    AddParameter(cmd, @"@pool", pool);
+                    AddParameter(cmd, @"@lastGranted", resource.LeaseLastGranted);
+                    AddParameter(cmd, @"@lastReleased", resource.LeaseLastReleased);
+                    AddParameter(cmd, @"@expires", DateTimeOffset.MinValue);
 
-                await cmd.ExecuteScalarAsync();
+                    await cmd.ExecuteScalarAsync();
+                }
             }
         }
 
@@ -224,13 +228,16 @@ IF NOT EXISTS (SELECT * FROM [Alluvial].[Leases]
 
             foreach (var script in scripts)
             {
-                var cmd = connection.CreateCommand();
-                cmd.CommandText = script;
-                cmd.CommandType = CommandType.Text;
+                using (var cmd = connection.CreateCommand())
 
-                Trace.WriteLine(script, typeof (SqlBrokeredDistributorDatabase).Name);
+                {
+                    cmd.CommandText = script;
+                    cmd.CommandType = CommandType.Text;
 
-                await cmd.ExecuteNonQueryAsync();
+                    Trace.WriteLine(script, typeof (SqlBrokeredDistributorDatabase).Name);
+
+                    await cmd.ExecuteNonQueryAsync();
+                }
             }
         }
     }

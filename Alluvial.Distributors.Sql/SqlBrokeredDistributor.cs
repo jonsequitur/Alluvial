@@ -63,37 +63,39 @@ namespace Alluvial.Distributors.Sql
             {
                 await connection.OpenAsync();
 
-                var cmd = connection.CreateCommand();
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = @"Alluvial.AcquireLease";
-                cmd.Parameters.AddWithValue(@"@waitIntervalMilliseconds", WaitInterval.TotalMilliseconds);
-                cmd.Parameters.AddWithValue(@"@leaseDurationMilliseconds", defaultLeaseDuration.TotalMilliseconds);
-                cmd.Parameters.AddWithValue(@"@pool", pool);
-
-                using (var reader = await cmd.ExecuteReaderAsync())
+                using (var cmd = connection.CreateCommand())
                 {
-                    while (await reader.ReadAsync())
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.CommandText = @"Alluvial.AcquireLease";
+                    cmd.Parameters.AddWithValue(@"@waitIntervalMilliseconds", WaitInterval.TotalMilliseconds);
+                    cmd.Parameters.AddWithValue(@"@leaseDurationMilliseconds", defaultLeaseDuration.TotalMilliseconds);
+                    cmd.Parameters.AddWithValue(@"@pool", pool);
+
+                    using (var reader = await cmd.ExecuteReaderAsync())
                     {
-                        var resourceName = await reader.GetFieldValueAsync<string>(0);
-                        var leaseLastGranted = await reader.GetFieldValueAsync<dynamic>(2);
-                        var leaseLastReleased = await reader.GetFieldValueAsync<dynamic>(3);
-                        var token = await reader.GetFieldValueAsync<dynamic>(5);
+                        while (await reader.ReadAsync())
+                        {
+                            var resourceName = await reader.GetFieldValueAsync<string>(0);
+                            var leaseLastGranted = await reader.GetFieldValueAsync<dynamic>(2);
+                            var leaseLastReleased = await reader.GetFieldValueAsync<dynamic>(3);
+                            var token = await reader.GetFieldValueAsync<dynamic>(5);
 
-                        var resource = Leasables.Single(l => l.Name == resourceName);
+                            var resource = Leasables.Single(l => l.Name == resourceName);
 
-                        resource.LeaseLastGranted = leaseLastGranted is DBNull
-                            ? DateTimeOffset.MinValue
-                            : (DateTimeOffset) leaseLastGranted;
-                        resource.LeaseLastReleased = leaseLastReleased is DBNull
-                            ? DateTimeOffset.MinValue
-                            : (DateTimeOffset) leaseLastReleased;
+                            resource.LeaseLastGranted = leaseLastGranted is DBNull
+                                                            ? DateTimeOffset.MinValue
+                                                            : (DateTimeOffset) leaseLastGranted;
+                            resource.LeaseLastReleased = leaseLastReleased is DBNull
+                                                             ? DateTimeOffset.MinValue
+                                                             : (DateTimeOffset) leaseLastReleased;
 
-                        Lease<T> lease = null;
-                        lease = new Lease<T>(resource,
-                                             defaultLeaseDuration,
-                                             (int) token,
-                                             extend: by => ExtendLease(lease, @by));
-                        return lease;
+                            Lease<T> lease = null;
+                            lease = new Lease<T>(resource,
+                                                 defaultLeaseDuration,
+                                                 (int) token,
+                                                 extend: by => ExtendLease(lease, @by));
+                            return lease;
+                        }
                     }
                 }
 
@@ -107,14 +109,16 @@ namespace Alluvial.Distributors.Sql
             {
                 await connection.OpenAsync();
 
-                var cmd = connection.CreateCommand();
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = @"Alluvial.ExtendLease";
-                cmd.Parameters.AddWithValue(@"@resourceName", lease.ResourceName);
-                cmd.Parameters.AddWithValue(@"@byMilliseconds", by.TotalMilliseconds);
-                cmd.Parameters.AddWithValue(@"@token", lease.OwnerToken);
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.CommandText = @"Alluvial.ExtendLease";
+                    cmd.Parameters.AddWithValue(@"@resourceName", lease.ResourceName);
+                    cmd.Parameters.AddWithValue(@"@byMilliseconds", by.TotalMilliseconds);
+                    cmd.Parameters.AddWithValue(@"@token", lease.OwnerToken);
 
-                await cmd.ExecuteNonQueryAsync();
+                    await cmd.ExecuteNonQueryAsync();
+                }
             }
         }
 
@@ -127,21 +131,23 @@ namespace Alluvial.Distributors.Sql
             {
                 await connection.OpenAsync();
 
-                var cmd = connection.CreateCommand();
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = @"Alluvial.ReleaseLease";
-                cmd.Parameters.AddWithValue(@"@resourceName", lease.ResourceName);
-                cmd.Parameters.AddWithValue(@"@token", lease.OwnerToken);
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.CommandText = @"Alluvial.ReleaseLease";
+                    cmd.Parameters.AddWithValue(@"@resourceName", lease.ResourceName);
+                    cmd.Parameters.AddWithValue(@"@token", lease.OwnerToken);
 
-                try
-                {
-                    var leaseLastReleased = (DateTimeOffset) await cmd.ExecuteScalarAsync();
-                    lease.NotifyReleased(leaseLastReleased);
-                    Debug.WriteLine($"[Distribute] ReleaseLease: {lease}");
-                }
-                catch (Exception exception)
-                {
-                    Debug.WriteLine($"[Distribute] ReleaseLease (failed): {lease}\n{exception}");
+                    try
+                    {
+                        var leaseLastReleased = (DateTimeOffset) await cmd.ExecuteScalarAsync();
+                        lease.NotifyReleased(leaseLastReleased);
+                        Debug.WriteLine($"[Distribute] ReleaseLease: {lease}");
+                    }
+                    catch (Exception exception)
+                    {
+                        Debug.WriteLine($"[Distribute] ReleaseLease (failed): {lease}\n{exception}");
+                    }
                 }
             }
         }
