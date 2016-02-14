@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.IO;
@@ -43,11 +45,12 @@ namespace Alluvial.Distributors.Sql
                 await connection.OpenAsync();
 
                 var cmd = connection.CreateCommand();
-                cmd.CommandText = 
+                cmd.CommandText =
                     $@"
 IF db_id('{distributorDatabaseName}') IS NULL
     BEGIN
-        CREATE DATABASE [{distributorDatabaseName}]
+        CREATE DATABASE [{distributorDatabaseName
+                        }]
         SELECT 'created'
     END
 ELSE
@@ -69,14 +72,65 @@ ELSE
             }
         }
 
+        public async Task<IEnumerable<Leasable>> GetLeasables()
+        {
+            var leasables = new List<Leasable>();
+
+            using (var connection = new SqlConnection(ConnectionString))
+            {
+                await connection.OpenAsync();
+
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandType = CommandType.Text;
+                    cmd.CommandText = @"SELECT [ResourceName], [Pool], [LastGranted], [LastReleased], [Expires] FROM Alluvial.Leases";
+
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            var leasable = new Leasable
+                            {
+                                ResourceName = await reader.GetFieldValueAsync<string>(0),
+                                Pool = await reader.GetFieldValueAsync<string>(1),
+                                LeaseLastGranted = await reader.GetFieldValueAsync<DateTimeOffset>(2),
+                                LeaseLastReleased = await reader.GetFieldValueAsync<DateTimeOffset>(3),
+                                LeaseExpires = await reader.GetFieldValueAsync<DateTimeOffset>(4)
+                            };
+
+                            leasables.Add(leasable);
+                        }
+                    }
+                }
+            }
+
+            return leasables;
+        }
+
         /// <summary>
         /// Initializes the SQL distributor schema.
         /// </summary>
         /// <remarks>This can be used to create the necessary database objects within an existing database. They are created in the "Alluvial" namespace.</remarks>
-        public async Task InitializeSchema(SqlConnection connection) =>
+        public async Task InitializeSchema()
+        {
+            using (var connection = new SqlConnection(ConnectionString))
+            {
+                await InitializeSchema(connection, connection.Database);
+            }
+        }
+
+        /// <summary>
+        /// Initializes the SQL distributor schema.
+        /// </summary>
+        /// <remarks>This can be used to create the necessary database objects within an existing database. They are created in the "Alluvial" namespace.</remarks>
+        public static async Task InitializeSchema(DbConnection connection) =>
             await InitializeSchema(connection, connection.Database);
 
-        private async Task InitializeSchema(SqlConnection connection, string distributorDatabaseName) =>
+        /// <summary>
+        /// Initializes the SQL distributor schema.
+        /// </summary>
+        /// <remarks>This can be used to create the necessary database objects within an existing database. They are created in the "Alluvial" namespace.</remarks>
+        private static async Task InitializeSchema(DbConnection connection, string distributorDatabaseName) =>
             await RunScript(connection,
                             @"Alluvial.Distributors.Sql.InitializeSchema.sql",
                             distributorDatabaseName);
@@ -91,12 +145,27 @@ ELSE
             using (var connection = new SqlConnection(ConnectionString))
             {
                 await connection.OpenAsync();
+                await RegisterLeasableResources(leasables, pool, connection);
+            }
+        }
 
-                foreach (var resource in leasables)
-                {
-                    var cmd = connection.CreateCommand();
-                    cmd.CommandType = CommandType.Text;
-                    cmd.CommandText = @"
+        /// <summary>
+        /// Creates records for leasable resources in the distributor database, which can then be acquired and leased out via a <see cref="SqlBrokeredDistributor{T}" />.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="leasables">The leasable resources.</param>
+        /// <param name="pool">The pool of resources. A distributor instances acquires leases from a single pool.</param>
+        /// <param name="connection">The connection on which to execute the SQL operations to create the lease records.</param>
+        public static async Task RegisterLeasableResources<T>(
+            Leasable<T>[] leasables,
+            string pool,
+            DbConnection connection)
+        {
+            foreach (var resource in leasables)
+            {
+                var cmd = connection.CreateCommand();
+                cmd.CommandType = CommandType.Text;
+                cmd.CommandText = @"
 IF NOT EXISTS (SELECT * FROM [Alluvial].[Leases] 
                WHERE Pool = @pool AND 
                ResourceName = @resourceName)
@@ -114,20 +183,34 @@ IF NOT EXISTS (SELECT * FROM [Alluvial].[Leases]
                          @lastReleased,
                          @expires)
     END";
-                    cmd.Parameters.AddWithValue(@"@resourceName", resource.Name);
-                    cmd.Parameters.AddWithValue(@"@pool", pool);
-                    cmd.Parameters.AddWithValue(@"@lastGranted", resource.LeaseLastGranted);
-                    cmd.Parameters.AddWithValue(@"@lastReleased", resource.LeaseLastReleased);
-                    cmd.Parameters.AddWithValue(@"@expires", DateTimeOffset.MinValue);
 
-                    await cmd.ExecuteScalarAsync();
-                }
+                AddParameter(cmd, @"@resourceName", resource.Name);
+                AddParameter(cmd, @"@pool", pool);
+                AddParameter(cmd, @"@lastGranted", resource.LeaseLastGranted);
+                AddParameter(cmd, @"@lastReleased", resource.LeaseLastReleased);
+                AddParameter(cmd, @"@expires", DateTimeOffset.MinValue);
+
+                await cmd.ExecuteScalarAsync();
             }
         }
 
-        private async Task RunScript(SqlConnection connection, string alluvialDistributorsSqlInitializeschemaSql, string databaseName)
+        private static void AddParameter(
+            DbCommand cmd,
+            string name,
+            object value)
         {
-            var scriptStream = typeof (SqlBrokeredDistributorDatabase).Assembly.GetManifestResourceStream(alluvialDistributorsSqlInitializeschemaSql);
+            var parameter = cmd.CreateParameter();
+            parameter.ParameterName = name;
+            parameter.Value = value;
+            cmd.Parameters.Add(parameter);
+        }
+
+        private static async Task RunScript(
+            DbConnection connection,
+            string resourceName,
+            string databaseName)
+        {
+            var scriptStream = typeof (SqlBrokeredDistributorDatabase).Assembly.GetManifestResourceStream(resourceName);
 
             var scripts = new StreamReader(scriptStream)
                 .ReadToEnd()

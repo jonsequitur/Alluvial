@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Alluvial.Distributors;
 using Alluvial.Distributors.Sql;
+using FluentAssertions;
 using NUnit.Framework;
 
 namespace Alluvial.Tests.Distributors
@@ -43,35 +44,23 @@ namespace Alluvial.Tests.Distributors
             return distributor;
         }
 
-        protected override TimeSpan DefaultLeaseDuration
-        {
-            get
-            {
-                return TimeSpan.FromSeconds(2);
-            }
-        }
+        protected override TimeSpan DefaultLeaseDuration => TimeSpan.FromSeconds(2);
 
-        protected override TimeSpan ClockDriftTolerance
-        {
-            get
-            {
-                return TimeSpan.FromSeconds(3);
-            }
-        }
+        protected override TimeSpan ClockDriftTolerance => TimeSpan.FromSeconds(3);
 
         [TestFixtureSetUp]
-        public void TestFixtureSetUp()
-        {
-            Database.CreateDatabase().Timeout().Wait();
-        }
+        public void TestFixtureSetUp() => Database.CreateDatabase().Timeout().Wait();
 
         [TearDown]
-        public void TearDown()
+        public void TearDown() => distributor?.Stop().Timeout().Wait();
+
+        [Test]
+        public async Task Database_initialization_is_idempotent()
         {
-            if (distributor != null)
-            {
-                distributor.Stop().Timeout().Wait();
-            }
+            Action initialize = () =>
+                                Database.InitializeSchema().Wait();
+
+            initialize.ShouldNotThrow();
         }
     }
 }
