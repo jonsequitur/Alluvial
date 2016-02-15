@@ -12,6 +12,11 @@ namespace Alluvial.Streams.ItsDomainSql.Tests
         {
             SetConnectionStrings();
 
+            using (var db = new CommandSchedulerDbContext())
+            {
+                new CommandSchedulerDatabaseInitializer().InitializeDatabase(db);
+            }
+
             lock (lockObj)
             {
                 if (databasesInitialized)
