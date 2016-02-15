@@ -63,9 +63,7 @@ namespace Alluvial
             bool synchronize,
             ICursor<TUpstreamCursor> initialCursor = null)
         {
-            TaskCompletionSource<AggregationBatch<TUpstreamCursor>> tcs;
-
-            tcs = new TaskCompletionSource<AggregationBatch<TUpstreamCursor>>();
+            var tcs = new TaskCompletionSource<AggregationBatch<TUpstreamCursor>>();
 
             if (synchronize)
             {
@@ -83,9 +81,10 @@ namespace Alluvial
 
             var projections = new ConcurrentBag<object>();
 
-            Action runQuery = async () =>
+            Action queryTheStream = async () =>
             {
-                var cursor = initialCursor ?? projections.OfType<ICursor<TUpstreamCursor>>().MinOrDefault();
+                var cursor = initialCursor ??
+                             projections.OfType<ICursor<TUpstreamCursor>>().MinOrDefault();
                 upstreamCursor = cursor;
                 var query = stream.CreateQuery(cursor, BatchSize);
 
@@ -104,7 +103,11 @@ namespace Alluvial
                 }
                 catch (Exception exception)
                 {
-                    tcs.SetException(exception);
+                    Debug.WriteLine($"[Catchup] {exception}");
+                    if (!tcs.Task.IsCompleted)
+                    {
+                        tcs.SetException(exception);
+                    }
                 }
             };
 
@@ -114,12 +117,13 @@ namespace Alluvial
 
                 if (projections.Count >= aggregatorSubscriptions.Count)
                 {
-                    runQuery();
+                    queryTheStream();
                 }
 
                 return tcs.Task;
             };
 
+            // create one aggregation task for each subscribed aggregator and await completion of all of them
             var aggregationTasks = aggregatorSubscriptions
                 .Values
                 .Select(v => Aggregate(stream, (dynamic) v, awaitData) as Task);
@@ -145,14 +149,20 @@ namespace Alluvial
 
                             var data = aggregationBatch.Batch;
 
-                            projection = await subscription.Aggregator.Aggregate(projection, data);
+                            projection = await subscription.Aggregator
+                                                           .Aggregate(
+                                                               projection,
+                                                               data);
 
                             var cursor = projection as ICursor<TUpstreamCursor>;
                             cursor?.AdvanceTo(aggregationBatch.Cursor.Position);
                         }
                         catch (Exception exception)
                         {
-                            var error = subscription.OnError.CheckErrorHandler(exception, projection);
+                            var error = subscription.OnError
+                                                    .CheckErrorHandler(
+                                                        exception,
+                                                        projection);
 
                             if (!error.ShouldContinue)
                             {
