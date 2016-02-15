@@ -1,3 +1,4 @@
+using System.Data.Entity;
 using Microsoft.Its.Domain.Sql;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 
@@ -11,6 +12,8 @@ namespace Alluvial.Streams.ItsDomainSql.Tests
         public static void Run()
         {
             SetConnectionStrings();
+
+            Database.SetInitializer(new CreateAndMigrate<CommandSchedulerDbContext>());
 
             lock (lockObj)
             {
