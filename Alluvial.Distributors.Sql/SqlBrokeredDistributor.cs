@@ -25,7 +25,7 @@ namespace Alluvial.Distributors.Sql
         /// <param name="pool">The name of the pool of leasable resources from which leases are acquired.</param>
         /// <param name="maxDegreesOfParallelism">The maximum degrees of parallelism per machine.</param>
         /// <param name="waitInterval">The interval to wait before a released lease can be reacquired.</param>
-        /// <param name="defaultLeaseDuration">The default duration of a lease.</param>
+        /// <param name="defaultLeaseDuration">The default duration of a lease. If not specified, the default duration is five minutes.</param>
         /// <exception cref="System.ArgumentNullException">
         /// database
         /// or

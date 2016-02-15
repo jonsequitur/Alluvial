@@ -31,29 +31,11 @@ namespace Alluvial.Tests.Distributors
             return distributor;
         }
 
-        protected override TimeSpan DefaultLeaseDuration
-        {
-            get
-            {
-                return TimeSpan.FromSeconds(1);
-            }
-        }
+        protected override TimeSpan DefaultLeaseDuration => TimeSpan.FromSeconds(1);
 
-        protected override TimeSpan ClockDriftTolerance
-        {
-            get
-            {
-                return TimeSpan.FromMilliseconds(30);
-            }
-        }
+        protected override TimeSpan ClockDriftTolerance => TimeSpan.FromMilliseconds(30);
 
         [TearDown]
-        public void TearDown()
-        {
-            if (distributor != null)
-            {
-                distributor.Dispose();
-            }
-        }
+        public void TearDown() => distributor?.Dispose();
     }
 }

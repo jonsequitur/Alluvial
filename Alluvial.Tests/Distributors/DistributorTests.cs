@@ -427,15 +427,26 @@ namespace Alluvial.Tests.Distributors
             acquireCount.Should().Be(6);
         }
 
-        [Ignore("Scenario under development")]
         [Test]
-        public async Task Distributor_can_be_slowed_when_there_is_no_incoming_data()
+        public async Task Distributor_rate_can_be_slowed()
         {
-            var stream = Enumerable.Range(1, 100).AsStream();
+            var receivedLeases = new ConcurrentBag<Lease<int>>();
 
-            var distributor = CreateDistributor();
+            var distributor = CreateDistributor(
+                async lease =>
+                {
+                    receivedLeases.Add(lease);
+                    await lease.Extend(2.Seconds());
+                    await Task.Delay(2.Seconds());
+                },
+                waitInterval: TimeSpan.FromSeconds(.1),
+                maxDegreesOfParallelism: 10);
 
-            Assert.Fail("Test not written yet.");
+            await distributor.Start();
+            await Task.Delay(1.Seconds());
+            await distributor.Stop();
+
+            receivedLeases.Count().Should().Be(10);
         }
     }
 }
