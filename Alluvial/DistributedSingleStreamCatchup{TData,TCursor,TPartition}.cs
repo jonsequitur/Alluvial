@@ -24,6 +24,7 @@ namespace Alluvial
         // FIX: (DistributedSingleStreamCatchup) need a way to dispose this distributor
         private readonly IDistributor<IStreamQueryPartition<TPartition>> distributor;
         protected readonly FetchAndSave<ICursor<TCursor>> fetchAndSavePartitionCursor;
+        private readonly IStreamQueryPartition<TPartition>[] partitions;
 
         public DistributedSingleStreamCatchup(
             IPartitionedStream<TData, TCursor, TPartition> partitionedStream,
@@ -38,7 +39,8 @@ namespace Alluvial
             }
 
             this.partitionedStream = partitionedStream;
-            this.distributor = distributor ?? partitions.DistributeQueriesInProcess();
+            this.partitions = partitions.ToArray();
+            this.distributor = distributor ?? this.partitions.DistributeQueriesInProcess();
             this.fetchAndSavePartitionCursor = fetchAndSavePartitionCursor ??
                                                new InMemoryProjectionStore<ICursor<TCursor>>(id => Cursor.New<TCursor>()).AsHandler();
 
@@ -67,24 +69,18 @@ namespace Alluvial
         /// </returns>
         public override async Task<ICursor<TCursor>> RunSingleBatch()
         {
-            var resources = distributor as IEnumerable<IStreamQueryPartition<TPartition>>;
-            if (resources != null)
-            {
-                var partitions = new ConcurrentDictionary<IStreamQueryPartition<TPartition>, Unit>(
-                    resources.Select(r => new KeyValuePair<IStreamQueryPartition<TPartition>, Unit>(r, Unit.Default)));
+            var resources = new ConcurrentDictionary<IStreamQueryPartition<TPartition>, Unit>(
+                partitions.Select(
+                    r => new KeyValuePair<IStreamQueryPartition<TPartition>, Unit>(
+                             r,
+                             Unit.Default)));
 
-                while (partitions.Any())
-                {
-                    var acquired = await distributor.Distribute(1);
-
-                    Unit _;
-                    partitions.TryRemove(acquired.Single(), out _);
-                }
-            }
-            else
+            while (resources.Any())
             {
-                // not all distributors have a finite set of known leasable resources
-                await distributor.Distribute(1);
+                var acquired = await distributor.Distribute(1);
+
+                Unit _;
+                resources.TryRemove(acquired.Single(), out _);
             }
 
             return Cursor.New<TCursor>();
