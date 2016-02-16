@@ -324,7 +324,21 @@ namespace Alluvial.Tests.Distributors
                  .And
                  .Message
                  .Should()
-                 .Contain("call OnReceive before calling Start");
+                 .Contain("You must call OnReceive before starting the distributor");
+        }
+
+        [Test]
+        public async Task When_Distribute_is_called_before_OnReceive_it_throws()
+        {
+            var distributor = CreateDistributor();
+
+            Action distribute = () => distributor.Distribute(1).Wait();
+
+            distribute.ShouldThrow<InvalidOperationException>()
+                      .And
+                      .Message
+                      .Should()
+                      .Contain("You must call OnReceive");
         }
 
         [Test]

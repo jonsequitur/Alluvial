@@ -42,11 +42,7 @@ namespace Alluvial
             this.fetchAndSavePartitionCursor = fetchAndSavePartitionCursor ??
                                                new InMemoryProjectionStore<ICursor<TCursor>>(id => Cursor.New<TCursor>()).AsHandler();
 
-            this.distributor
-#if DEBUG
-                .Trace() // TODO: (DistributedSingleStreamCatchup) figure out a way to let people Trace this distributor
-#endif
-                .OnReceive(OnReceiveLease);
+            this.distributor.OnReceive(OnReceiveLease);
         }
 
         protected virtual async Task OnReceiveLease(Lease<IStreamQueryPartition<TPartition>> lease) =>

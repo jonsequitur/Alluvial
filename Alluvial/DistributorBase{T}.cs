@@ -91,6 +91,8 @@ namespace Alluvial
         /// <param name="count">The number of leases to distribute.</param>
         public virtual async Task<IEnumerable<T>> Distribute(int count)
         {
+            EnsureOnReceiveHasBeenCalled();
+
             var acquired = new List<T>();
 
             while (acquired.Count < count)
@@ -114,16 +116,21 @@ namespace Alluvial
         /// </summary>
         public virtual Task Start()
         {
-            if (onReceive == null)
-            {
-                throw new InvalidOperationException("You must call OnReceive before calling Start.");
-            }
+            EnsureOnReceiveHasBeenCalled();
 
             Parallel.For(0,
                          maxDegreesOfParallelism,
                          async _ => await TryRunOne(loop: true));
 
             return Unit.Default.CompletedTask();
+        }
+
+        private void EnsureOnReceiveHasBeenCalled()
+        {
+            if (onReceive == null)
+            {
+                throw new InvalidOperationException("You must call OnReceive before starting the distributor.");
+            }
         }
 
         private async Task<LeaseAcquisitionAttempt> TryRunOne(bool loop)
@@ -143,7 +150,7 @@ namespace Alluvial
             }
             catch (Exception exception)
             {
-                Debug.WriteLine("[Distribute] Exception during AcquireLease:\n" + exception);
+                Debug.WriteLine($"[Distribute] Exception during AcquireLease:\n{exception}");
             }
 
             if (lease != null)
