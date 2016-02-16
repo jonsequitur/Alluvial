@@ -33,8 +33,8 @@ namespace Alluvial.Tests.Distributors
         public void SetUp()
         {
             DefaultLeasables = Enumerable.Range(1, 10)
-                                        .Select(i => new Leasable<int>(i, i.ToString()))
-                                        .ToArray();
+                                         .Select(i => new Leasable<int>(i, i.ToString()))
+                                         .ToArray();
         }
 
         [Test]
@@ -304,16 +304,6 @@ namespace Alluvial.Tests.Distributors
         }
 
         [Test]
-        public async Task OnReceive_can_only_be_called_once()
-        {
-            var distributor = CreateDistributor(async l => { });
-            Action callOnReceiveAgain = () => distributor.OnReceive(async l => { });
-
-            callOnReceiveAgain.ShouldThrow<InvalidOperationException>()
-                              .And.Message.Should().Be("OnReceive has already been called. It can only be called once per distributor.");
-        }
-
-        [Test]
         public async Task When_Start_is_called_before_OnReceive_it_throws()
         {
             var distributor = CreateDistributor();
@@ -371,10 +361,7 @@ namespace Alluvial.Tests.Distributors
             Lease<int> lease = null;
             var lastGranted = DefaultLeasables.Select(l => l.LeaseLastGranted).Distinct().Single();
 
-            var distributor = CreateDistributor(async l =>
-            {
-                lease = l;
-            });
+            var distributor = CreateDistributor(async l => { lease = l; });
 
             await distributor.Distribute(1);
 
@@ -447,14 +434,15 @@ namespace Alluvial.Tests.Distributors
             var receivedLeases = new ConcurrentBag<Lease<int>>();
 
             var distributor = CreateDistributor(
-                async lease =>
-                {
-                    receivedLeases.Add(lease);
-                    await lease.Extend(2.Seconds());
-                    await Task.Delay(2.Seconds());
-                },
+                async lease => { receivedLeases.Add(lease); },
                 waitInterval: TimeSpan.FromSeconds(.1),
                 maxDegreesOfParallelism: 10);
+
+            distributor.OnReceive(async lease =>
+            {
+                await lease.Extend(2.Seconds());
+                await Task.Delay(2.Seconds());
+            });
 
             await distributor.Start();
             await Task.Delay(1.Seconds());
