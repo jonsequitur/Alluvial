@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Alluvial
@@ -101,15 +102,15 @@ namespace Alluvial
         public static IStreamCatchup<TData, TCursor> DistributeAmong<TData, TCursor, TPartition>(
             this IPartitionedStream<TData, TCursor, TPartition> streams,
             IEnumerable<IStreamQueryPartition<TPartition>> partitions,
+            IDistributor<IStreamQueryPartition<TPartition>> distributor,
             int? batchSize = null,
-            FetchAndSave<ICursor<TCursor>> fetchAndSavePartitionCursor = null,
-            IDistributor<IStreamQueryPartition<TPartition>> distributor = null) =>
+            FetchAndSave<ICursor<TCursor>> fetchAndSavePartitionCursor = null) =>
                 new DistributedSingleStreamCatchup<TData, TCursor, TPartition>(
                     streams,
                     partitions,
+                    distributor,
                     batchSize,
-                    fetchAndSavePartitionCursor,
-                    distributor);
+                    fetchAndSavePartitionCursor);
 
         /// <summary>
         /// Distributes a stream catchup the among one or more partitions using a specified distributor.
@@ -118,15 +119,53 @@ namespace Alluvial
         public static IStreamCatchup<TData, TUpstreamCursor> DistributeAmong<TData, TUpstreamCursor, TDownstreamCursor, TPartition>(
             this IPartitionedStream<IStream<TData, TDownstreamCursor>, TUpstreamCursor, TPartition> streams,
             IEnumerable<IStreamQueryPartition<TPartition>> partitions,
+            IDistributor<IStreamQueryPartition<TPartition>> distributor,
             int? batchSize = null,
-            FetchAndSave<ICursor<TUpstreamCursor>> fetchAndSavePartitionCursor = null,
-            IDistributor<IStreamQueryPartition<TPartition>> distributor = null) =>
+            FetchAndSave<ICursor<TUpstreamCursor>> fetchAndSavePartitionCursor = null) =>
                 new DistributedMultiStreamCatchup<TData, TUpstreamCursor, TDownstreamCursor, TPartition>(
                     streams,
                     partitions,
                     batchSize,
                     fetchAndSavePartitionCursor,
                     distributor);
+
+        /// <summary>
+        /// Distributes a stream catchup the among one or more partitions using an in-memory distributor.
+        /// </summary>
+        /// <remarks>If no distributor is provided, then distribution is done in-process.</remarks>
+        public static IStreamCatchup<TData, TCursor> DistributeInMemoryAmong<TData, TCursor, TPartition>(
+            this IPartitionedStream<TData, TCursor, TPartition> streams,
+            IEnumerable<IStreamQueryPartition<TPartition>> partitions,
+            int? batchSize = null,
+            FetchAndSave<ICursor<TCursor>> fetchAndSavePartitionCursor = null)
+        {
+            var partitionsArray = partitions.ToArray();
+            return new DistributedSingleStreamCatchup<TData, TCursor, TPartition>(
+                streams,
+                partitionsArray,
+                partitionsArray.CreateInMemoryDistributor(),
+                batchSize,
+                fetchAndSavePartitionCursor);
+        }
+
+        /// <summary>
+        /// Distributes a stream catchup the among one or more partitions using an in-memory distributor.
+        /// </summary>
+        /// <remarks>If no distributor is provided, then distribution is done in-process.</remarks>
+        public static IStreamCatchup<TData, TUpstreamCursor> DistributeInMemoryAmong<TData, TUpstreamCursor, TDownstreamCursor, TPartition>(
+            this IPartitionedStream<IStream<TData, TDownstreamCursor>, TUpstreamCursor, TPartition> streams,
+            IEnumerable<IStreamQueryPartition<TPartition>> partitions,
+            int? batchSize = null,
+            FetchAndSave<ICursor<TUpstreamCursor>> fetchAndSavePartitionCursor = null)
+        {
+            var partitionsArray = partitions.ToArray();
+            return new DistributedMultiStreamCatchup<TData, TUpstreamCursor, TDownstreamCursor, TPartition>(
+                streams,
+                partitionsArray,
+                batchSize,
+                fetchAndSavePartitionCursor,
+                partitionsArray.CreateInMemoryDistributor());
+        }
 
         /// <summary>
         /// Runs the catchup query until it reaches an empty batch, then stops.

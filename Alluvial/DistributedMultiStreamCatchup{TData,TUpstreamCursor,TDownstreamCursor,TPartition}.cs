@@ -22,9 +22,7 @@ namespace Alluvial
             IDistributor<IStreamQueryPartition<TPartition>> distributor = null)
             : base(null,
                    partitions,
-                   batchSize,
-                   fetchAndSavePartitionCursor,
-                   distributor)
+                   distributor, batchSize, fetchAndSavePartitionCursor)
         {
             partitionedStreams = partitionedStream;
         }

@@ -64,9 +64,10 @@ namespace Alluvial.Tests
             var domainEvents = partitionedStream.Map(es => es.Select(e => e.Body).OfType<IDomainEvent>());
 
             // catch up
-            var catchup = domainEvents.DistributeAmong(Enumerable.Range(1, 10)
-                                                                 .Select(i => Partition.ByValue(i.ToString())),
-                                                       batchSize: 2);
+            var catchup = domainEvents.DistributeInMemoryAmong(
+                Enumerable.Range(1, 10)
+                          .Select(i => Partition.ByValue(i.ToString())),
+                batchSize: 2);
 
             var receivedEvents = new ConcurrentBag<IDomainEvent>();
 

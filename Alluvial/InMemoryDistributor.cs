@@ -81,7 +81,7 @@ namespace Alluvial
         /// </summary>
         protected override Task ReleaseLease(Lease<T> lease)
         {
-            if (workInProgress.Values.Any(l => l.GetHashCode().Equals(lease.GetHashCode())))
+            if (workInProgress.Values.Contains(lease))
             {
                 Lease<T> _;
 

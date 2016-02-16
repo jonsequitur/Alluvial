@@ -21,7 +21,6 @@ namespace Alluvial
 
         protected readonly IPartitionedStream<TData, TCursor, TPartition> partitionedStream;
 
-        // FIX: (DistributedSingleStreamCatchup) need a way to dispose this distributor
         private readonly IDistributor<IStreamQueryPartition<TPartition>> distributor;
         protected readonly FetchAndSave<ICursor<TCursor>> fetchAndSavePartitionCursor;
         private readonly IStreamQueryPartition<TPartition>[] partitions;
@@ -29,18 +28,23 @@ namespace Alluvial
         public DistributedSingleStreamCatchup(
             IPartitionedStream<TData, TCursor, TPartition> partitionedStream,
             IEnumerable<IStreamQueryPartition<TPartition>> partitions,
+            IDistributor<IStreamQueryPartition<TPartition>> distributor,
             int? batchSize = null,
-            FetchAndSave<ICursor<TCursor>> fetchAndSavePartitionCursor = null,
-            IDistributor<IStreamQueryPartition<TPartition>> distributor = null) : base(batchSize)
+            FetchAndSave<ICursor<TCursor>> fetchAndSavePartitionCursor = null) :
+                base(batchSize)
         {
             if (partitions == null)
             {
                 throw new ArgumentNullException(nameof(partitions));
             }
+            if (distributor == null)
+            {
+                throw new ArgumentNullException(nameof(distributor));
+            }
 
             this.partitionedStream = partitionedStream;
             this.partitions = partitions.ToArray();
-            this.distributor = distributor ?? this.partitions.DistributeQueriesInProcess();
+            this.distributor = distributor;
             this.fetchAndSavePartitionCursor = fetchAndSavePartitionCursor ??
                                                new InMemoryProjectionStore<ICursor<TCursor>>(id => Cursor.New<TCursor>()).AsHandler();
 
