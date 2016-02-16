@@ -74,8 +74,16 @@ namespace Alluvial
                 throw new ArgumentNullException(nameof(distributor));
             }
 
-            onLeaseAcquired = onLeaseAcquired ?? TraceOnLeaseAcquired;
-            onLeaseReleasing = onLeaseReleasing ?? TraceOnLeaseReleasing;
+            if (onLeaseAcquired == null && onLeaseReleasing == null)
+            {
+                onLeaseAcquired = TraceOnLeaseAcquired;
+                onLeaseReleasing = TraceOnLeaseReleasing;
+            }
+            else
+            {
+                onLeaseAcquired = onLeaseAcquired ?? (l => { });
+                onLeaseReleasing = onLeaseReleasing ?? (l => { });
+            }
 
             var newDistributor = Create(
                 start: () =>

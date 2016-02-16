@@ -434,7 +434,7 @@ namespace Alluvial.Tests.Distributors
             var receivedLeases = new ConcurrentBag<Lease<int>>();
 
             var distributor = CreateDistributor(
-                async lease => { receivedLeases.Add(lease); },
+                async lease => receivedLeases.Add(lease),
                 waitInterval: TimeSpan.FromSeconds(.1),
                 maxDegreesOfParallelism: 10);
 

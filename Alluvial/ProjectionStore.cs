@@ -36,21 +36,29 @@ namespace Alluvial
             Action<TKey, TProjection> get = null,
             Action<TKey, TProjection> put = null)
         {
-            var traceGet = get ?? TraceGet;
-            var tracePut = put ?? TracePut;
+            if (get == null && put == null)
+            {
+                get = TraceGet;
+                put = TracePut;
+            }
+            else
+            {
+                get = get ?? ((k, p) => { });
+                put = put ?? ((k, p) => { });
+            }
 
             return Create<TKey, TProjection>(
                 get: async key =>
                 {
                     var projection = await store.Get(key);
 
-                    traceGet(key, projection);
+                    get(key, projection);
 
                     return projection;
                 },
                 put: async (key, projection) =>
                 {
-                    tracePut(key, projection);
+                    put(key, projection);
 
                     await store.Put(key, projection);
                 });
