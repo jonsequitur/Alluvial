@@ -15,7 +15,7 @@ namespace Alluvial
     /// <typeparam name="T">The type of the resources distributed by the distributor.</typeparam>
     /// <seealso cref="Alluvial.IDistributor{T}" />
     /// <seealso cref="System.Collections.Generic.IEnumerable{T}" />
-    public abstract class DistributorBase<T> : IDistributor<T>, IEnumerable<T>
+    public abstract class DistributorBase<T> : IDistributor<T>
     {
         private readonly int maxDegreesOfParallelism;
         private bool stopped;
@@ -276,25 +276,6 @@ namespace Alluvial
                     Value = value
                 };
             }
-        }
-
-        /// <summary>
-        /// Returns an enumerator that iterates through the collection.
-        /// </summary>
-        /// <returns>
-        /// An enumerator that can be used to iterate through the collection.
-        /// </returns>
-        public IEnumerator<T> GetEnumerator() => leasables.Select(l => l.Resource).GetEnumerator();
-
-        /// <summary>
-        /// Returns an enumerator that iterates through a collection.
-        /// </summary>
-        /// <returns>
-        /// An <see cref="T:System.Collections.IEnumerator"/> object that can be used to iterate through the collection.
-        /// </returns>
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
         }
     }
 }
