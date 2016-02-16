@@ -250,7 +250,7 @@ namespace Alluvial
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
-        public void Dispose() => Task.Run(() => Stop());
+        public void Dispose() => Task.Run(() => Stop()).Wait();
 
         private struct LeaseAcquisitionAttempt
         {
