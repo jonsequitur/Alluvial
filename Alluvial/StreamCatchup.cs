@@ -10,6 +10,19 @@ namespace Alluvial
     /// </summary>
     public static class StreamCatchup
     {
+        internal static Counter<TData> Count<TData, TCursor>(
+            this IStreamCatchup<TData, TCursor> catchup)
+        {
+            var counter = new Counter<TData>();
+
+            var subscription = catchup.Subscribe((_, batch) => counter.Count(batch).CompletedTask(),
+                                                 NoCursor(counter));
+
+            counter.OnDispose(subscription);
+
+            return counter;
+        }
+
         /// <summary>
         /// Creates a catchup for the specified stream.
         /// </summary>
@@ -170,12 +183,12 @@ namespace Alluvial
         /// <summary>
         /// Runs the catchup query until it reaches an empty batch, then stops.
         /// </summary>
-        public static async Task<ICursor<TCursor>> RunUntilCaughtUp<TData, TCursor>(this IStreamCatchup<TData, TCursor> catchup)
+        public static async Task<ICursor<TCursor>> RunUntilCaughtUp<TData, TCursor>(
+            this IStreamCatchup<TData, TCursor> catchup)
         {
             ICursor<TCursor> cursor;
-            var counter = new Counter<TData>();
 
-            using (catchup.Subscribe((_, batch) => counter.Count(batch).CompletedTask(), NoCursor(counter)))
+            using (var counter = catchup.Count())
             {
                 int countBefore;
                 do
@@ -310,13 +323,34 @@ namespace Alluvial
         private static FetchAndSave<TProjection> NoCursor<TProjection>(TProjection projection) =>
             (streamId, aggregate) => aggregate(projection);
 
-        internal class Counter<TCursor> : Projection<int>
+        internal class Counter<TCursor> : Projection<int>, IDisposable
         {
+            private IDisposable onDispose;
+
             public Counter<TCursor> Count(IStreamBatch<TCursor> batch)
             {
                 Value += batch.Count;
                 return this;
             }
+
+            public void OnDispose(IDisposable disposable)
+            {
+                if (onDispose != null)
+                {
+                    onDispose = Disposable.Create(() =>
+                    {
+                        onDispose.Dispose();
+                        disposable.Dispose();
+                    });
+                }
+                else
+                {
+                    onDispose = disposable;
+                }
+            }
+
+            public void Dispose() => onDispose?.Dispose();
         }
+
     }
 }
