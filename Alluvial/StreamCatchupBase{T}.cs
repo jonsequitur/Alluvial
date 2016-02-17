@@ -56,7 +56,7 @@ namespace Alluvial
         /// <returns>
         /// The updated cursor position after the batch is consumed.
         /// </returns>
-        public abstract Task<ICursor<TCursor>> RunSingleBatch();
+        public abstract Task RunSingleBatch();
 
         protected async Task<ICursor<TUpstreamCursor>> RunSingleBatch<TUpstreamCursor>(
             IStream<TData, TUpstreamCursor> stream,

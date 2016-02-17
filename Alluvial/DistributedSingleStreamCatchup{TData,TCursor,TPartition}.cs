@@ -51,19 +51,22 @@ namespace Alluvial
             this.distributor.OnReceive(OnReceiveLease);
         }
 
-        protected virtual async Task OnReceiveLease(Lease<IStreamQueryPartition<TPartition>> lease) =>
-            await fetchAndSavePartitionCursor(
-                lease.ResourceName,
-                async cursor =>
-                {
-                    var upstreamCatchup = new SingleStreamCatchup<TData, TCursor>(
-                        await partitionedStream.GetStream(lease.Resource),
-                        initialCursor: cursor,
-                        batchSize: BatchSize,
-                        subscriptions: new ConcurrentDictionary<Type, IAggregatorSubscription>(aggregatorSubscriptions));
+        protected virtual async Task OnReceiveLease(
+            Lease<IStreamQueryPartition<TPartition>> lease) =>
+                await fetchAndSavePartitionCursor(
+                    lease.ResourceName,
+                    async cursor =>
+                    {
+                        var upstreamCatchup = new SingleStreamCatchup<TData, TCursor>(
+                            await partitionedStream.GetStream(lease.Resource),
+                            initialCursor: cursor,
+                            batchSize: BatchSize,
+                            subscriptions: new ConcurrentDictionary<Type, IAggregatorSubscription>(aggregatorSubscriptions));
 
-                    return await upstreamCatchup.RunSingleBatch();
-                });
+                        await upstreamCatchup.RunSingleBatch();
+
+                        return cursor;
+                    });
 
         /// <summary>
         /// Consumes a single batch from the source stream and updates the subscribed aggregators.
@@ -71,7 +74,7 @@ namespace Alluvial
         /// <returns>
         /// The updated cursor position after the batch is consumed.
         /// </returns>
-        public override async Task<ICursor<TCursor>> RunSingleBatch()
+        public override async Task RunSingleBatch()
         {
             var resources = new ConcurrentDictionary<IStreamQueryPartition<TPartition>, Unit>(
                 partitions.Select(
@@ -86,8 +89,6 @@ namespace Alluvial
                 Unit _;
                 resources.TryRemove(acquired.Single(), out _);
             }
-
-            return Cursor.New<TCursor>();
         }
 
         /// <summary>

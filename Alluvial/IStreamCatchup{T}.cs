@@ -29,6 +29,6 @@ namespace Alluvial
         /// Consumes a single batch from the source stream and updates the subscribed aggregators.
         /// </summary>
         /// <returns>The updated cursor position after the batch is consumed.</returns>
-        Task<ICursor<TCursor>> RunSingleBatch();
+        Task RunSingleBatch();
     }
 }

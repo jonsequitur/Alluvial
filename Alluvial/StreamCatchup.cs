@@ -10,6 +10,19 @@ namespace Alluvial
     /// </summary>
     public static class StreamCatchup
     {
+        public static IStreamCatchup<TData, TCursor> Backoff<TData, TCursor>(
+            this IStreamCatchup<TData, TCursor> catchup,
+            TimeSpan duration) =>
+                new Delegator<TData, TCursor>(
+                    innerCatchup: catchup,
+                    runSingleBatch: async () =>
+                    {
+                        using (var counter = catchup.Count())
+                        {
+                            await catchup.RunSingleBatch();
+                        }
+                    });
+
         internal static Counter<TData> Count<TData, TCursor>(
             this IStreamCatchup<TData, TCursor> catchup)
         {
@@ -183,22 +196,18 @@ namespace Alluvial
         /// <summary>
         /// Runs the catchup query until it reaches an empty batch, then stops.
         /// </summary>
-        public static async Task<ICursor<TCursor>> RunUntilCaughtUp<TData, TCursor>(
+        public static async Task RunUntilCaughtUp<TData, TCursor>(
             this IStreamCatchup<TData, TCursor> catchup)
         {
-            ICursor<TCursor> cursor;
-
             using (var counter = catchup.Count())
             {
                 int countBefore;
                 do
                 {
                     countBefore = counter.Value;
-                    cursor = await catchup.RunSingleBatch();
+                   await catchup.RunSingleBatch();
                 } while (countBefore != counter.Value);
             }
-
-            return cursor;
         }
 
         /// <summary>
@@ -352,5 +361,38 @@ namespace Alluvial
             public void Dispose() => onDispose?.Dispose();
         }
 
+        internal class Delegator<TData, TCursor> : IStreamCatchup<TData, TCursor>
+        {
+            private readonly IStreamCatchup<TData, TCursor> innerCatchup;
+            private readonly Func<Task> runSingleBatch;
+
+            public Delegator(
+                IStreamCatchup<TData, TCursor> innerCatchup,
+                Func<Task> runSingleBatch)
+            {
+                if (innerCatchup == null)
+                {
+                    throw new ArgumentNullException(nameof(innerCatchup));
+                }
+                if (runSingleBatch == null)
+                {
+                    throw new ArgumentNullException(nameof(runSingleBatch));
+                }
+                this.innerCatchup = innerCatchup;
+                this.runSingleBatch = runSingleBatch;
+            }
+
+            public IDisposable SubscribeAggregator<TProjection>(
+                IStreamAggregator<TProjection, TData> aggregator,
+                FetchAndSave<TProjection> fetchAndSave,
+                HandleAggregatorError<TProjection> onError)
+                =>
+                    innerCatchup.SubscribeAggregator(
+                        aggregator,
+                        fetchAndSave,
+                        onError);
+
+            public Task RunSingleBatch() => runSingleBatch();
+        }
     }
 }

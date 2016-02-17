@@ -77,10 +77,7 @@ namespace Alluvial
         /// <summary>
         /// Consumes a single batch from the source stream and updates the subscribed aggregators.
         /// </summary>
-        /// <returns>
-        /// The updated cursor position after the batch is consumed.
-        /// </returns>
-        public override async Task<ICursor<TUpstreamCursor>> RunSingleBatch() => await upstreamCatchup.RunSingleBatch();
+        public override async Task RunSingleBatch() => await upstreamCatchup.RunSingleBatch();
 
         /// <summary>
         /// Returns a <see cref="System.String" /> that represents this instance.

@@ -38,7 +38,7 @@ namespace Alluvial
                 {
                     var upstreamCatchup = new SingleStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor>(
                         await partitionedStreams.GetStream(lease.Resource),
-                        initialCursor: cursor.Clone(),
+                        initialCursor: cursor,
                         batchSize: BatchSize);
 
                     var downstreamCatchup = new MultiStreamCatchup<TData, TUpstreamCursor, TDownstreamCursor>(
@@ -46,7 +46,9 @@ namespace Alluvial
                         cursor.Clone(),
                         subscriptions: new ConcurrentDictionary<Type, IAggregatorSubscription>(aggregatorSubscriptions));
 
-                    return await upstreamCatchup.RunUntilCaughtUp();
+                    await upstreamCatchup.RunUntilCaughtUp();
+
+                    return cursor;
                 });
     }
 }

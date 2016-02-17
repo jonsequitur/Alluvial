@@ -40,7 +40,7 @@ namespace Alluvial
         /// <returns>
         /// The updated cursor position after the batch is consumed.
         /// </returns>
-        public override async Task<ICursor<TCursor>> RunSingleBatch() =>
+        public override async Task RunSingleBatch() =>
             await RunSingleBatch(stream, true, initialCursor);
 
         /// <summary>
