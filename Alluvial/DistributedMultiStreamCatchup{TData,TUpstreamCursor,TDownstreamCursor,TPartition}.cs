@@ -24,6 +24,10 @@ namespace Alluvial
                    partitions,
                    distributor, batchSize, fetchAndSavePartitionCursor)
         {
+            if (partitionedStream == null)
+            {
+                throw new ArgumentNullException(nameof(partitionedStream));
+            }
             partitionedStreams = partitionedStream;
         }
 
