@@ -20,6 +20,10 @@ namespace Alluvial
                         using (var counter = catchup.Count())
                         {
                             await catchup.RunSingleBatch();
+                            if (counter.Value == 0)
+                            {
+                                await Task.Delay(duration);
+                            }
                         }
                     });
 
@@ -28,7 +32,7 @@ namespace Alluvial
         {
             var counter = new Counter<TData>();
 
-            var subscription = catchup.Subscribe((_, batch) => counter.Count(batch).CompletedTask(),
+            var subscription = catchup.Subscribe((_, batch) => counter.Add(batch).CompletedTask(),
                                                  NoCursor(counter));
 
             counter.OnDispose(subscription);
@@ -336,7 +340,7 @@ namespace Alluvial
         {
             private IDisposable onDispose;
 
-            public Counter<TCursor> Count(IStreamBatch<TCursor> batch)
+            public Counter<TCursor> Add(IStreamBatch<TCursor> batch)
             {
                 Value += batch.Count;
                 return this;

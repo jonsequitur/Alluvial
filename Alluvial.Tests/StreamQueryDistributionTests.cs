@@ -139,7 +139,7 @@ namespace Alluvial.Tests
                     Partition.ByRange("f", "j"),
                     Partition.ByRange("k", "z")
                 },
-                                         batchSize: 11,
+                                         batchSize: 231,
                                          fetchAndSavePartitionCursor: cursorStore.Trace().AsHandler());
 
             catchup.Subscribe(aggregator);

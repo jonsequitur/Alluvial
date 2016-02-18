@@ -46,7 +46,7 @@ namespace Alluvial
                         cursor.Clone(),
                         subscriptions: new ConcurrentDictionary<Type, IAggregatorSubscription>(aggregatorSubscriptions));
 
-                    await upstreamCatchup.RunUntilCaughtUp();
+                    await upstreamCatchup.RunSingleBatch();
 
                     return cursor;
                 });
