@@ -531,14 +531,12 @@ namespace Alluvial.Tests
                 distributor: distributor)
                 .Backoff(5.Seconds());
 
-            var store = new InMemoryProjectionStore<Projection<List<string>, int>>();
-
             catchup.Subscribe(async (p, b) =>
             {
                 p.Value = p.Value ?? new List<string>();
                 p.Value.AddRange(b);
                 return p;
-            }, store);
+            }, new InMemoryProjectionStore<Projection<List<string>, int>>());
 
             // act
             await distributor.Start();

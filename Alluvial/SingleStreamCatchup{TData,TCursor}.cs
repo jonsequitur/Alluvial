@@ -12,7 +12,7 @@ namespace Alluvial
     /// <typeparam name="TData">The type of the data that the catchup pushes to the aggregators.</typeparam>
     /// <typeparam name="TCursor">The type of the cursor.</typeparam>
     [DebuggerDisplay("{ToString()}")]
-    internal class SingleStreamCatchup<TData, TCursor> : StreamCatchupBase<TData, TCursor>
+    internal class SingleStreamCatchup<TData, TCursor> : StreamCatchupBase<TData>
     {
         private readonly IStream<TData, TCursor> stream;
         private readonly ICursor<TCursor> initialCursor;

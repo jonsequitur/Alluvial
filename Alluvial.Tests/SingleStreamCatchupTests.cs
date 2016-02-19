@@ -426,7 +426,7 @@ namespace Alluvial.Tests
 
             var catchup = StreamCatchup.Create(stream);
 
-            catchup.Subscribe<Projection<int, int>, int, int>(async (sum, batch) =>
+            catchup.Subscribe<Projection<int, int>, int>(async (sum, batch) =>
             {
                 sum.Value += batch.Count;
                 return sum;
@@ -448,7 +448,7 @@ namespace Alluvial.Tests
             var pollCountAtDispose = 0;
             var stream = Enumerable.Range(1, 1000).AsSequentialStream().Trace();
             var catchup = StreamCatchup.Create(stream, batchSize: 1);
-            catchup.Subscribe<int, int, int>(async (p, b) =>
+            catchup.Subscribe<int, int>(async (p, b) =>
             {
                 pollCount++;
                 return p + b.Count;

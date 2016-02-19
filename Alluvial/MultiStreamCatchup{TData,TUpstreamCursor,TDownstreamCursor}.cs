@@ -13,9 +13,9 @@ namespace Alluvial
     /// <typeparam name="TUpstreamCursor">The type of the upstream cursor.</typeparam>
     /// <typeparam name="TDownstreamCursor">The type of the downstream cursors.</typeparam>
     [DebuggerDisplay("{ToString()}")]
-    internal class MultiStreamCatchup<TData, TUpstreamCursor, TDownstreamCursor> : StreamCatchupBase<TData, TUpstreamCursor>
+    internal class MultiStreamCatchup<TData, TUpstreamCursor, TDownstreamCursor> : StreamCatchupBase<TData>
     {
-        private readonly IStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor> upstreamCatchup;
+        private readonly IStreamCatchup<IStream<TData, TDownstreamCursor>> upstreamCatchup;
         private static readonly string catchupTypeDescription = typeof (MultiStreamCatchup<TData, TUpstreamCursor, TDownstreamCursor>).ReadableName();
 
         /// <summary>
@@ -25,7 +25,7 @@ namespace Alluvial
         /// <param name="upstreamCursor">The upstream cursor.</param>
         /// <param name="subscriptions">The aggregator subscriptions to the data being caught up.</param>
         public MultiStreamCatchup(
-            IStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor> upstreamCatchup,
+            IStreamCatchup<IStream<TData, TDownstreamCursor>> upstreamCatchup,
             ICursor<TUpstreamCursor> upstreamCursor,
             ConcurrentDictionary<Type, IAggregatorSubscription> subscriptions = null) :
                 this(upstreamCatchup,
@@ -49,7 +49,7 @@ namespace Alluvial
         /// or
         /// manageCursor</exception>
         public MultiStreamCatchup(
-            IStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor> upstreamCatchup,
+            IStreamCatchup<IStream<TData, TDownstreamCursor>> upstreamCatchup,
             FetchAndSave<ICursor<TUpstreamCursor>> manageCursor,
             ConcurrentDictionary<Type, IAggregatorSubscription> subscriptions = null) : base(aggregatorSubscriptions: subscriptions)
         {
