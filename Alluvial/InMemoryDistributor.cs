@@ -89,8 +89,6 @@ namespace Alluvial
                 {
                     lease.NotifyReleased();
                 }
-
-                lease.NotifyCompleted();
             }
 
             return Unit.Default.CompletedTask();

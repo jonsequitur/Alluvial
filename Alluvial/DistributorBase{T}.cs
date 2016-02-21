@@ -169,12 +169,10 @@ namespace Alluvial
 
                 try
                 {
-                    var receive = pipeline(lease, _ => Unit.Default.CompletedTask());
+                    var receive = pipeline(lease,
+                                           _ => Unit.Default.CompletedTask());
 
-                    // the cancellation token will be set for a shorter period of time but can be extended using Lease.Extend, so 10 minutes is the upper bound
-                    var timeout = Task.Delay(TimeSpan.FromMinutes(10), lease.CancellationToken);
-
-                    await receive.TimeoutAfter(timeout);
+                    await receive.TimeoutAfter(lease.Expiration());
                 }
                 catch (Exception exception)
                 {

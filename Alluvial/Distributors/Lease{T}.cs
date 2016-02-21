@@ -15,7 +15,6 @@ namespace Alluvial.Distributors
         private readonly Leasable<T> leasable;
         private readonly int ownerToken;
         private readonly Func<TimeSpan, Task> extend;
-        private bool completed;
         private TimeSpan duration;
 
         /// <summary>
@@ -57,9 +56,31 @@ namespace Alluvial.Distributors
         public DateTimeOffset LastGranted { get; }
 
         /// <summary>
+        /// Used by the distributor to notify release of the lease.
+        /// </summary>
+        public void NotifyReleased(DateTimeOffset? at = null) => 
+            leasable.LeaseLastReleased = at ?? DateTimeOffset.UtcNow;
+
+        public void Cancel() => cancellationTokenSource.Cancel();
+
+        /// <summary>
         /// Gets the duration for which the lease is granted.
         /// </summary>
         public TimeSpan Duration => duration;
+
+        /// <summary>
+        /// Gets a task that completes when the lease is released or expired.
+        /// </summary>
+        public async Task Expiration()
+        {
+            try
+            {
+                await Task.Delay(TimeSpan.FromMinutes(60), CancellationToken);
+            }
+            catch (TaskCanceledException)
+            {
+            }
+        }
 
         /// <summary>
         /// Gets a token that the owner of the lease uses for operations relating to the lease, such as cancelation and renewal.
@@ -77,23 +98,24 @@ namespace Alluvial.Distributors
         /// <param name="by">The by.</param>
         /// <returns></returns>
         /// <exception cref="System.InvalidOperationException">The lease cannot be extended.</exception>
-        public Task Extend(TimeSpan by)
+        public async Task Extend(TimeSpan by)
         {
             Debug.WriteLine($"[Distribute] requesting extension: {this}: {duration}");
 
-            if (completed || cancellationTokenSource.IsCancellationRequested)
+            if (cancellationTokenSource.IsCancellationRequested)
             {
                 throw new InvalidOperationException("The lease cannot be extended.");
             }
 
-            extend?.Invoke(@by);
+            if (extend != null)
+            {
+                await extend(@by);
+            } 
 
             duration += by;
             cancellationTokenSource.CancelAfter(by);
 
             Debug.WriteLine($"[Distribute] extended: {this}: " + duration);
-
-            return Unit.Default.CompletedTask();
         }
 
         /// <summary>
@@ -116,15 +138,7 @@ namespace Alluvial.Distributors
         /// </summary>
         public string ResourceName => leasable.Name;
 
-        /// <summary>
-        /// Used by the distributor to notify release of the lease.
-        /// </summary>
-        public void NotifyReleased(DateTimeOffset? at = null) => leasable.LeaseLastReleased = at ?? DateTimeOffset.UtcNow;
-
-        internal void NotifyCompleted() => completed = true;
-
         internal void NotifyGranted(DateTimeOffset? at = null) => 
             leasable.LeaseLastGranted = at ?? DateTimeOffset.UtcNow;
-
     }
 }
