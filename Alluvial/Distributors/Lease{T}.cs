@@ -116,20 +116,15 @@ namespace Alluvial.Distributors
         /// </summary>
         public string ResourceName => leasable.Name;
 
-        internal void NotifyCompleted()
-        {
-            completed = true;
-        }
+        /// <summary>
+        /// Used by the distributor to notify release of the lease.
+        /// </summary>
+        public void NotifyReleased(DateTimeOffset? at = null) => leasable.LeaseLastReleased = at ?? DateTimeOffset.UtcNow;
+
+        internal void NotifyCompleted() => completed = true;
 
         internal void NotifyGranted(DateTimeOffset? at = null) => 
             leasable.LeaseLastGranted = at ?? DateTimeOffset.UtcNow;
 
-        /// <summary>
-        /// Used by the distributor to notify release of the lease.
-        /// </summary>
-        public void NotifyReleased(DateTimeOffset? at = null)
-        {
-            leasable.LeaseLastReleased = at ?? DateTimeOffset.UtcNow;
-        }
     }
 }
