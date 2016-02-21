@@ -14,7 +14,7 @@ namespace Alluvial.Distributors
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly Leasable<T> leasable;
         private readonly int ownerToken;
-        private readonly Func<TimeSpan, Task> extend;
+        private readonly Func<TimeSpan, Task<TimeSpan>> extend;
         private TimeSpan duration;
 
         /// <summary>
@@ -29,7 +29,7 @@ namespace Alluvial.Distributors
             Leasable<T> leasable,
             TimeSpan duration,
             int ownerToken,
-            Func<TimeSpan, Task> extend = null)
+            Func<TimeSpan, Task<TimeSpan>> extend = null)
         {
             if (leasable == null)
             {
@@ -61,6 +61,9 @@ namespace Alluvial.Distributors
         public void NotifyReleased(DateTimeOffset? at = null) => 
             leasable.LeaseLastReleased = at ?? DateTimeOffset.UtcNow;
 
+        /// <summary>
+        /// Cancels the lease.
+        /// </summary>
         public void Cancel() => cancellationTokenSource.Cancel();
 
         /// <summary>
@@ -93,14 +96,17 @@ namespace Alluvial.Distributors
         public CancellationToken CancellationToken => cancellationTokenSource.Token;
 
         /// <summary>
-        /// Extends the lease specified by.
+        /// Extends the lease.
         /// </summary>
-        /// <param name="by">The by.</param>
+        /// <param name="by">The amount of time by which to extend the lease.</param>
         /// <returns></returns>
         /// <exception cref="System.InvalidOperationException">The lease cannot be extended.</exception>
         public async Task Extend(TimeSpan by)
         {
-            Debug.WriteLine($"[Distribute] requesting extension: {this}: {duration}");
+            if (by < TimeSpan.Zero)
+            {
+                throw new ArgumentException("Lease cannot be extended by a negative timespan.");
+            }
 
             if (cancellationTokenSource.IsCancellationRequested)
             {
@@ -109,13 +115,13 @@ namespace Alluvial.Distributors
 
             if (extend != null)
             {
-                await extend(@by);
-            } 
+                @by = await extend(@by);
+            }
 
             duration += by;
-            cancellationTokenSource.CancelAfter(by);
+            cancellationTokenSource.CancelAfter(duration);
 
-            Debug.WriteLine($"[Distribute] extended: {this}: " + duration);
+            Debug.WriteLine($"[Lease] extended by {by}: {this}");
         }
 
         /// <summary>
@@ -124,7 +130,7 @@ namespace Alluvial.Distributors
         /// <returns>
         /// A string that represents the current object.
         /// </returns>
-        public override string ToString() => $"lease:{ResourceName} (last granted @ {LastGranted}, last released @ {LastReleased}) ({OwnerToken})";
+        public override string ToString() => $"lease:{ResourceName} ({OwnerToken}) total duration {duration} (last granted @ {LastGranted}, last released @ {LastReleased})";
 
         internal Leasable<T> Leasable => leasable;
 

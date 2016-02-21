@@ -74,20 +74,53 @@ namespace Alluvial.Tests
         [Test]
         public async Task When_a_lease_is_extended_then_its_cancelation_token_is_extended()
         {
-            var leasable = new Leasable<string>("hello", "hello");
-
-            var extendedBy = TimeSpan.Zero;
-
             var lease = new Lease<string>(leasable,
                                           200.Milliseconds(),
-                                          1,
-                                          async ts => extendedBy = ts);
+                                          1);
 
             await lease.Extend(TimeSpan.FromHours(3));
 
             await Task.Delay(1.Seconds());
 
             lease.CancellationToken.IsCancellationRequested.Should().BeFalse();
+        }
+
+        [Test]
+        public async Task A_lease_can_be_extended_more_than_once_and_extensions_are_cumulative()
+        {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            var lease = new Lease<string>(leasable,
+                                          50.Milliseconds(),
+                                          1);
+
+            await lease.Extend(25.Milliseconds());
+            await lease.Extend(25.Milliseconds());
+            await lease.Extend(25.Milliseconds());
+            await lease.Extend(25.Milliseconds());
+
+            await lease.Expiration();
+
+            stopwatch.Elapsed
+                     .Should()
+                     .BeCloseTo(150.Milliseconds(), 50);
+        }
+
+        [Test]
+        public async Task Leases_cannot_be_extended_by_a_negative_timespan()
+        {
+            var lease = new Lease<string>(leasable,
+                                          20.Milliseconds(),
+                                          1);
+
+            Action extend = () => lease.Extend(-1.Seconds()).Wait();
+
+            extend.ShouldThrow<ArgumentException>()
+                  .And
+                  .Message
+                  .Should()
+                  .Be("Lease cannot be extended by a negative timespan.");
         }
     }
 }
