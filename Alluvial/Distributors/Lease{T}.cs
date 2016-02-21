@@ -9,7 +9,7 @@ namespace Alluvial.Distributors
     /// A time-bound exclusive lease to a known resource.
     /// </summary>
     /// <typeparam name="T">The type of the resource.</typeparam>
-    public class Lease<T>
+    public class Lease<T> : ILease
     {
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly Leasable<T> leasable;
