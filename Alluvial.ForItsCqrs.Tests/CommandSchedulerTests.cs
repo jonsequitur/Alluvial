@@ -54,7 +54,7 @@ namespace Alluvial.Streams.ItsDomainSql.Tests
             await ScheduleSomeCommands(50);
 
             var catchup = CommandScheduler.CommandsDueOnClock(clockName)
-                                          .DistributeAmong(Partition.AllGuids()
+                                          .DistributeInMemoryAmong(Partition.AllGuids()
                                                                     .Among(16)
                                                                     .ToArray());
 
@@ -101,7 +101,7 @@ namespace Alluvial.Streams.ItsDomainSql.Tests
             };
 
             var clockStream = CommandScheduler.ClocksWithCommandsDue().Trace();
-            var catchup = clockStream.DistributeAmong(partitions);
+            var catchup = clockStream.DistributeInMemoryAmong(partitions);
             var store = new InMemoryProjectionStore<CommandsApplied>();
             var aggregator = CommandScheduler.AdvanceClocks();
             catchup.Subscribe(aggregator, store);

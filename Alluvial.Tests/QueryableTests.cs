@@ -28,7 +28,7 @@ namespace Alluvial.Tests
                     .ToArray();
             });
 
-            var catchup = stream.DistributeAmong(Partition.AllGuids().Among(20));
+            var catchup = stream.DistributeInMemoryAmong(Partition.AllGuids().Among(20));
 
             var store = new InMemoryProjectionStore<int>();
 
@@ -58,7 +58,7 @@ namespace Alluvial.Tests
                     .ToArray();
             });
 
-            var catchup = stream.DistributeAmong(Partition.ByRange(0, 100).Among(5));
+            var catchup = stream.DistributeInMemoryAmong(Partition.ByRange(0, 100).Among(5));
 
             var store = new InMemoryProjectionStore<int>();
 
@@ -98,7 +98,7 @@ namespace Alluvial.Tests
                     .ToArray();
             });
 
-            var catchup = stream.DistributeAmong(partitions);
+            var catchup = stream.DistributeInMemoryAmong(partitions);
 
             var store = new InMemoryProjectionStore<int>();
 

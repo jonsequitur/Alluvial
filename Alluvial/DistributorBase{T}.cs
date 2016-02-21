@@ -1,8 +1,6 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Alluvial.Distributors;
@@ -15,14 +13,14 @@ namespace Alluvial
     /// <typeparam name="T">The type of the resources distributed by the distributor.</typeparam>
     /// <seealso cref="Alluvial.IDistributor{T}" />
     /// <seealso cref="System.Collections.Generic.IEnumerable{T}" />
-    public abstract class DistributorBase<T> : IDistributor<T>, IEnumerable<T>
+    public abstract class DistributorBase<T> : IDistributor<T>
     {
-        private Func<Lease<T>, Task> onReceive;
         private readonly int maxDegreesOfParallelism;
         private bool stopped;
         private readonly TimeSpan waitInterval;
         private readonly Leasable<T>[] leasables;
         private int leasesHeld;
+        private DistributorPipeAsync<T> pipeline;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DistributorBase{T}"/> class.
@@ -72,17 +70,29 @@ namespace Alluvial
         /// Called when a lease is available.
         /// </summary>
         /// <param name="receive">The delegate called when work is available to be done.</param>
-        /// <exception cref="System.InvalidOperationException">OnReceive has already been called. It can only be called once per distributor.</exception>
         /// <remarks>
         /// For the duration of the lease, the leased resource will not be available to any other instance.
         /// </remarks>
-        public void OnReceive(Func<Lease<T>, Task> receive)
+        public void OnReceive(DistributorPipeAsync<T> receive)
         {
-            if (onReceive != null)
+            if (receive == null)
             {
-                throw new InvalidOperationException("OnReceive has already been called. It can only be called once per distributor.");
+                throw new ArgumentNullException(nameof(receive));
             }
-            onReceive = receive;
+
+            if (pipeline == null)
+            {
+                pipeline = receive;
+            }
+            else
+            {
+                var previousPipeline = pipeline;
+
+                pipeline = (lease, next) =>
+                           receive(lease,
+                                   l => previousPipeline(l,
+                                                 _ => Unit.Default.CompletedTask()));
+            }
         }
 
         /// <summary>
@@ -127,7 +137,7 @@ namespace Alluvial
 
         private void EnsureOnReceiveHasBeenCalled()
         {
-            if (onReceive == null)
+            if (pipeline == null)
             {
                 throw new InvalidOperationException("You must call OnReceive before starting the distributor.");
             }
@@ -159,7 +169,7 @@ namespace Alluvial
 
                 try
                 {
-                    var receive = onReceive(lease);
+                    var receive = pipeline(lease, _ => Unit.Default.CompletedTask());
 
                     // the cancellation token will be set for a shorter period of time but can be extended using Lease.Extend, so 10 minutes is the upper bound
                     var timeout = Task.Delay(TimeSpan.FromMinutes(10), lease.CancellationToken);
@@ -240,7 +250,7 @@ namespace Alluvial
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
-        public void Dispose() => Task.Run(() => Stop());
+        public void Dispose() => Task.Run(() => Stop()).Wait();
 
         private struct LeaseAcquisitionAttempt
         {
@@ -264,25 +274,6 @@ namespace Alluvial
                     Value = value
                 };
             }
-        }
-
-        /// <summary>
-        /// Returns an enumerator that iterates through the collection.
-        /// </summary>
-        /// <returns>
-        /// An enumerator that can be used to iterate through the collection.
-        /// </returns>
-        public IEnumerator<T> GetEnumerator() => leasables.Select(l => l.Resource).GetEnumerator();
-
-        /// <summary>
-        /// Returns an enumerator that iterates through a collection.
-        /// </summary>
-        /// <returns>
-        /// An <see cref="T:System.Collections.IEnumerator"/> object that can be used to iterate through the collection.
-        /// </returns>
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
         }
     }
 }
