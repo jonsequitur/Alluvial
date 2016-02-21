@@ -22,12 +22,12 @@ namespace Alluvial
         /// <returns>An anonymous distributor instance.</returns>
         public static IDistributor<T> Create<T>(
             Func<Task> start,
-            Action<Func<Lease<T>, Task>> onReceive,
+            Action<DistributorPipeAsync<T>> onReceive,
             Func<Task> stop,
             Func<int, Task<IEnumerable<T>>> distribute) =>
                 new AnonymousDistributor<T>(start, onReceive, stop, distribute);
 
-        internal static IDistributor<IStreamQueryPartition<TPartition>> DistributeQueriesInProcess<TPartition>(
+        public static IDistributor<IStreamQueryPartition<TPartition>> CreateInMemoryDistributor<TPartition>(
             this IEnumerable<IStreamQueryPartition<TPartition>> partitions,
             int maxDegreesOfParallelism = 5,
             Func<IStreamQueryPartition<TPartition>, string> named = null,
@@ -74,29 +74,55 @@ namespace Alluvial
                 throw new ArgumentNullException(nameof(distributor));
             }
 
-            return Create(
+            if (onLeaseAcquired == null && onLeaseReleasing == null)
+            {
+                onLeaseAcquired = TraceOnLeaseAcquired;
+                onLeaseReleasing = TraceOnLeaseReleasing;
+            }
+            else
+            {
+                onLeaseAcquired = onLeaseAcquired ?? (l => { });
+                onLeaseReleasing = onLeaseReleasing ?? (l => { });
+            }
+
+            var newDistributor = Create(
                 start: () =>
                 {
                     System.Diagnostics.Trace.WriteLine("[Distribute] Start");
                     return distributor.Start();
                 },
-                onReceive: receive =>
-                {
-                    onLeaseAcquired = onLeaseAcquired ?? TraceOnLeaseAcquired;
-                    onLeaseReleasing = onLeaseReleasing ?? TraceOnLeaseReleasing;
-
-                    // FIX: (Trace) this doesn't do anything if OnReceive was called before Trace, so a proper pipeline model may be better here.
-                    distributor.OnReceive(async lease =>
-                    {
-                        onLeaseAcquired(lease);
-                        await receive(lease);
-                        onLeaseReleasing(lease);
-                    });
-                }, stop: () =>
+                stop: () =>
                 {
                     System.Diagnostics.Trace.WriteLine("[Distribute] Stop");
                     return distributor.Stop();
-                }, distribute: distributor.Distribute);
+                },
+                distribute: distributor.Distribute,
+                onReceive: distributor.OnReceive);
+
+            distributor.OnReceive(async (lease, next) =>
+            {
+                onLeaseAcquired(lease);
+                await next(lease);
+                onLeaseReleasing(lease);
+            });
+
+            return newDistributor;
+        }
+        
+        public static void OnReceive<T>(
+            this IDistributor<T> distributor,
+            Func<Lease<T>, Task> receive)
+        {
+            if (receive == null)
+            {
+                throw new ArgumentNullException(nameof(receive));
+            }
+
+            distributor.OnReceive(async (lease, next) =>
+            {
+                await next(lease);
+                await receive(lease);
+            });
         }
 
         private static void TraceOnLeaseAcquired<T>(Lease<T> lease) =>

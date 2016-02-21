@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -84,8 +85,8 @@ namespace Alluvial.Streams.ItsDomainSql.Tests
                 var eventType14s = batch.OfType<AggregateB.EventType14>().ToList();
                 projection.Value.AddRange(eventType14s);
             }).Trace();
-            
-            var catchup = streams.DistributeAmong(
+
+            var catchup = streams.DistributeInMemoryAmong(
                 Partition.AllGuids().Among(10));
 
             var store = new InMemoryProjectionStore<MatchingEvents>();

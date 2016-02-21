@@ -67,7 +67,7 @@ namespace Alluvial.Tests
             var savingsAccountsCatchup = StreamCatchup.Create(savingsAccounts);
 
             var numberOfSavingsAccounts = new Projection<int, int>();
-            savingsAccountsCatchup.Subscribe<Projection<int, int>, IDomainEvent, string>(
+            savingsAccountsCatchup.Subscribe<Projection<int, int>, IDomainEvent>(
                 manage: async (streamId, aggregate) =>
                 {
                     numberOfSavingsAccounts = await aggregate(numberOfSavingsAccounts);

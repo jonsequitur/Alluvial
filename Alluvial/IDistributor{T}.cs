@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Alluvial.Distributors;
 
 namespace Alluvial
 {
@@ -15,7 +14,7 @@ namespace Alluvial
         /// </summary>
         /// <param name="onReceive">The delegate called when work is available to be done.</param>
         /// <remarks>For the duration of the lease, the leased resource will not be available to any other instance.</remarks>
-        void OnReceive(Func<Lease<T>, Task> onReceive);
+        void OnReceive(DistributorPipeAsync<T> onReceive);
 
         /// <summary>
         /// Starts distributing work.
