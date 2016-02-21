@@ -2,8 +2,6 @@ using System.Threading.Tasks;
 
 namespace Alluvial
 {
-    // FIX: rename QueryDownstream
-
     /// <summary>
     /// Composes the operations of retrieving or creating a projection, performing an aggregate operation with a sequence of data, and storing the updated projection. 
     /// </summary>

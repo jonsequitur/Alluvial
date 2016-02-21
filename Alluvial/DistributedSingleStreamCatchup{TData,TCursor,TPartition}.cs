@@ -15,53 +15,58 @@ namespace Alluvial
     /// <typeparam name="TCursor">The type of the cursor.</typeparam>
     /// <typeparam name="TPartition">The type of the partition.</typeparam>
     [DebuggerDisplay("{ToString()}")]
-    internal class DistributedSingleStreamCatchup<TData, TCursor, TPartition> : StreamCatchupBase<TData, TCursor>
+    internal class DistributedSingleStreamCatchup<TData, TCursor, TPartition> : StreamCatchupBase<TData>
     {
         private static readonly string catchupTypeDescription = typeof (DistributedSingleStreamCatchup<TData, TCursor, TPartition>).ReadableName();
 
         protected readonly IPartitionedStream<TData, TCursor, TPartition> partitionedStream;
 
-        // FIX: (DistributedSingleStreamCatchup) need a way to dispose this distributor
         private readonly IDistributor<IStreamQueryPartition<TPartition>> distributor;
         protected readonly FetchAndSave<ICursor<TCursor>> fetchAndSavePartitionCursor;
+        private readonly IStreamQueryPartition<TPartition>[] partitions;
 
         public DistributedSingleStreamCatchup(
             IPartitionedStream<TData, TCursor, TPartition> partitionedStream,
             IEnumerable<IStreamQueryPartition<TPartition>> partitions,
+            IDistributor<IStreamQueryPartition<TPartition>> distributor,
             int? batchSize = null,
-            FetchAndSave<ICursor<TCursor>> fetchAndSavePartitionCursor = null,
-            IDistributor<IStreamQueryPartition<TPartition>> distributor = null) : base(batchSize)
+            FetchAndSave<ICursor<TCursor>> fetchAndSavePartitionCursor = null) :
+                base(batchSize)
         {
             if (partitions == null)
             {
                 throw new ArgumentNullException(nameof(partitions));
             }
+            if (distributor == null)
+            {
+                throw new ArgumentNullException(nameof(distributor));
+            }
 
             this.partitionedStream = partitionedStream;
-            this.distributor = distributor ?? partitions.DistributeQueriesInProcess();
+            this.partitions = partitions.ToArray();
+            this.distributor = distributor;
             this.fetchAndSavePartitionCursor = fetchAndSavePartitionCursor ??
                                                new InMemoryProjectionStore<ICursor<TCursor>>(id => Cursor.New<TCursor>()).AsHandler();
 
-            this.distributor
-#if DEBUG
-                .Trace() // TODO: (DistributedSingleStreamCatchup) figure out a way to let people Trace this distributor
-#endif
-                .OnReceive(OnReceiveLease);
+            this.distributor.OnReceive(OnReceiveLease);
         }
 
-        protected virtual async Task OnReceiveLease(Lease<IStreamQueryPartition<TPartition>> lease) =>
-            await fetchAndSavePartitionCursor(
-                lease.ResourceName,
-                async cursor =>
-                {
-                    var upstreamCatchup = new SingleStreamCatchup<TData, TCursor>(
-                        await partitionedStream.GetStream(lease.Resource),
-                        initialCursor: cursor,
-                        batchSize: BatchSize,
-                        subscriptions: new ConcurrentDictionary<Type, IAggregatorSubscription>(aggregatorSubscriptions));
+        protected virtual async Task OnReceiveLease(
+            Lease<IStreamQueryPartition<TPartition>> lease) =>
+                await fetchAndSavePartitionCursor(
+                    lease.ResourceName,
+                    async cursor =>
+                    {
+                        var upstreamCatchup = new SingleStreamCatchup<TData, TCursor>(
+                            await partitionedStream.GetStream(lease.Resource),
+                            initialCursor: cursor,
+                            batchSize: BatchSize,
+                            subscriptions: new ConcurrentDictionary<Type, IAggregatorSubscription>(aggregatorSubscriptions));
 
-                    return await upstreamCatchup.RunSingleBatch();
-                });
+                        await upstreamCatchup.RunSingleBatch();
+
+                        return cursor;
+                    });
 
         /// <summary>
         /// Consumes a single batch from the source stream and updates the subscribed aggregators.
@@ -69,29 +74,21 @@ namespace Alluvial
         /// <returns>
         /// The updated cursor position after the batch is consumed.
         /// </returns>
-        public override async Task<ICursor<TCursor>> RunSingleBatch()
+        public override async Task RunSingleBatch()
         {
-            var resources = distributor as IEnumerable<IStreamQueryPartition<TPartition>>;
-            if (resources != null)
+            var resources = new ConcurrentDictionary<IStreamQueryPartition<TPartition>, Unit>(
+                partitions.Select(
+                    r => new KeyValuePair<IStreamQueryPartition<TPartition>, Unit>(
+                             r,
+                             Unit.Default)));
+
+            while (resources.Any())
             {
-                var partitions = new ConcurrentDictionary<IStreamQueryPartition<TPartition>, Unit>(
-                    resources.Select(r => new KeyValuePair<IStreamQueryPartition<TPartition>, Unit>(r, Unit.Default)));
+                var acquired = await distributor.Distribute(1);
 
-                while (partitions.Any())
-                {
-                    var acquired = await distributor.Distribute(1);
-
-                    Unit _;
-                    partitions.TryRemove(acquired.Single(), out _);
-                }
+                Unit _;
+                resources.TryRemove(acquired.Single(), out _);
             }
-            else
-            {
-                // not all distributors have a finite set of known leasable resources
-                await distributor.Distribute(1);
-            }
-
-            return Cursor.New<TCursor>();
         }
 
         /// <summary>

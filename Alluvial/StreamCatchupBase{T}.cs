@@ -11,8 +11,7 @@ namespace Alluvial
     /// An persistent query over a stream of data, which updates one or more stream aggregators.
     /// </summary>
     /// <typeparam name="TData">The type of the data that the catchup pushes to the aggregators.</typeparam>
-    /// <typeparam name="TCursor">The type of the cursor.</typeparam>
-    internal abstract class StreamCatchupBase<TData, TCursor> : IStreamCatchup<TData, TCursor>
+    internal abstract class StreamCatchupBase<TData> : IStreamCatchup<TData>
     {
         private object batchTaskCompletionSource;
         protected readonly ConcurrentDictionary<Type, IAggregatorSubscription> aggregatorSubscriptions;
@@ -56,7 +55,7 @@ namespace Alluvial
         /// <returns>
         /// The updated cursor position after the batch is consumed.
         /// </returns>
-        public abstract Task<ICursor<TCursor>> RunSingleBatch();
+        public abstract Task RunSingleBatch();
 
         protected async Task<ICursor<TUpstreamCursor>> RunSingleBatch<TUpstreamCursor>(
             IStream<TData, TUpstreamCursor> stream,

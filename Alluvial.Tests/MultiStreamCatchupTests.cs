@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using FluentAssertions;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Alluvial.Distributors;
 using Alluvial.Tests.BankDomain;
 using NEventStore;
 using NUnit.Framework;
@@ -117,19 +119,10 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task Stream_traversal_can_continue_from_upstream_cursor_that_was_returned_by_RunSingleBatch()
+        public async Task Stream_traversal_can_continue_from_upstream_cursor()
         {
-            var catchup = StreamCatchup.All(streamSource.StreamPerAggregate(), batchSize: 50);
-
-            ICursor<string> cursor;
-
-            using (catchup.Subscribe(new BalanceProjector(), new InMemoryProjectionStore<BalanceProjection>()))
-            {
-                cursor = await catchup.RunSingleBatch();
-            }
-
             var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
-            catchup = StreamCatchup.All(streamSource.StreamPerAggregate(), cursor);
+            var catchup = StreamCatchup.All(streamSource.StreamPerAggregate(), Cursor.New("50"));
 
             using (catchup.Subscribe(new BalanceProjector(), projectionStore))
             {
@@ -205,11 +198,7 @@ namespace Alluvial.Tests
 
                 store.WriteEvents(streamId, 100m);
 
-                var cursor = await catchup.RunUntilCaughtUp();
-
-                cursor.Position
-                      .Should()
-                      .Be("101");
+                await catchup.RunUntilCaughtUp();
 
                 var balanceProjection = await projectionStore.Get(streamId);
 
@@ -357,9 +346,8 @@ namespace Alluvial.Tests
                                             });
             using (catchup.Subscribe(new BalanceProjector()))
             {
-                var cursor = await catchup.RunSingleBatch();
+                await catchup.RunSingleBatch();
 
-                cursor.Position.Should().Be("10");
                 storedCursor.Position.Should().Be("10");
             }
         }
@@ -374,10 +362,9 @@ namespace Alluvial.Tests
                                             manageUpstreamCursor: async (id, use) => { await use(storedCursor); });
             using (catchup.Subscribe(new BalanceProjector()))
             {
-                var cursor = await catchup.RunSingleBatch();
+                await catchup.RunSingleBatch();
 
                 storedCursor.Position.Should().Be("4");
-                cursor.Position.Should().Be("4");
             }
         }
 
@@ -513,6 +500,51 @@ namespace Alluvial.Tests
             }
 
             getCount.Should().Be(1);
+        }
+
+        [Ignore("Scenario not working yet")]
+        [Test]
+        public async Task A_backoff_can_be_specified_when_there_is_no_new_data()
+        {
+            // arrange
+            var emptyData = new ConcurrentBag<string>();
+            var fetchCount = 0;
+
+            var stream = Stream.PartitionedByValue<string, int, string>(
+                query: async (query, partition) =>
+                {
+                    Interlocked.Increment(ref fetchCount);
+                    return emptyData.Where(s => s.StartsWith(partition.Value));
+                });
+
+            var partitions = Values.AtoZ()
+                                   .Select(v => Partition.ByValue(v))
+                                   .ToArray();
+
+            var distributor = partitions.CreateInMemoryDistributor(
+                waitInterval: TimeSpan.FromSeconds(.1),
+                maxDegreesOfParallelism: 30)
+                .Trace();
+
+            var catchup = stream.DistributeAmong(
+                partitions,
+                distributor: distributor)
+                .Backoff(5.Seconds());
+
+            catchup.Subscribe(async (p, b) =>
+            {
+                p.Value = p.Value ?? new List<string>();
+                p.Value.AddRange(b);
+                return p;
+            }, new InMemoryProjectionStore<Projection<List<string>, int>>());
+
+            // act
+            await distributor.Start();
+            await Task.Delay(2.Seconds());
+            await distributor.Stop();
+
+            // assert
+            fetchCount.Should().Be(26);
         }
     }
 }

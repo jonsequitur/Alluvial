@@ -22,10 +22,12 @@ namespace Alluvial
             IDistributor<IStreamQueryPartition<TPartition>> distributor = null)
             : base(null,
                    partitions,
-                   batchSize,
-                   fetchAndSavePartitionCursor,
-                   distributor)
+                   distributor, batchSize, fetchAndSavePartitionCursor)
         {
+            if (partitionedStream == null)
+            {
+                throw new ArgumentNullException(nameof(partitionedStream));
+            }
             partitionedStreams = partitionedStream;
         }
 
@@ -36,7 +38,7 @@ namespace Alluvial
                 {
                     var upstreamCatchup = new SingleStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor>(
                         await partitionedStreams.GetStream(lease.Resource),
-                        initialCursor: cursor.Clone(),
+                        initialCursor: cursor,
                         batchSize: BatchSize);
 
                     var downstreamCatchup = new MultiStreamCatchup<TData, TUpstreamCursor, TDownstreamCursor>(
@@ -44,7 +46,9 @@ namespace Alluvial
                         cursor.Clone(),
                         subscriptions: new ConcurrentDictionary<Type, IAggregatorSubscription>(aggregatorSubscriptions));
 
-                    return await upstreamCatchup.RunUntilCaughtUp();
+                    await upstreamCatchup.RunSingleBatch();
+
+                    return cursor;
                 });
     }
 }

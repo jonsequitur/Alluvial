@@ -12,7 +12,7 @@ namespace Alluvial
     /// <typeparam name="TData">The type of the data that the catchup pushes to the aggregators.</typeparam>
     /// <typeparam name="TCursor">The type of the cursor.</typeparam>
     [DebuggerDisplay("{ToString()}")]
-    internal class SingleStreamCatchup<TData, TCursor> : StreamCatchupBase<TData, TCursor>
+    internal class SingleStreamCatchup<TData, TCursor> : StreamCatchupBase<TData>
     {
         private readonly IStream<TData, TCursor> stream;
         private readonly ICursor<TCursor> initialCursor;
@@ -40,7 +40,7 @@ namespace Alluvial
         /// <returns>
         /// The updated cursor position after the batch is consumed.
         /// </returns>
-        public override async Task<ICursor<TCursor>> RunSingleBatch() =>
+        public override async Task RunSingleBatch() =>
             await RunSingleBatch(stream, true, initialCursor);
 
         /// <summary>

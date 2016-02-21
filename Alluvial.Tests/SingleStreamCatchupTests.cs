@@ -70,11 +70,12 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task When_one_batch_is_running_a_second_caller_to_RunSingleBatch_can_await_the_completion_of_the_same_batch()
+        public async Task When_one_batch_is_running_then_a_second_caller_to_RunSingleBatch_can_await_the_completion_of_the_same_batch()
         {
             var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
 
-            var catchup = StreamCatchup.Create(stream, batchSize: 1);
+            var cursor = Cursor.New<int>();
+            var catchup = StreamCatchup.Create(stream, batchSize: 1, initialCursor: cursor);
             catchup.Subscribe(new BalanceProjector()
                                   .Pipeline(async (projection, batch, next) =>
                                   {
@@ -82,11 +83,10 @@ namespace Alluvial.Tests
                                       await next(projection, batch);
                                   }), projectionStore);
 
-            var cursor1 = catchup.RunSingleBatch();
-            var cursor2 = catchup.RunSingleBatch();
+            await Task.WhenAll(catchup.RunSingleBatch(),
+                               catchup.RunSingleBatch());
 
-            (await cursor1).Should()
-                               .BeSameAs(await cursor2);
+            cursor.Position.Should().Be(1);
         }
 
         [Test]
@@ -177,12 +177,8 @@ namespace Alluvial.Tests
 
             store.WriteEvents(streamId, howMany: 100);
 
-            var cursor = await catchup.RunUntilCaughtUp();
-
-            cursor.Position
-                  .Should()
-                  .Be(101);
-
+            await catchup.RunUntilCaughtUp();
+            
             var balanceProjection = await projectionStore.Get(streamId);
 
             balanceProjection.Balance.Should().Be(101);
@@ -430,7 +426,7 @@ namespace Alluvial.Tests
 
             var catchup = StreamCatchup.Create(stream);
 
-            catchup.Subscribe<Projection<int, int>, int, int>(async (sum, batch) =>
+            catchup.Subscribe<Projection<int, int>, int>(async (sum, batch) =>
             {
                 sum.Value += batch.Count;
                 return sum;
@@ -452,7 +448,7 @@ namespace Alluvial.Tests
             var pollCountAtDispose = 0;
             var stream = Enumerable.Range(1, 1000).AsSequentialStream().Trace();
             var catchup = StreamCatchup.Create(stream, batchSize: 1);
-            catchup.Subscribe<int, int, int>(async (p, b) =>
+            catchup.Subscribe<int, int>(async (p, b) =>
             {
                 pollCount++;
                 return p + b.Count;

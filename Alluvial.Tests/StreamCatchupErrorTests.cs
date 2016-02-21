@@ -125,7 +125,7 @@ namespace Alluvial.Tests
             var error = default(StreamCatchupError<Projection<int, int>>);
 
             var catchup = StreamCatchup.Create(stream);
-            catchup.Subscribe<Projection<int, int>, int, int>(async (sum, batch) =>
+            catchup.Subscribe<Projection<int, int>, int>(async (sum, batch) =>
             {
                 sum.Value += batch.Count;
                 return sum;
@@ -156,7 +156,7 @@ namespace Alluvial.Tests
 
             var catchup = StreamCatchup.All(streams);
 
-            catchup.Subscribe<Projection<string, int>, string, int>(async (sum, batch) => new Projection<string, int>(),
+            catchup.Subscribe<Projection<string, int>, string>(async (sum, batch) => new Projection<string, int>(),
                                                                     (streamId, use) => use(null),
                                                                     onError: e =>
                                                                     {
