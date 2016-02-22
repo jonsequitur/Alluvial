@@ -214,9 +214,9 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task Guid_partitions_as_integers_are_gapless()
+        public async Task Guid_partitions_are_gapless()
         {
-            int numberOfPartitions = 1000;
+            var numberOfPartitions = 1000;
 
             var partitions = Partition.AllGuids()
                                       .Among(numberOfPartitions)
@@ -236,6 +236,28 @@ namespace Alluvial.Tests
                 firstPartition.UpperBoundInclusive.ToBigInteger()
                               .Should()
                               .Be(secondPartition.LowerBoundExclusive.ToBigInteger());
+            }
+        }
+
+        [Test]
+        public async Task Guid_partitions_result_in_roughly_equal_distribution()
+        {
+            var guids = Enumerable.Range(1, 10000)
+                                  .Select(_ => Guid.NewGuid())
+                                  .ToArray();
+
+            var partitions = Partition.AllGuids().Among(10);
+
+            var partitioned = guids.DistributeAmong(partitions);
+
+            foreach (var x in partitioned)
+            {
+                Console.WriteLine($"{x.Key}: {x.Count()}");
+            }
+
+            foreach (var grouping in partitioned)
+            {
+                grouping.Count().Should().BeInRange(900, 1100);
             }
         }
 
