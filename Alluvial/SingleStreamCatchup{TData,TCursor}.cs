@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Alluvial.Distributors;
 
 namespace Alluvial
 {
@@ -40,8 +41,8 @@ namespace Alluvial
         /// <returns>
         /// The updated cursor position after the batch is consumed.
         /// </returns>
-        public override async Task RunSingleBatch() =>
-            await RunSingleBatch(stream, true, initialCursor);
+        public override async Task RunSingleBatch(ILease lease) =>
+            await RunSingleBatch(stream, true, lease, initialCursor);
 
         /// <summary>
         /// Returns a <see cref="System.String" /> that represents this instance.

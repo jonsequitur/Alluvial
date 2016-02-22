@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Alluvial.Distributors;
 
 namespace Alluvial
 {
@@ -15,14 +16,15 @@ namespace Alluvial
             TimeSpan duration) =>
                 new Delegator<TData>(
                     innerCatchup: catchup,
-                    runSingleBatch: async () =>
+                    runSingleBatch: async lease =>
                     {
                         using (var counter = catchup.Count())
                         {
-                            await catchup.RunSingleBatch();
+                            await catchup.RunSingleBatch(lease);
                             if (counter.Value == 0)
                             {
-                                await Task.Delay(duration);
+                                await lease.Extend(duration);
+                                await lease.Expiration();
                             }
                         }
                     });
@@ -201,7 +203,8 @@ namespace Alluvial
         /// Runs the catchup query until it reaches an empty batch, then stops.
         /// </summary>
         public static async Task RunUntilCaughtUp<TData>(
-            this IStreamCatchup<TData> catchup)
+            this IStreamCatchup<TData> catchup,
+            ILease lease = null)
         {
             using (var counter = catchup.Count())
             {
@@ -209,7 +212,7 @@ namespace Alluvial
                 do
                 {
                     countBefore = counter.Value;
-                   await catchup.RunSingleBatch();
+                   await catchup.RunSingleBatch(lease ?? Lease.CreateDefault());
                 } while (countBefore != counter.Value);
             }
         }
@@ -231,12 +234,24 @@ namespace Alluvial
             {
                 while (!canceled)
                 {
-                    await catchup.RunSingleBatch();
+                    await catchup.RunSingleBatch(Lease.CreateDefault());
                     await Task.Delay(pollInterval);
                 }
             });
 
             return Disposable.Create(() => { canceled = true; });
+        }
+
+        /// <summary>
+        /// Consumes a single batch from the source stream and updates the subscribed aggregators.
+        /// </summary>
+        /// <param name="catchup">The catchup.</param>
+        /// <returns>
+        /// The updated cursor position after the batch is consumed.
+        /// </returns>
+        public static async Task RunSingleBatch<T>(this IStreamCatchup<T> catchup)
+        {
+            await catchup.RunSingleBatch(Lease.CreateDefault());
         }
 
         /// <summary>
@@ -362,11 +377,11 @@ namespace Alluvial
         internal class Delegator<TData> : IStreamCatchup<TData>
         {
             private readonly IStreamCatchup<TData> innerCatchup;
-            private readonly Func<Task> runSingleBatch;
+            private readonly Func<ILease, Task> runSingleBatch;
 
             public Delegator(
                 IStreamCatchup<TData> innerCatchup,
-                Func<Task> runSingleBatch)
+                Func<ILease, Task> runSingleBatch)
             {
                 if (innerCatchup == null)
                 {
@@ -390,7 +405,7 @@ namespace Alluvial
                         fetchAndSave,
                         onError);
 
-            public Task RunSingleBatch() => runSingleBatch();
+            public Task RunSingleBatch(ILease lease) => runSingleBatch(lease);
         }
     }
 }

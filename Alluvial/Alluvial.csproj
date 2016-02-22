@@ -55,6 +55,7 @@
     <Compile Include="DistributorPipeAsync{T}.cs" />
     <Compile Include="Distributors\ILease.cs" />
     <Compile Include="Distributors\Leasable{T}.cs" />
+    <Compile Include="Distributors\Lease.cs" />
     <Compile Include="Distributors\Lease{T}.cs" />
     <Compile Include="InMemoryDistributor.cs" />
     <Compile Include="IDistributor{T}.cs" />

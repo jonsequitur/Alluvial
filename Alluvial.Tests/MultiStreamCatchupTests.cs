@@ -522,7 +522,7 @@ namespace Alluvial.Tests
                                    .ToArray();
 
             var distributor = partitions.CreateInMemoryDistributor(
-                waitInterval: TimeSpan.FromSeconds(.1),
+                waitInterval: TimeSpan.FromSeconds(.5),
                 maxDegreesOfParallelism: 30)
                 .Trace();
 

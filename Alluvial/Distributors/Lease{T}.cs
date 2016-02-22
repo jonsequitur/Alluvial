@@ -1,6 +1,4 @@
 using System;
-using System.Diagnostics;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Alluvial.Distributors
@@ -9,13 +7,10 @@ namespace Alluvial.Distributors
     /// A time-bound exclusive lease to a known resource.
     /// </summary>
     /// <typeparam name="T">The type of the resource.</typeparam>
-    public class Lease<T> : ILease
+    public class Lease<T> : Lease
     {
-        private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly Leasable<T> leasable;
         private readonly int ownerToken;
-        private readonly Func<TimeSpan, Task<TimeSpan>> extend;
-        private TimeSpan duration;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Lease{T}"/> class.
@@ -29,7 +24,7 @@ namespace Alluvial.Distributors
             Leasable<T> leasable,
             TimeSpan duration,
             int ownerToken,
-            Func<TimeSpan, Task<TimeSpan>> extend = null)
+            Func<TimeSpan, Task<TimeSpan>> extend = null) : base(duration, extend)
         {
             if (leasable == null)
             {
@@ -37,12 +32,10 @@ namespace Alluvial.Distributors
             }
 
             this.leasable = leasable;
-            this.duration = duration;
             this.ownerToken = ownerToken;
-            this.extend = extend;
+          
             LastGranted = this.leasable.LeaseLastGranted;
             LastReleased = this.leasable.LeaseLastReleased;
-            cancellationTokenSource.CancelAfter(Duration);
         }
 
         /// <summary>
@@ -62,67 +55,9 @@ namespace Alluvial.Distributors
             leasable.LeaseLastReleased = at ?? DateTimeOffset.UtcNow;
 
         /// <summary>
-        /// Cancels the lease.
-        /// </summary>
-        public void Cancel() => cancellationTokenSource.Cancel();
-
-        /// <summary>
-        /// Gets the duration for which the lease is granted.
-        /// </summary>
-        public TimeSpan Duration => duration;
-
-        /// <summary>
-        /// Gets a task that completes when the lease is released or expired.
-        /// </summary>
-        public async Task Expiration()
-        {
-            try
-            {
-                await Task.Delay(TimeSpan.FromMinutes(60), CancellationToken);
-            }
-            catch (TaskCanceledException)
-            {
-            }
-        }
-
-        /// <summary>
         /// Gets a token that the owner of the lease uses for operations relating to the lease, such as cancelation and renewal.
         /// </summary>
         public int OwnerToken => ownerToken;
-
-        /// <summary>
-        /// Gets a cancellation token that can be used to cancel the task associated with the lease.
-        /// </summary>
-        public CancellationToken CancellationToken => cancellationTokenSource.Token;
-
-        /// <summary>
-        /// Extends the lease.
-        /// </summary>
-        /// <param name="by">The amount of time by which to extend the lease.</param>
-        /// <returns></returns>
-        /// <exception cref="System.InvalidOperationException">The lease cannot be extended.</exception>
-        public async Task Extend(TimeSpan by)
-        {
-            if (by < TimeSpan.Zero)
-            {
-                throw new ArgumentException("Lease cannot be extended by a negative timespan.");
-            }
-
-            if (cancellationTokenSource.IsCancellationRequested)
-            {
-                throw new InvalidOperationException("The lease cannot be extended.");
-            }
-
-            if (extend != null)
-            {
-                @by = await extend(@by);
-            }
-
-            duration += by;
-            cancellationTokenSource.CancelAfter(duration);
-
-            Debug.WriteLine($"[Lease] extended by {by}: {this}");
-        }
 
         /// <summary>
         /// Returns a string that represents the current object.
@@ -130,7 +65,7 @@ namespace Alluvial.Distributors
         /// <returns>
         /// A string that represents the current object.
         /// </returns>
-        public override string ToString() => $"lease:{ResourceName} ({OwnerToken}) total duration {duration} (last granted @ {LastGranted}, last released @ {LastReleased})";
+        public override string ToString() => $"lease:{ResourceName} ({OwnerToken}) total duration {Duration} (last granted @ {LastGranted}, last released @ {LastReleased})";
 
         internal Leasable<T> Leasable => leasable;
 

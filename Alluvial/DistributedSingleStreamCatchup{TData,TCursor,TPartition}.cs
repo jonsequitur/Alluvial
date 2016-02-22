@@ -74,7 +74,7 @@ namespace Alluvial
         /// <returns>
         /// The updated cursor position after the batch is consumed.
         /// </returns>
-        public override async Task RunSingleBatch()
+        public override async Task RunSingleBatch(ILease lease)
         {
             var resources = new ConcurrentDictionary<IStreamQueryPartition<TPartition>, Unit>(
                 partitions.Select(

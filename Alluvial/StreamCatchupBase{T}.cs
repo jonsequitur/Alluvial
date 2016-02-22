@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Alluvial.Distributors;
 
 namespace Alluvial
 {
@@ -55,11 +56,12 @@ namespace Alluvial
         /// <returns>
         /// The updated cursor position after the batch is consumed.
         /// </returns>
-        public abstract Task RunSingleBatch();
+        public abstract Task RunSingleBatch(ILease lease);
 
         protected async Task<ICursor<TUpstreamCursor>> RunSingleBatch<TUpstreamCursor>(
             IStream<TData, TUpstreamCursor> stream,
             bool synchronize,
+            ILease lease,
             ICursor<TUpstreamCursor> initialCursor = null)
         {
             var tcs = new TaskCompletionSource<AggregationBatch<TUpstreamCursor>>();
