@@ -111,11 +111,14 @@ namespace Alluvial
                 }
             };
 
-            Func<object, Task<AggregationBatch<TUpstreamCursor>>> awaitData = c =>
+            var receivedProjectionsCount = 0;
+
+            Func<object, Task<AggregationBatch<TUpstreamCursor>>> waitForProjectionsThenQueryTheStream = c =>
             {
                 projections.Add(c);
 
-                if (projections.Count >= aggregatorSubscriptions.Count)
+                // we only want to query data from the stream once, when all projections have been received
+                if (Interlocked.Increment(ref receivedProjectionsCount) == aggregatorSubscriptions.Count)
                 {
                     queryTheStream();
                 }
@@ -126,7 +129,7 @@ namespace Alluvial
             // create one aggregation task for each subscribed aggregator and await completion of all of them
             var aggregationTasks = aggregatorSubscriptions
                 .Values
-                .Select(v => Aggregate(stream, (dynamic) v, awaitData) as Task);
+                .Select(v => Aggregate(stream, (dynamic) v, waitForProjectionsThenQueryTheStream) as Task);
 
             await Task.WhenAll(aggregationTasks);
 
