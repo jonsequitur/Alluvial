@@ -58,6 +58,7 @@
     <Compile Include="Distributors\Lease.cs" />
     <Compile Include="Distributors\Lease{T}.cs" />
     <Compile Include="Grouping.cs" />
+    <Compile Include="IDistributedCatchup.cs" />
     <Compile Include="InMemoryDistributor.cs" />
     <Compile Include="IDistributor{T}.cs" />
     <Compile Include="InMemoryProjectionStore.cs" />

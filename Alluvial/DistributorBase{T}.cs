@@ -172,7 +172,7 @@ namespace Alluvial
                     var receive = pipeline(lease,
                                            _ => Unit.Default.CompletedTask());
 
-                    await receive.TimeoutAfter(lease.Expiration());
+                    await Task.WhenAny(receive, lease.Expiration());
                 }
                 catch (Exception exception)
                 {

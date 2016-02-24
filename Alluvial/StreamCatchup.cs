@@ -13,21 +13,27 @@ namespace Alluvial
     {
         public static IStreamCatchup<TData> Backoff<TData>(
             this IStreamCatchup<TData> catchup,
-            TimeSpan duration) =>
-                new Delegator<TData>(
-                    innerCatchup: catchup,
-                    runSingleBatch: async lease =>
+            TimeSpan duration)
+        {
+            var distributedCatchup = catchup as IDistributedCatchup<TData>;
+            distributedCatchup?.ConfigureChildCatchup(child => child.Backoff(duration));
+
+            return new Delegator<TData>(
+                innerCatchup: catchup,
+                runSingleBatch: async lease =>
+                {
+                    using (var counter = catchup.Count())
                     {
-                        using (var counter = catchup.Count())
+                        await catchup.RunSingleBatch(lease);
+
+                        if (counter.Value == 0)
                         {
-                            await catchup.RunSingleBatch(lease);
-                            if (counter.Value == 0)
-                            {
-                                await lease.Extend(duration);
-                                await lease.Expiration();
-                            }
+                            await lease.Extend(duration);
+                            await lease.Expiration();
                         }
-                    });
+                    }
+                });
+        }
 
         internal static Counter<TData> Count<TData>(
             this IStreamCatchup<TData> catchup)

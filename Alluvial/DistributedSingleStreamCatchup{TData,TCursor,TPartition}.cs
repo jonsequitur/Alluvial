@@ -15,7 +15,9 @@ namespace Alluvial
     /// <typeparam name="TCursor">The type of the cursor.</typeparam>
     /// <typeparam name="TPartition">The type of the partition.</typeparam>
     [DebuggerDisplay("{ToString()}")]
-    internal class DistributedSingleStreamCatchup<TData, TCursor, TPartition> : StreamCatchupBase<TData>
+    internal class DistributedSingleStreamCatchup<TData, TCursor, TPartition> : 
+        StreamCatchupBase<TData>,
+        IDistributedCatchup<TData>
     {
         private static readonly string catchupTypeDescription = typeof (DistributedSingleStreamCatchup<TData, TCursor, TPartition>).ReadableName();
 
@@ -57,13 +59,18 @@ namespace Alluvial
                     lease.ResourceName,
                     async cursor =>
                     {
-                        var upstreamCatchup = new SingleStreamCatchup<TData, TCursor>(
+                        IStreamCatchup<TData> upstreamCatchup = new SingleStreamCatchup<TData, TCursor>(
                             await partitionedStream.GetStream(lease.Resource),
                             initialCursor: cursor,
                             batchSize: BatchSize,
                             subscriptions: new ConcurrentDictionary<Type, IAggregatorSubscription>(aggregatorSubscriptions));
 
-                        await upstreamCatchup.RunSingleBatch();
+                        if (configureChildCatchup != null)
+                        {
+                            upstreamCatchup = configureChildCatchup(upstreamCatchup);
+                        }
+
+                        await upstreamCatchup.RunSingleBatch(lease);
 
                         return cursor;
                     });
@@ -76,20 +83,23 @@ namespace Alluvial
         /// </returns>
         public override async Task RunSingleBatch(ILease lease)
         {
-            var resources = new ConcurrentDictionary<IStreamQueryPartition<TPartition>, Unit>(
-                partitions.Select(
-                    r => new KeyValuePair<IStreamQueryPartition<TPartition>, Unit>(
-                             r,
-                             Unit.Default)));
+            await distributor.Distribute(partitions.Length);
+        }
 
-            while (resources.Any())
+        public void ConfigureChildCatchup(Func<IStreamCatchup<TData>, IStreamCatchup<TData>> configure)
+        {
+            if (configureChildCatchup == null)
             {
-                var acquired = await distributor.Distribute(1);
-
-                Unit _;
-                resources.TryRemove(acquired.Single(), out _);
+                configureChildCatchup = configure;
+            }
+            else
+            {
+                var previousConfigure = configureChildCatchup;
+                configureChildCatchup = catchup => configure(previousConfigure(catchup));
             }
         }
+
+        private Func<IStreamCatchup<TData>, IStreamCatchup<TData>> configureChildCatchup;
 
         /// <summary>
         /// Returns a <see cref="System.String" /> that represents this instance.
