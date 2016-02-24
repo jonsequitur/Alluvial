@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace Alluvial.Distributors
+namespace Alluvial
 {
     /// <summary>
     /// A time-bound exclusive lease.
