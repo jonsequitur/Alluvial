@@ -546,7 +546,7 @@ namespace Alluvial.Tests
                 query: async (query, partition) =>
                 {
                     Interlocked.Increment(ref fetchCount);
-                    return emptyData.Where(s => s.StartsWith(partition.Value));
+                    return emptyData;
                 });
 
             var partitions = Values.AtoZ()
