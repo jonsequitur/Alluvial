@@ -2,7 +2,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading.Tasks;
-using Alluvial.Distributors;
 
 namespace Alluvial
 {
@@ -89,8 +88,6 @@ namespace Alluvial
                 {
                     lease.NotifyReleased();
                 }
-
-                lease.NotifyCompleted();
             }
 
             return Unit.Default.CompletedTask();

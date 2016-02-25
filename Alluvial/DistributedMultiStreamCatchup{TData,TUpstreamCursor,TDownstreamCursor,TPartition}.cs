@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using Alluvial.Distributors;
 
 namespace Alluvial
 {
@@ -22,7 +21,9 @@ namespace Alluvial
             IDistributor<IStreamQueryPartition<TPartition>> distributor = null)
             : base(null,
                    partitions,
-                   distributor, batchSize, fetchAndSavePartitionCursor)
+                   distributor, 
+                   batchSize, 
+                   fetchAndSavePartitionCursor)
         {
             if (partitionedStream == null)
             {
@@ -36,19 +37,28 @@ namespace Alluvial
                 lease.ResourceName,
                 async cursor =>
                 {
-                    var upstreamCatchup = new SingleStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor>(
+                    IStreamCatchup<IStream<TData, TDownstreamCursor>> upstreamCatchup =
+                    
+                    new SingleStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor>(
                         await partitionedStreams.GetStream(lease.Resource),
                         initialCursor: cursor,
                         batchSize: BatchSize);
+
+                    if (configureChildCatchup != null)
+                    {
+                        upstreamCatchup = configureChildCatchup(upstreamCatchup);
+                    }
 
                     var downstreamCatchup = new MultiStreamCatchup<TData, TUpstreamCursor, TDownstreamCursor>(
                         upstreamCatchup,
                         cursor.Clone(),
                         subscriptions: new ConcurrentDictionary<Type, IAggregatorSubscription>(aggregatorSubscriptions));
 
-                    await upstreamCatchup.RunSingleBatch();
+                    await upstreamCatchup.RunSingleBatch(lease);
 
                     return cursor;
                 });
+
+        private Func<IStreamCatchup<IStream<TData, TDownstreamCursor>>, IStreamCatchup<IStream<TData, TDownstreamCursor>>> configureChildCatchup;
     }
 }

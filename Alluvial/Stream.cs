@@ -204,10 +204,10 @@ namespace Alluvial
         /// <summary>
         /// Splits a stream into many streams that can be independently caught up.
         /// </summary>
-        /// <typeparam name="TUpstream">The type of the partitioned stream.</typeparam>
+        /// <typeparam name="TUpstream">The type of the upstream stream.</typeparam>
         /// <typeparam name="TDownstream">The type of the downstream streams.</typeparam>
         /// <typeparam name="TUpstreamCursor">The type of the upstream cursor.</typeparam>
-        /// <param name="upstream">The partitioned stream.</param>
+        /// <param name="upstream">The upstream stream.</param>
         /// <param name="queryDownstream">The downstream query.</param>
         /// <returns></returns>
         public static IStream<TDownstream, TUpstreamCursor> IntoMany<TUpstream, TDownstream, TUpstreamCursor>(
@@ -235,7 +235,7 @@ namespace Alluvial
                     },
                     advanceCursor: (query, batch) =>
                     {
-                        // we're passing the cursor through to the partitionedStream query, so we don't want downstream queries to overwrite it
+                        // we're passing the cursor through to the upstream query, so we don't want downstream queries to overwrite it
                     },
                     newCursor: upstream.NewCursor);
 
@@ -277,7 +277,7 @@ namespace Alluvial
                     },
                     advanceCursor: (query, batch) =>
                     {
-                        // we're passing the cursor through to the partitionedStream query, so we don't want downstream queries to overwrite it
+                        // we're passing the cursor through to the upstream query, so we don't want downstream queries to overwrite it
                     });
 
         /// <summary>

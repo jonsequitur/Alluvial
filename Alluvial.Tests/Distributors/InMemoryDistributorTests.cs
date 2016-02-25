@@ -1,6 +1,5 @@
 using System;
 using System.Threading.Tasks;
-using Alluvial.Distributors;
 using NUnit.Framework;
 
 namespace Alluvial.Tests.Distributors

@@ -4,7 +4,6 @@ using System.Diagnostics;
 using FluentAssertions;
 using System.Linq;
 using System.Threading.Tasks;
-using Alluvial.Distributors;
 using Alluvial.Tests.BankDomain;
 using NUnit.Framework;
 
