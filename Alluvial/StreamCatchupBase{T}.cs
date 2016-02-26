@@ -55,11 +55,12 @@ namespace Alluvial
         /// <returns>
         /// The updated cursor position after the batch is consumed.
         /// </returns>
-        public abstract Task RunSingleBatch();
+        public abstract Task RunSingleBatch(ILease lease);
 
         protected async Task<ICursor<TUpstreamCursor>> RunSingleBatch<TUpstreamCursor>(
             IStream<TData, TUpstreamCursor> stream,
             bool synchronize,
+            ILease lease,
             ICursor<TUpstreamCursor> initialCursor = null)
         {
             var tcs = new TaskCompletionSource<AggregationBatch<TUpstreamCursor>>();
@@ -110,11 +111,14 @@ namespace Alluvial
                 }
             };
 
-            Func<object, Task<AggregationBatch<TUpstreamCursor>>> awaitData = c =>
+            var receivedProjectionsCount = 0;
+
+            Func<object, Task<AggregationBatch<TUpstreamCursor>>> waitForProjectionsThenQueryTheStream = c =>
             {
                 projections.Add(c);
 
-                if (projections.Count >= aggregatorSubscriptions.Count)
+                // we only want to query data from the stream once, when all projections have been received
+                if (Interlocked.Increment(ref receivedProjectionsCount) == aggregatorSubscriptions.Count)
                 {
                     queryTheStream();
                 }
@@ -125,7 +129,7 @@ namespace Alluvial
             // create one aggregation task for each subscribed aggregator and await completion of all of them
             var aggregationTasks = aggregatorSubscriptions
                 .Values
-                .Select(v => Aggregate(stream, (dynamic) v, awaitData) as Task);
+                .Select(v => Aggregate(stream, (dynamic) v, waitForProjectionsThenQueryTheStream) as Task);
 
             await Task.WhenAll(aggregationTasks);
 

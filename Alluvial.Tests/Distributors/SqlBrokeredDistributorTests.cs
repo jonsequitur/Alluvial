@@ -1,6 +1,5 @@
 using System;
 using System.Threading.Tasks;
-using Alluvial.Distributors;
 using Alluvial.Distributors.Sql;
 using FluentAssertions;
 using NUnit.Framework;

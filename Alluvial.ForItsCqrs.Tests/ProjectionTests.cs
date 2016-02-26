@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using Alluvial.Distributors;
 using Alluvial.Distributors.Sql;
 using Alluvial.Tests;
 using FluentAssertions;

@@ -139,12 +139,12 @@ namespace Alluvial.Tests
                     Partition.ByRange("f", "j"),
                     Partition.ByRange("k", "z")
                 },
-                                         batchSize: 231,
+                                         batchSize: 10,
                                          fetchAndSavePartitionCursor: cursorStore.Trace().AsHandler());
 
             catchup.Subscribe(aggregator);
 
-            await catchup.RunUntilCaughtUp();
+            await catchup.RunSingleBatch();
 
             cursorStore.Count().Should().Be(3);
         }

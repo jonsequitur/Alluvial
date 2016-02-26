@@ -67,7 +67,7 @@ namespace Alluvial
                 async (cursor, streams) =>
                 {
                     // ths upstream cursor is not passed here because the downstream streams have their own independent cursors
-                    await Task.WhenAll(streams.Select(s => RunSingleBatch(s, false)));
+                    await Task.WhenAll(streams.Select(s => RunSingleBatch(s, false, Lease.CreateDefault())));
 
                     return cursor;
                 },
@@ -77,7 +77,7 @@ namespace Alluvial
         /// <summary>
         /// Consumes a single batch from the source stream and updates the subscribed aggregators.
         /// </summary>
-        public override async Task RunSingleBatch() => await upstreamCatchup.RunSingleBatch();
+        public override async Task RunSingleBatch(ILease lease) => await upstreamCatchup.RunSingleBatch(lease);
 
         /// <summary>
         /// Returns a <see cref="System.String" /> that represents this instance.

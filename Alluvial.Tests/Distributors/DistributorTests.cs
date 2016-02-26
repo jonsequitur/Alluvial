@@ -7,7 +7,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Alluvial.Distributors;
 using NUnit.Framework;
 
 namespace Alluvial.Tests.Distributors

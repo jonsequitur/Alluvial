@@ -8,7 +8,6 @@ using FluentAssertions;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using Alluvial.Distributors;
 using Alluvial.Distributors.Sql;
 using Microsoft.Its.Domain.Sql;
 using Microsoft.Its.Domain.Sql.Migrations;

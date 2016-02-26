@@ -5,7 +5,6 @@ using FluentAssertions;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Alluvial.Distributors;
 using Alluvial.Tests.BankDomain;
 using NEventStore;
 using NUnit.Framework;
@@ -502,9 +501,42 @@ namespace Alluvial.Tests
             getCount.Should().Be(1);
         }
 
-        [Ignore("Scenario not working yet")]
         [Test]
-        public async Task A_backoff_can_be_specified_when_there_is_no_new_data()
+        public async Task A_backoff_can_be_specified_so_that_polling_slows_when_there_is_no_new_data()
+        {
+            // arrange
+            var fetchCount = 0;
+
+            var streams = Stream.Create<string, int>(async q =>
+            {
+                Interlocked.Increment(ref fetchCount);
+                return Enumerable.Empty<string>();
+            }) .Trace()
+                                .IntoMany(async (item, cursor, toCursor) => Enumerable.Empty<string>().AsSequentialStream())
+                               ;
+
+            var catchup = StreamCatchup.All(streams)
+                                       .Backoff(5.Seconds());
+
+            catchup.Subscribe(async (p, b) =>
+            {
+                p.Value = p.Value ?? new List<string>();
+                p.Value.AddRange(b);
+                return p;
+            }, new InMemoryProjectionStore<Projection<List<string>, int>>());
+
+            // act
+            using (catchup.Poll(TimeSpan.FromSeconds(.1)))
+            {
+                await Task.Delay(1.Seconds());
+            }
+
+            // assert
+            fetchCount.Should().Be(1);
+        }
+
+        [Test]
+        public async Task A_backoff_can_be_specified_so_that_distributor_slows_when_there_is_no_new_data()
         {
             // arrange
             var emptyData = new ConcurrentBag<string>();
@@ -514,7 +546,7 @@ namespace Alluvial.Tests
                 query: async (query, partition) =>
                 {
                     Interlocked.Increment(ref fetchCount);
-                    return emptyData.Where(s => s.StartsWith(partition.Value));
+                    return emptyData;
                 });
 
             var partitions = Values.AtoZ()
@@ -522,7 +554,7 @@ namespace Alluvial.Tests
                                    .ToArray();
 
             var distributor = partitions.CreateInMemoryDistributor(
-                waitInterval: TimeSpan.FromSeconds(.1),
+                waitInterval: TimeSpan.FromSeconds(.5),
                 maxDegreesOfParallelism: 30)
                 .Trace();
 
