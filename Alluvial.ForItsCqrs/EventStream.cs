@@ -41,7 +41,6 @@ namespace Alluvial.Streams.ItsDomainSql
             string streamId,
             Func<IQueryable<StorableEvent>> storableEvents) =>
                 AllChangesPartitioned(streamId, storableEvents)
-                    .Trace()
                     .IntoMany((update, fromCursor, toCursor, partition) =>
                               Stream.Create<IEvent, long>(
                                   update.AggregateId.ToString(),
