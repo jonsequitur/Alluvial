@@ -70,9 +70,6 @@ namespace Alluvial
         /// <summary>
         /// Consumes a single batch from the source stream and updates the subscribed aggregators.
         /// </summary>
-        /// <returns>
-        /// The updated cursor position after the batch is consumed.
-        /// </returns>
         public override async Task RunSingleBatch(ILease lease)
         {
             await distributor.Distribute(partitions.Length);
