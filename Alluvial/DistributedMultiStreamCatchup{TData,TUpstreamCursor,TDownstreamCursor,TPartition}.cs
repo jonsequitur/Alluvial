@@ -32,22 +32,17 @@ namespace Alluvial
             partitionedStreams = partitionedStream;
         }
 
-        protected override async Task OnReceiveLease(Lease<IStreamQueryPartition<TPartition>> lease) =>
+        public async override Task ReceiveLease(
+            Lease<IStreamQueryPartition<TPartition>> lease) =>
             await fetchAndSavePartitionCursor(
                 lease.ResourceName,
                 async cursor =>
                 {
-                    IStreamCatchup<IStream<TData, TDownstreamCursor>> upstreamCatchup =
-                    
-                    new SingleStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor>(
-                        await partitionedStreams.GetStream(lease.Resource),
-                        initialCursor: cursor,
-                        batchSize: BatchSize);
-
-                    if (configureChildCatchup != null)
-                    {
-                        upstreamCatchup = configureChildCatchup(upstreamCatchup);
-                    }
+                    var upstreamCatchup =
+                        new SingleStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor>(
+                            await partitionedStreams.GetStream(lease.Resource),
+                            initialCursor: cursor,
+                            batchSize: BatchSize);
 
                     var downstreamCatchup = new MultiStreamCatchup<TData, TUpstreamCursor, TDownstreamCursor>(
                         upstreamCatchup,
@@ -58,7 +53,5 @@ namespace Alluvial
 
                     return cursor;
                 });
-
-        private Func<IStreamCatchup<IStream<TData, TDownstreamCursor>>, IStreamCatchup<IStream<TData, TDownstreamCursor>>> configureChildCatchup;
     }
 }

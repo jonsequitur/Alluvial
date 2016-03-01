@@ -512,8 +512,7 @@ namespace Alluvial.Tests
                 Interlocked.Increment(ref fetchCount);
                 return Enumerable.Empty<string>();
             }) .Trace()
-                                .IntoMany(async (item, cursor, toCursor) => Enumerable.Empty<string>().AsSequentialStream())
-                               ;
+                                .IntoMany(async (item, cursor, toCursor) => Enumerable.Empty<string>().AsSequentialStream());
 
             var catchup = StreamCatchup.All(streams)
                                        .Backoff(5.Seconds());
@@ -539,18 +538,18 @@ namespace Alluvial.Tests
         public async Task A_backoff_can_be_specified_so_that_distributor_slows_when_there_is_no_new_data()
         {
             // arrange
-            var emptyData = new ConcurrentBag<string>();
             var fetchCount = 0;
 
-            var stream = Stream.PartitionedByValue<string, int, string>(
+            var streams = Stream.PartitionedByValue<string, int, string>(
                 query: async (query, partition) =>
                 {
                     Interlocked.Increment(ref fetchCount);
-                    return emptyData;
-                });
+                    return Enumerable.Empty<string>();
+                })
+                                .IntoMany(async (a, b, c, d) => Enumerable.Empty<string>().AsSequentialStream());
 
             var partitions = Values.AtoZ()
-                                   .Select(v => Partition.ByValue(v))
+                                   .Select(Partition.ByValue)
                                    .ToArray();
 
             var distributor = partitions.CreateInMemoryDistributor(
@@ -558,7 +557,7 @@ namespace Alluvial.Tests
                 maxDegreesOfParallelism: 30)
                 .Trace();
 
-            var catchup = stream.DistributeAmong(
+            var catchup = streams.DistributeAmong(
                 partitions,
                 distributor: distributor)
                 .Backoff(5.Seconds());

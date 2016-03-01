@@ -14,9 +14,9 @@ namespace Alluvial
     /// <typeparam name="TCursor">The type of the cursor.</typeparam>
     /// <typeparam name="TPartition">The type of the partition.</typeparam>
     [DebuggerDisplay("{ToString()}")]
-    internal class DistributedSingleStreamCatchup<TData, TCursor, TPartition> : 
+    internal class DistributedSingleStreamCatchup<TData, TCursor, TPartition> :
         StreamCatchupBase<TData>,
-        IDistributedCatchup<TData>
+        IDistributedStreamCatchup<TData, TPartition>
     {
         private static readonly string catchupTypeDescription = typeof (DistributedSingleStreamCatchup<TData, TCursor, TPartition>).ReadableName();
 
@@ -48,11 +48,9 @@ namespace Alluvial
             this.distributor = distributor;
             this.fetchAndSavePartitionCursor = fetchAndSavePartitionCursor ??
                                                new InMemoryProjectionStore<ICursor<TCursor>>(id => Cursor.New<TCursor>()).AsHandler();
-
-            this.distributor.OnReceive(OnReceiveLease);
         }
 
-        protected virtual async Task OnReceiveLease(
+        public virtual async Task ReceiveLease(
             Lease<IStreamQueryPartition<TPartition>> lease) =>
                 await fetchAndSavePartitionCursor(
                     lease.ResourceName,
@@ -63,11 +61,6 @@ namespace Alluvial
                             initialCursor: cursor,
                             batchSize: BatchSize,
                             subscriptions: new ConcurrentDictionary<Type, IAggregatorSubscription>(aggregatorSubscriptions));
-
-                        if (configureChildCatchup != null)
-                        {
-                            upstreamCatchup = configureChildCatchup(upstreamCatchup);
-                        }
 
                         await upstreamCatchup.RunSingleBatch(lease);
 
@@ -84,22 +77,7 @@ namespace Alluvial
         {
             await distributor.Distribute(partitions.Length);
         }
-
-        public void ConfigureChildCatchup(Func<IStreamCatchup<TData>, IStreamCatchup<TData>> configure)
-        {
-            if (configureChildCatchup == null)
-            {
-                configureChildCatchup = configure;
-            }
-            else
-            {
-                var previousConfigure = configureChildCatchup;
-                configureChildCatchup = catchup => configure(previousConfigure(catchup));
-            }
-        }
-
-        private Func<IStreamCatchup<TData>, IStreamCatchup<TData>> configureChildCatchup;
-
+        
         /// <summary>
         /// Returns a <see cref="System.String" /> that represents this instance.
         /// </summary>

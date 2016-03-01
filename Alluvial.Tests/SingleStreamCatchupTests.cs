@@ -500,6 +500,49 @@ namespace Alluvial.Tests
             fetchCount.Should().Be(1);
         }
 
+           [Test]
+        public async Task A_backoff_can_be_specified_so_that_distributor_slows_when_there_is_no_new_data()
+        {
+            // arrange
+            var fetchCount = 0;
+
+            var stream = Stream.PartitionedByValue<string, int, string>(
+                query: async (query, partition) =>
+                {
+                    Interlocked.Increment(ref fetchCount);
+                    return Enumerable.Empty<string>();
+                });
+
+            var partitions = Values.AtoZ()
+                                   .Select(Partition.ByValue)
+                                   .ToArray();
+
+            var distributor = partitions.CreateInMemoryDistributor(
+                waitInterval: TimeSpan.FromSeconds(.5),
+                maxDegreesOfParallelism: 30)
+                .Trace();
+
+            var catchup = stream.DistributeAmong(
+                partitions,
+                distributor: distributor)
+                .Backoff(5.Seconds());
+
+            catchup.Subscribe(async (p, b) =>
+            {
+                p.Value = p.Value ?? new List<string>();
+                p.Value.AddRange(b);
+                return p;
+            }, new InMemoryProjectionStore<Projection<List<string>, int>>());
+
+            // act
+            await distributor.Start();
+            await Task.Delay(2.Seconds());
+            await distributor.Stop();
+
+            // assert
+            fetchCount.Should().Be(26);
+        }
+
         private void Throw()
         {
             throw new Exception("oops!");

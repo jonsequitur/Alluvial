@@ -53,12 +53,12 @@
     <Compile Include="Cursor{TPosition}.cs" />
     <Compile Include="DistributedMultiStreamCatchup{TData,TUpstreamCursor,TDownstreamCursor,TPartition}.cs" />
     <Compile Include="DistributorPipeAsync{T}.cs" />
+    <Compile Include="IDistributedStreamCatchup{TData,TPartition}.cs" />
     <Compile Include="ILease.cs" />
     <Compile Include="Leasable{T}.cs" />
     <Compile Include="Lease.cs" />
     <Compile Include="Lease{T}.cs" />
     <Compile Include="Grouping.cs" />
-    <Compile Include="IDistributedCatchup.cs" />
     <Compile Include="InMemoryDistributor.cs" />
     <Compile Include="IDistributor{T}.cs" />
     <Compile Include="InMemoryProjectionStore.cs" />
