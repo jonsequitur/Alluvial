@@ -22,30 +22,15 @@ namespace Alluvial
 
         protected readonly IPartitionedStream<TData, TCursor, TPartition> partitionedStream;
 
-        private readonly IDistributor<IStreamQueryPartition<TPartition>> distributor;
         protected readonly FetchAndSave<ICursor<TCursor>> fetchAndSavePartitionCursor;
-        private readonly IStreamQueryPartition<TPartition>[] partitions;
 
         public DistributedSingleStreamCatchup(
             IPartitionedStream<TData, TCursor, TPartition> partitionedStream,
-            IEnumerable<IStreamQueryPartition<TPartition>> partitions,
-            IDistributor<IStreamQueryPartition<TPartition>> distributor,
             int? batchSize = null,
             FetchAndSave<ICursor<TCursor>> fetchAndSavePartitionCursor = null) :
                 base(batchSize)
         {
-            if (partitions == null)
-            {
-                throw new ArgumentNullException(nameof(partitions));
-            }
-            if (distributor == null)
-            {
-                throw new ArgumentNullException(nameof(distributor));
-            }
-
             this.partitionedStream = partitionedStream;
-            this.partitions = partitions.ToArray();
-            this.distributor = distributor;
             this.fetchAndSavePartitionCursor = fetchAndSavePartitionCursor ??
                                                new InMemoryProjectionStore<ICursor<TCursor>>(id => Cursor.New<TCursor>()).AsHandler();
         }
@@ -72,7 +57,7 @@ namespace Alluvial
         /// </summary>
         public override async Task RunSingleBatch(ILease lease)
         {
-            await distributor.Distribute(partitions.Length);
+            
         }
         
         /// <summary>

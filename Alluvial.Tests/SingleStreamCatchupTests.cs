@@ -500,7 +500,7 @@ namespace Alluvial.Tests
             fetchCount.Should().Be(1);
         }
 
-           [Test]
+        [Test]
         public async Task A_backoff_can_be_specified_so_that_distributor_slows_when_there_is_no_new_data()
         {
             // arrange
@@ -520,12 +520,11 @@ namespace Alluvial.Tests
             var distributor = partitions.CreateInMemoryDistributor(
                 waitInterval: TimeSpan.FromSeconds(.5),
                 maxDegreesOfParallelism: 30)
-                .Trace();
+                                        .Trace();
 
-            var catchup = stream.DistributeAmong(
-                partitions,
-                distributor: distributor)
-                .Backoff(5.Seconds());
+            var catchup = stream.CreateDistributedCatchup()
+                                .Backoff(5.Seconds())
+                                .Distribute(partitions, distributor);
 
             catchup.Subscribe(async (p, b) =>
             {

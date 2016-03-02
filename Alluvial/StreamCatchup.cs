@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -17,11 +18,11 @@ namespace Alluvial
             return catchup.Wrap(
                 runSingleBatch: async lease =>
                 {
-                    using (var counter1 = catchup.Count())
+                    using (var counter = catchup.Count())
                     {
                         await catchup.RunSingleBatch(lease);
 
-                        if (counter1.Value == 0)
+                        if (counter.Value == 0)
                         {
                             await lease.Extend(duration);
                             await lease.Expiration();
@@ -165,21 +166,15 @@ namespace Alluvial
         /// Distributes a stream catchup the among one or more partitions using a specified distributor.
         /// </summary>
         /// <remarks>If no distributor is provided, then distribution is done in-process.</remarks>
-        public static IStreamCatchup<TData> DistributeAmong<TData, TCursor, TPartition>(
+        public static IDistributedStreamCatchup<TData, TPartition> CreateDistributedCatchup<TData, TCursor, TPartition>(
             this IPartitionedStream<TData, TCursor, TPartition> streams,
-            IEnumerable<IStreamQueryPartition<TPartition>> partitions,
-            IDistributor<IStreamQueryPartition<TPartition>> distributor,
             int? batchSize = null,
             FetchAndSave<ICursor<TCursor>> fetchAndSavePartitionCursor = null)
         {
             var catchup = new DistributedSingleStreamCatchup<TData, TCursor, TPartition>(
                 streams,
-                partitions,
-                distributor,
                 batchSize,
                 fetchAndSavePartitionCursor);
-
-            distributor.OnReceive(catchup.ReceiveLease);
 
             return catchup;
         }
@@ -188,75 +183,44 @@ namespace Alluvial
         /// Distributes a stream catchup the among one or more partitions using a specified distributor.
         /// </summary>
         /// <remarks>If no distributor is provided, then distribution is done in-process.</remarks>
-        public static IDistributedStreamCatchup<TData, TPartition> DistributeAmong<TData, TUpstreamCursor, TDownstreamCursor, TPartition>(
+        public static IDistributedStreamCatchup<TData, TPartition> CreateDistributedCatchup<TData, TUpstreamCursor, TDownstreamCursor, TPartition>(
             this IPartitionedStream<IStream<TData, TDownstreamCursor>, TUpstreamCursor, TPartition> streams,
-            IEnumerable<IStreamQueryPartition<TPartition>> partitions,
-            IDistributor<IStreamQueryPartition<TPartition>> distributor,
             int? batchSize = null,
             FetchAndSave<ICursor<TUpstreamCursor>> fetchAndSavePartitionCursor = null)
         {
             var catchup = new DistributedMultiStreamCatchup<TData, TUpstreamCursor, TDownstreamCursor, TPartition>(
                 streams,
-                partitions,
-                batchSize,
-                fetchAndSavePartitionCursor,
-                distributor);
-
-            distributor.OnReceive(catchup.ReceiveLease);
-
-            return catchup;
-        }
-
-        /// <summary>
-        /// Distributes a stream catchup the among one or more partitions using an in-memory distributor.
-        /// </summary>
-        /// <remarks>If no distributor is provided, then distribution is done in-process.</remarks>
-        public static IDistributedStreamCatchup<TData, TPartition> DistributeInMemoryAmong<TData, TCursor, TPartition>(
-            this IPartitionedStream<TData, TCursor, TPartition> streams,
-            IEnumerable<IStreamQueryPartition<TPartition>> partitions,
-            int? batchSize = null,
-            FetchAndSave<ICursor<TCursor>> fetchAndSavePartitionCursor = null)
-        {
-            var partitionsArray = partitions.ToArray();
-
-            var distributor = partitionsArray.CreateInMemoryDistributor();
-
-            var catchup = new DistributedSingleStreamCatchup<TData, TCursor, TPartition>(
-                streams,
-                partitionsArray,
-                distributor,
                 batchSize,
                 fetchAndSavePartitionCursor);
 
-            distributor.OnReceive(catchup.ReceiveLease);
-
             return catchup;
         }
 
-        /// <summary>
-        /// Distributes a stream catchup the among one or more partitions using an in-memory distributor.
-        /// </summary>
-        /// <remarks>If no distributor is provided, then distribution is done in-process.</remarks>
-        public static IDistributedStreamCatchup<TData, TPartition> DistributeInMemoryAmong<TData, TUpstreamCursor, TDownstreamCursor, TPartition>(
-            this IPartitionedStream<IStream<TData, TDownstreamCursor>, TUpstreamCursor, TPartition> streams,
+        public static IDistributedStreamCatchup<TData, TPartition> Distribute<TData, TPartition>(
+            this IDistributedStreamCatchup<TData, TPartition> catchup,
             IEnumerable<IStreamQueryPartition<TPartition>> partitions,
-            int? batchSize = null,
-            FetchAndSave<ICursor<TUpstreamCursor>> fetchAndSavePartitionCursor = null)
+            IDistributor<IStreamQueryPartition<TPartition>> distributor)
         {
-            var partitionsArray = partitions.ToArray();
+            var queryPartitions = partitions as IStreamQueryPartition<TPartition>[] ?? partitions.ToArray();
 
-            var distributor = partitionsArray.CreateInMemoryDistributor();
+            var wrapped = catchup.Wrap<TData, TPartition>(
+                runSingleBatch: lease => distributor.Distribute(queryPartitions.Length),
+                receiveLease: lease => catchup.ReceiveLease(lease));
 
-            var catchup = new DistributedMultiStreamCatchup<TData, TUpstreamCursor, TDownstreamCursor, TPartition>(
-                streams,
-                partitionsArray,
-                batchSize,
-                fetchAndSavePartitionCursor,
-                distributor);
+            distributor.OnReceive(lease => wrapped.ReceiveLease(lease));
 
-            distributor.OnReceive(catchup.ReceiveLease);
-            
-            return catchup;
+            return wrapped;
+        }
+
+        public static IDistributedStreamCatchup<TData, TPartition> DistributeInMemoryAmong<TData, TPartition>(
+            this IDistributedStreamCatchup<TData, TPartition> catchup,
+            IEnumerable<IStreamQueryPartition<TPartition>> partitions)
+        {
+            var queryPartitions = partitions as IStreamQueryPartition<TPartition>[] ?? partitions.ToArray();
+
+            var distributor = queryPartitions.CreateInMemoryDistributor();
+
+            return catchup.Distribute(queryPartitions, distributor);
         }
 
         /// <summary>

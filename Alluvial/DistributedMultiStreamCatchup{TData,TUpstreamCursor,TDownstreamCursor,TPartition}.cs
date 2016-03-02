@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -15,13 +14,9 @@ namespace Alluvial
 
         public DistributedMultiStreamCatchup(
             IPartitionedStream<IStream<TData, TDownstreamCursor>, TUpstreamCursor, TPartition> partitionedStream,
-            IEnumerable<IStreamQueryPartition<TPartition>> partitions,
             int? batchSize = null,
-            FetchAndSave<ICursor<TUpstreamCursor>> fetchAndSavePartitionCursor = null,
-            IDistributor<IStreamQueryPartition<TPartition>> distributor = null)
+            FetchAndSave<ICursor<TUpstreamCursor>> fetchAndSavePartitionCursor = null)
             : base(null,
-                   partitions,
-                   distributor, 
                    batchSize, 
                    fetchAndSavePartitionCursor)
         {

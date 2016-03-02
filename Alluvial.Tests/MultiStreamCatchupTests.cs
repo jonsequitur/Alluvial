@@ -546,21 +546,22 @@ namespace Alluvial.Tests
                     Interlocked.Increment(ref fetchCount);
                     return Enumerable.Empty<string>();
                 })
-                                .IntoMany(async (a, b, c, d) => Enumerable.Empty<string>().AsSequentialStream());
+                                .IntoMany(async (a, b, c, d) => Enumerable.Empty<string>().AsSequentialStream())
+                                .Trace();
 
             var partitions = Values.AtoZ()
                                    .Select(Partition.ByValue)
                                    .ToArray();
 
-            var distributor = partitions.CreateInMemoryDistributor(
-                waitInterval: TimeSpan.FromSeconds(.5),
-                maxDegreesOfParallelism: 30)
+            var distributor = partitions
+                .CreateInMemoryDistributor(
+                    waitInterval: TimeSpan.FromSeconds(.5),
+                    maxDegreesOfParallelism: 30)
                 .Trace();
 
-            var catchup = streams.DistributeAmong(
-                partitions,
-                distributor: distributor)
-                .Backoff(5.Seconds());
+            var catchup = streams.CreateDistributedCatchup()
+                                 .Backoff(5.Seconds())
+                                 .Distribute(partitions, distributor);
 
             catchup.Subscribe(async (p, b) =>
             {

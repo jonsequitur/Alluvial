@@ -84,11 +84,12 @@ namespace Alluvial.Streams.ItsDomainSql.Tests
                 projection.Value.AddRange(eventType14s);
             }).Trace();
 
-            var catchup = streams.DistributeInMemoryAmong(
-                Partition.AllGuids().Among(10));
+            var catchup = streams.CreateDistributedCatchup()
+                                 .DistributeInMemoryAmong(Partition.AllGuids().Among(10));
 
             var store = new InMemoryProjectionStore<MatchingEvents>();
             catchup.Subscribe(aggregator, store.Trace());
+
             await catchup.RunUntilCaughtUp();
             store.Sum(x => x.Value.Count).Should().Be(expectedCount);
         }

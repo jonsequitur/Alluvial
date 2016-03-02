@@ -39,7 +39,8 @@ namespace Alluvial
 
             if (!added)
             {
-                throw new InvalidOperationException($"Aggregator for projection of type {typeof (TProjection)} is already subscribed.");
+                // FIX: (SubscribeAggregator) allow multiple subscriptions of the same type
+           //     throw new InvalidOperationException($"Aggregator for projection of type {typeof (TProjection)} is already subscribed.");
             }
 
             return Disposable.Create(() =>
