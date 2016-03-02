@@ -46,6 +46,7 @@
     <Compile Include="Aggregate{TProjection,TData}.cs" />
     <Compile Include="Aggregate{TProjection}.cs" />
     <Compile Include="AggregatorSubscription.cs" />
+    <Compile Include="AggregatorSubscriptionList.cs" />
     <Compile Include="AnonymousProjectionStore{TKey,TProjection}.cs" />
     <Compile Include="AnonymousStreamBase{TData,TCursor}.cs" />
     <Compile Include="AnonymousDistributor.cs" />

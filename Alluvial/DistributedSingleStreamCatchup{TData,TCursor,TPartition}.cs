@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -45,7 +43,7 @@ namespace Alluvial
                             await partitionedStream.GetStream(lease.Resource),
                             initialCursor: cursor,
                             batchSize: BatchSize,
-                            subscriptions: new ConcurrentDictionary<Type, IAggregatorSubscription>(aggregatorSubscriptions));
+                            subscriptions: new AggregatorSubscriptionList(aggregatorSubscriptions));
 
                         await upstreamCatchup.RunSingleBatch(lease);
 
@@ -67,6 +65,6 @@ namespace Alluvial
         /// A <see cref="System.String" /> that represents this instance.
         /// </returns>
         public override string ToString() =>
-            $"{catchupTypeDescription}->{partitionedStream}->{string.Join(" + ", aggregatorSubscriptions.Select(s => s.Value.ProjectionType.ReadableName()))}";
+            $"{catchupTypeDescription}->{partitionedStream}->{string.Join(" + ", aggregatorSubscriptions.Select(s => s.ProjectionType.ReadableName()))}";
     }
 }

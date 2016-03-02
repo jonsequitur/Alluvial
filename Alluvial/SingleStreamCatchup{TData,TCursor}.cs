@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -22,7 +21,7 @@ namespace Alluvial
             IStream<TData, TCursor> stream,
             ICursor<TCursor> initialCursor = null,
             int? batchSize = null,
-            ConcurrentDictionary<Type, IAggregatorSubscription> subscriptions = null) :
+            AggregatorSubscriptionList subscriptions = null) :
                 base(batchSize, subscriptions)
         {
             if (stream == null)
@@ -47,6 +46,6 @@ namespace Alluvial
         /// A <see cref="System.String" /> that represents this instance.
         /// </returns>
         public override string ToString() =>
-            $"{catchupTypeDescription}->{stream.Id}->{string.Join(" + ", aggregatorSubscriptions.Select(s => s.Value.ProjectionType.ReadableName()))}";
+            $"{catchupTypeDescription}->{stream.Id}->{string.Join(" + ", aggregatorSubscriptions.Select(s => s.ProjectionType.ReadableName()))}";
     }
 }

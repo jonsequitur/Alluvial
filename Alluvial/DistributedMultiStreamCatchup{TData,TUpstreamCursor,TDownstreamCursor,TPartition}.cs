@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -42,7 +41,7 @@ namespace Alluvial
                     var downstreamCatchup = new MultiStreamCatchup<TData, TUpstreamCursor, TDownstreamCursor>(
                         upstreamCatchup,
                         cursor.Clone(),
-                        subscriptions: new ConcurrentDictionary<Type, IAggregatorSubscription>(aggregatorSubscriptions));
+                        subscriptions: new AggregatorSubscriptionList(aggregatorSubscriptions));
 
                     await upstreamCatchup.RunSingleBatch(lease);
 
