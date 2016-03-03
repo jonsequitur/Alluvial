@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -11,6 +10,12 @@ namespace Alluvial
     /// </summary>
     public static class StreamCatchup
     {
+        /// <summary>
+        /// Specifies an amount of time to wait if a stream produces no data.
+        /// </summary>
+        /// <typeparam name="TData">The type of the data in the stream.</typeparam>
+        /// <param name="catchup">The catchup.</param>
+        /// <param name="duration">The duration to wait.</param>
         public static IStreamCatchup<TData> Backoff<TData>(
             this IStreamCatchup<TData> catchup,
             TimeSpan duration)
@@ -31,6 +36,14 @@ namespace Alluvial
                 });
         }
 
+        /// <summary>
+        /// Specifies an amount of time to wait if a stream produces no data.
+        /// </summary>
+        /// <typeparam name="TData">The type of the data in the stream.</typeparam>
+        /// <typeparam name="TPartition">The type of the partition.</typeparam>
+        /// <param name="catchup">The catchup.</param>
+        /// <param name="duration">The duration to wait.</param>
+        /// <returns></returns>
         public static IDistributedStreamCatchup<TData, TPartition> Backoff<TData, TPartition>(
             this IDistributedStreamCatchup<TData, TPartition> catchup,
             TimeSpan duration)
@@ -196,7 +209,15 @@ namespace Alluvial
             return catchup;
         }
 
-        public static IDistributedStreamCatchup<TData, TPartition> Distribute<TData, TPartition>(
+        /// <summary>
+        /// Distributes the work of querying specified partitions using a distributor.
+        /// </summary>
+        /// <typeparam name="TData">The type of the data in the stream.</typeparam>
+        /// <typeparam name="TPartition">The type of the partition.</typeparam>
+        /// <param name="catchup">The catchup.</param>
+        /// <param name="partitions">The partitions to distribute.</param>
+        /// <param name="distributor">The distributor.</param>
+        public static IDistributedStreamCatchup<TData, TPartition> DistributeAmong<TData, TPartition>(
             this IDistributedStreamCatchup<TData, TPartition> catchup,
             IEnumerable<IStreamQueryPartition<TPartition>> partitions,
             IDistributor<IStreamQueryPartition<TPartition>> distributor)
@@ -205,13 +226,20 @@ namespace Alluvial
 
             var wrapped = catchup.Wrap<TData, TPartition>(
                 runSingleBatch: lease => distributor.Distribute(queryPartitions.Length),
-                receiveLease: lease => catchup.ReceiveLease(lease));
+                receiveLease: catchup.ReceiveLease);
 
             distributor.OnReceive(lease => wrapped.ReceiveLease(lease));
 
             return wrapped;
         }
 
+        /// <summary>
+        /// Distributes the work of querying specified partitions using an in-memory distributor.
+        /// </summary>
+        /// <typeparam name="TData">The type of the data in the stream.</typeparam>
+        /// <typeparam name="TPartition">The type of the partition.</typeparam>
+        /// <param name="catchup">The catchup.</param>
+        /// <param name="partitions">The partitions to distribute.</param>
         public static IDistributedStreamCatchup<TData, TPartition> DistributeInMemoryAmong<TData, TPartition>(
             this IDistributedStreamCatchup<TData, TPartition> catchup,
             IEnumerable<IStreamQueryPartition<TPartition>> partitions)
@@ -220,7 +248,7 @@ namespace Alluvial
 
             var distributor = queryPartitions.CreateInMemoryDistributor();
 
-            return catchup.Distribute(queryPartitions, distributor);
+            return catchup.DistributeAmong(queryPartitions, distributor);
         }
 
         /// <summary>

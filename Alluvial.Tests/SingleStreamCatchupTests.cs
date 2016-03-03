@@ -524,7 +524,7 @@ namespace Alluvial.Tests
 
             var catchup = stream.CreateDistributedCatchup()
                                 .Backoff(5.Seconds())
-                                .Distribute(partitions, distributor);
+                                .DistributeAmong(partitions, distributor);
 
             catchup.Subscribe(async (p, b) =>
             {
