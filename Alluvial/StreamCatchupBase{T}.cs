@@ -14,15 +14,15 @@ namespace Alluvial
     internal abstract class StreamCatchupBase<TData> : IStreamCatchup<TData>
     {
         private object batchTaskCompletionSource;
-        protected readonly ConcurrentDictionary<Type, IAggregatorSubscription> aggregatorSubscriptions;
+        protected readonly AggregatorSubscriptionList aggregatorSubscriptions;
 
         protected StreamCatchupBase(
             int? batchSize = null,
-            ConcurrentDictionary<Type, IAggregatorSubscription> aggregatorSubscriptions = null)
+            AggregatorSubscriptionList aggregatorSubscriptions = null)
         {
             BatchSize = batchSize;
             this.aggregatorSubscriptions = aggregatorSubscriptions ??
-                                           new ConcurrentDictionary<Type, IAggregatorSubscription>();
+                                           new AggregatorSubscriptionList();
         }
 
         protected int? BatchSize { get; }
@@ -32,20 +32,14 @@ namespace Alluvial
             FetchAndSave<TProjection> fetchAndSave,
             HandleAggregatorError<TProjection> onError)
         {
-            var added = aggregatorSubscriptions.TryAdd(typeof (TProjection),
-                                                       new AggregatorSubscription<TProjection, TData>(aggregator,
-                                                                                                      fetchAndSave,
-                                                                                                      onError));
-
-            if (!added)
-            {
-                throw new InvalidOperationException($"Aggregator for projection of type {typeof (TProjection)} is already subscribed.");
-            }
+            var subscription = new AggregatorSubscription<TProjection, TData>(aggregator,
+                                                                              fetchAndSave,
+                                                                              onError);
+            aggregatorSubscriptions.Add(subscription);
 
             return Disposable.Create(() =>
             {
-                IAggregatorSubscription _;
-                aggregatorSubscriptions.TryRemove(typeof (TProjection), out _);
+                aggregatorSubscriptions.Remove(subscription);
             });
         }
 
@@ -128,7 +122,6 @@ namespace Alluvial
 
             // create one aggregation task for each subscribed aggregator and await completion of all of them
             var aggregationTasks = aggregatorSubscriptions
-                .Values
                 .Select(v => Aggregate(stream, (dynamic) v, waitForProjectionsThenQueryTheStream) as Task);
 
             await Task.WhenAll(aggregationTasks);

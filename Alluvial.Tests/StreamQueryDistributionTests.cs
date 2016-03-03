@@ -66,9 +66,9 @@ namespace Alluvial.Tests
                 }
             }).Trace();
 
-            var catchup = partitionedStream
-                .Trace()
-                .DistributeInMemoryAmong(partitions, batchSize: 15);
+            var catchup = partitionedStream.Trace()
+                                           .CreateDistributedCatchup(batchSize: 15)
+                                           .DistributeInMemoryAmong(partitions);
 
             catchup.Subscribe(aggregator, store.Trace());
 
@@ -101,9 +101,10 @@ namespace Alluvial.Tests
             }).Trace();
 
             var catchup = partitionedStream
-                .DistributeInMemoryAmong(partitions,
-                                         batchSize: 73,
-                                         fetchAndSavePartitionCursor: cursorStore.Trace().AsHandler());
+                .CreateDistributedCatchup(
+                    batchSize: 73,
+                    fetchAndSavePartitionCursor: cursorStore.Trace().AsHandler())
+                .DistributeInMemoryAmong(partitions);
 
             catchup.Subscribe(aggregator);
 
@@ -133,14 +134,14 @@ namespace Alluvial.Tests
 
             var catchup = partitionedStream
                 .IntoMany(async (word, b, c, p) => new[] { word }.AsStream())
+                .CreateDistributedCatchup(batchSize: 10,
+                                          fetchAndSavePartitionCursor: cursorStore.Trace().AsHandler())
                 .DistributeInMemoryAmong(new[]
                 {
                     Partition.ByRange("a", "f"),
                     Partition.ByRange("f", "j"),
                     Partition.ByRange("k", "z")
-                },
-                                         batchSize: 10,
-                                         fetchAndSavePartitionCursor: cursorStore.Trace().AsHandler());
+                });
 
             catchup.Subscribe(aggregator);
 

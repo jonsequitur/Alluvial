@@ -27,7 +27,7 @@ namespace Alluvial
         public MultiStreamCatchup(
             IStreamCatchup<IStream<TData, TDownstreamCursor>> upstreamCatchup,
             ICursor<TUpstreamCursor> upstreamCursor,
-            ConcurrentDictionary<Type, IAggregatorSubscription> subscriptions = null) :
+            AggregatorSubscriptionList subscriptions = null) :
                 this(upstreamCatchup,
                      (async (streamId, update) => await update(upstreamCursor)),
                      subscriptions)
@@ -51,7 +51,7 @@ namespace Alluvial
         public MultiStreamCatchup(
             IStreamCatchup<IStream<TData, TDownstreamCursor>> upstreamCatchup,
             FetchAndSave<ICursor<TUpstreamCursor>> manageCursor,
-            ConcurrentDictionary<Type, IAggregatorSubscription> subscriptions = null) : base(aggregatorSubscriptions: subscriptions)
+            AggregatorSubscriptionList subscriptions = null) : base(aggregatorSubscriptions: subscriptions)
         {
             if (upstreamCatchup == null)
             {
@@ -86,6 +86,6 @@ namespace Alluvial
         /// A <see cref="System.String" /> that represents this instance.
         /// </returns>
         public override string ToString() =>
-            $"{catchupTypeDescription}->{upstreamCatchup}->{string.Join(" + ", aggregatorSubscriptions.Select(s => s.Value.ProjectionType.ReadableName()))}";
+            $"{catchupTypeDescription}->{upstreamCatchup}->{string.Join(" + ", aggregatorSubscriptions.Select(s => s.ProjectionType.ReadableName()))}";
     }
 }

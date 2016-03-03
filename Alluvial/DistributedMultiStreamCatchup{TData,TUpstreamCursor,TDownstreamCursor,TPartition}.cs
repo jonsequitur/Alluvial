@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -15,13 +13,9 @@ namespace Alluvial
 
         public DistributedMultiStreamCatchup(
             IPartitionedStream<IStream<TData, TDownstreamCursor>, TUpstreamCursor, TPartition> partitionedStream,
-            IEnumerable<IStreamQueryPartition<TPartition>> partitions,
             int? batchSize = null,
-            FetchAndSave<ICursor<TUpstreamCursor>> fetchAndSavePartitionCursor = null,
-            IDistributor<IStreamQueryPartition<TPartition>> distributor = null)
+            FetchAndSave<ICursor<TUpstreamCursor>> fetchAndSavePartitionCursor = null)
             : base(null,
-                   partitions,
-                   distributor, 
                    batchSize, 
                    fetchAndSavePartitionCursor)
         {
@@ -32,33 +26,26 @@ namespace Alluvial
             partitionedStreams = partitionedStream;
         }
 
-        protected override async Task OnReceiveLease(Lease<IStreamQueryPartition<TPartition>> lease) =>
+        public async override Task ReceiveLease(
+            Lease<IStreamQueryPartition<TPartition>> lease) =>
             await fetchAndSavePartitionCursor(
                 lease.ResourceName,
                 async cursor =>
                 {
-                    IStreamCatchup<IStream<TData, TDownstreamCursor>> upstreamCatchup =
-                    
-                    new SingleStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor>(
-                        await partitionedStreams.GetStream(lease.Resource),
-                        initialCursor: cursor,
-                        batchSize: BatchSize);
-
-                    if (configureChildCatchup != null)
-                    {
-                        upstreamCatchup = configureChildCatchup(upstreamCatchup);
-                    }
+                    var upstreamCatchup =
+                        new SingleStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor>(
+                            await partitionedStreams.GetStream(lease.Resource),
+                            initialCursor: cursor,
+                            batchSize: BatchSize);
 
                     var downstreamCatchup = new MultiStreamCatchup<TData, TUpstreamCursor, TDownstreamCursor>(
                         upstreamCatchup,
                         cursor.Clone(),
-                        subscriptions: new ConcurrentDictionary<Type, IAggregatorSubscription>(aggregatorSubscriptions));
+                        subscriptions: new AggregatorSubscriptionList(aggregatorSubscriptions));
 
                     await upstreamCatchup.RunSingleBatch(lease);
 
                     return cursor;
                 });
-
-        private Func<IStreamCatchup<IStream<TData, TDownstreamCursor>>, IStreamCatchup<IStream<TData, TDownstreamCursor>>> configureChildCatchup;
     }
 }

@@ -28,9 +28,6 @@ namespace Alluvial
         /// Consumes a single batch from the source stream and updates the subscribed aggregators.
         /// </summary>
         /// <param name="lease">A lease that can be used to extend or cancel the batch operation.</param>
-        /// <returns>
-        /// The updated cursor position after the batch is consumed.
-        /// </returns>
         Task RunSingleBatch(ILease lease);
     }
 }
