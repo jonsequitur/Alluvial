@@ -55,7 +55,7 @@ namespace Alluvial
         /// </summary>
         public override async Task RunSingleBatch(ILease lease)
         {
-            
+            throw new InvalidOperationException("You must subscribe the catchup to a distributor before calling RunSingleBatch.");
         }
         
         /// <summary>

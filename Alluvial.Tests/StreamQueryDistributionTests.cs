@@ -149,5 +149,19 @@ namespace Alluvial.Tests
 
             cursorStore.Count().Should().Be(3);
         }
+
+        [Test]
+        public async Task When_a_distributed_catchup_has_not_been_subscribed_to_a_distributor_then_RunSingleBatch_throws()
+        {
+            var catchup = partitionedStream.CreateDistributedCatchup();
+
+            Action runSingleBatch = () => catchup.RunSingleBatch().Wait();
+
+            runSingleBatch.ShouldThrow<InvalidOperationException>()
+                .And
+                .Message
+                .Should()
+                .Contain("You must subscribe the catchup to a distributor before calling RunSingleBatch.");
+        }
     }
 }

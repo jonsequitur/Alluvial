@@ -25,3 +25,4 @@ Artifacts
 *.psess
 *.xml
 *.nupkg
+*.vspx
