@@ -12,6 +12,30 @@ namespace Alluvial.Streams.ItsDomainSql
     public static class EventStream
     {
         /// <summary>
+        /// Returns a stream of all events in the event store, in the order they were inserted.
+        /// </summary>
+        /// <param name="streamId">The stream identifier.</param>
+        /// <param name="storableEvents">A delegate returning a query of events to include in the stream.</param>
+        public static IPartitionedStream<IEvent, long, Guid> Events(
+            string streamId,
+            Func<IQueryable<StorableEvent>> storableEvents)
+        {
+            return Stream.PartitionedByRange<StorableEvent, long, Guid>(
+                query: async (query, partition) =>
+                       await storableEvents()
+                                 .Where(e => e.Id > query.Cursor.Position)
+                                 .WithinPartition(e => e.AggregateId, partition)
+                                 .OrderBy(e => e.Id)
+                                 .Take(query.BatchSize ?? 100)
+                                 .ToArrayAsync(),
+                id: streamId,
+                advanceCursor: (q, b) => b.LastOrDefault()
+                                          .IfNotNull()
+                                          .ThenDo(u => q.Cursor.AdvanceTo(u.Id)))
+                         .Map(es => es.Select(e => e.ToDomainEvent()));
+        }
+
+        /// <summary>
         /// Returns a stream of streams, each of which contains all of the events for a single aggregate.
         /// </summary>
         /// <param name="streamId">The stream identifier.</param>
@@ -54,11 +78,11 @@ namespace Alluvial.Streams.ItsDomainSql
 
         private static IStream<EventStreamChange, long> AllChanges(
             string streamId,
-            Func<IQueryable<StorableEvent>> getStorableEvents)
+            Func<IQueryable<StorableEvent>> storableEvents)
         {
             Func<IStreamQuery<long>, Task<IEnumerable<EventStreamChange>>> query =
                 async streamQuery =>
-                await EventStreamChanges(getStorableEvents(), streamQuery);
+                await EventStreamChanges(storableEvents(), streamQuery);
 
             return Stream
                 .Create(
