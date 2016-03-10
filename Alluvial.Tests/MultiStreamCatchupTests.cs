@@ -556,7 +556,8 @@ namespace Alluvial.Tests
             var distributor = partitions
                 .CreateInMemoryDistributor(
                     waitInterval: TimeSpan.FromSeconds(.5),
-                    maxDegreesOfParallelism: 30)
+                    maxDegreesOfParallelism: 30,
+                    defaultLeaseDuration: 5.Seconds())
                 .Trace();
 
             var catchup = streams.CreateDistributedCatchup()
