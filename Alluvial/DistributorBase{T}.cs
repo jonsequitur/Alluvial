@@ -90,7 +90,7 @@ namespace Alluvial
                 pipeline = (lease, next) =>
                            receive(lease,
                                    l => previousPipeline(l,
-                                                 _ => Unit.Default.CompletedTask()));
+                                                                           _ => Unit.Default.CompletedTask()));
             }
         }
 
@@ -171,11 +171,16 @@ namespace Alluvial
                     var receive = pipeline(lease,
                                            _ => Unit.Default.CompletedTask());
 
-                    await Task.WhenAny(receive, lease.Expiration());
+                    var r = await Task.WhenAny(receive, lease.Expiration());
+
+                    if (r.Status == TaskStatus.Faulted)
+                    {
+                        lease.Exception = r.Exception;
+                    }
                 }
                 catch (Exception exception)
                 {
-                    Debug.WriteLine($"[Distribute] Exception during OnReceive for lease {lease}:\n{exception}");
+                    lease.Exception = exception;
                 }
 
                 try
