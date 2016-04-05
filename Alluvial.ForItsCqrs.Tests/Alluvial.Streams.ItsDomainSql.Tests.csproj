@@ -64,15 +64,15 @@
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.Its.Domain, Version=0.14.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Its.Domain.0.14.4-beta\lib\net452\Microsoft.Its.Domain.dll</HintPath>
+      <HintPath>..\packages\Its.Domain.0.14.9-beta\lib\net452\Microsoft.Its.Domain.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.Its.Domain.Sql, Version=0.14.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Its.Domain.Sql.0.14.4-beta\lib\net452\Microsoft.Its.Domain.Sql.dll</HintPath>
+      <HintPath>..\packages\Its.Domain.Sql.0.14.9-beta\lib\net452\Microsoft.Its.Domain.Sql.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.Its.Domain.Testing, Version=0.14.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Its.Domain.Testing.0.14.4-beta\lib\net452\Microsoft.Its.Domain.Testing.dll</HintPath>
+      <HintPath>..\packages\Its.Domain.Testing.0.14.9-beta\lib\net452\Microsoft.Its.Domain.Testing.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
