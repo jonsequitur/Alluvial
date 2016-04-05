@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("Alluvial.Tests")]
-[assembly: AssemblyCopyright("Copyright © 2014 Jon Sequeira")]
+[assembly: AssemblyCopyright("Copyright © 2016 Jon Sequeira")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

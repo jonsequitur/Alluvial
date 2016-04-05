@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("Alluvial.Distributors.Sql")]
-[assembly: AssemblyCopyright("Copyright ©  2015 Jon Sequeira")]
+[assembly: AssemblyCopyright("Copyright © 2016 Jon Sequeira")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

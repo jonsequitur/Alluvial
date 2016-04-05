@@ -1,7 +1,7 @@
 using Microsoft.Its.Domain.Sql;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 
-namespace Alluvial.Streams.ItsDomainSql.Tests
+namespace Alluvial.For.ItsDomainSql.Tests
 {
     public static class DatabaseSetup
     {

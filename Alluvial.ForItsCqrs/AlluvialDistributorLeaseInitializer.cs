@@ -6,7 +6,7 @@ using Alluvial.Distributors.Sql;
 using Microsoft.Its.Domain.Sql.Migrations;
 using Newtonsoft.Json;
 
-namespace Alluvial.Streams.ItsDomainSql
+namespace Alluvial.For.ItsDomainSql
 {
     public class AlluvialDistributorLeaseInitializer<T> : IDbMigrator
     {

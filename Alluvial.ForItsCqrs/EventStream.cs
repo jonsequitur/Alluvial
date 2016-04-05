@@ -7,7 +7,7 @@ using Microsoft.Its.Domain;
 using Microsoft.Its.Domain.Sql;
 using Pocket;
 
-namespace Alluvial.Streams.ItsDomainSql
+namespace Alluvial.For.ItsDomainSql
 {
     public static class EventStream
     {

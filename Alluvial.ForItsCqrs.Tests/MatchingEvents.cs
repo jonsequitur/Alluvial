@@ -3,7 +3,7 @@ using System.Linq;
 using Its.Log.Instrumentation;
 using Microsoft.Its.Domain;
 
-namespace Alluvial.Streams.ItsDomainSql.Tests
+namespace Alluvial.For.ItsDomainSql.Tests
 {
     public class MatchingEvents : Projection<List<IEvent>, long>
     {

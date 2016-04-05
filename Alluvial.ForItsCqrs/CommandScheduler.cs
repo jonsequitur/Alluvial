@@ -7,7 +7,7 @@ using Microsoft.Its.Domain.Sql.CommandScheduler;
 using SchedulerClock = Microsoft.Its.Domain.Sql.CommandScheduler.Clock;
 using DomainClock = Microsoft.Its.Domain.Clock;
 
-namespace Alluvial.Streams.ItsDomainSql
+namespace Alluvial.For.ItsDomainSql
 {
     public static class CommandScheduler
     {

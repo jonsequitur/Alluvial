@@ -12,7 +12,7 @@ using NUnit.Framework;
 using Clock = Microsoft.Its.Domain.Clock;
 using SchedulerClock = Microsoft.Its.Domain.Sql.CommandScheduler.Clock;
 
-namespace Alluvial.Streams.ItsDomainSql.Tests
+namespace Alluvial.For.ItsDomainSql.Tests
 {
     [TestFixture]
     public class CommandSchedulerTests

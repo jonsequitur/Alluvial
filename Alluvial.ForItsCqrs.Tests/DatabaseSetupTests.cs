@@ -13,7 +13,7 @@ using Microsoft.Its.Domain.Sql;
 using Microsoft.Its.Domain.Sql.Migrations;
 using NUnit.Framework;
 
-namespace Alluvial.Streams.ItsDomainSql.Tests
+namespace Alluvial.For.ItsDomainSql.Tests
 {
     [TestFixture]
     public class DatabaseSetupTests

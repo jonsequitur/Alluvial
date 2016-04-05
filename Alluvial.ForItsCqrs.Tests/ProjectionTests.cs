@@ -11,7 +11,7 @@ using Microsoft.Its.Domain.Testing;
 using NUnit.Framework;
 using Pocket;
 
-namespace Alluvial.Streams.ItsDomainSql.Tests
+namespace Alluvial.For.ItsDomainSql.Tests
 {
     [TestFixture]
     public class ProjectionTests
