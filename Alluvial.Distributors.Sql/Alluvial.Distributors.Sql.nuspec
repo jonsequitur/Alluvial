@@ -13,7 +13,7 @@
     <description>A SQL-based query distributor for Alluvial</description>
     <tags>data projections stream-processing</tags>
     <dependencies>
-        <dependency id="Alluvial" version="[0.1.22-beta,)" />
+        <dependency id="Alluvial" version="[0.1.23,)" />
     </dependencies>
 </metadata>
 </package>
