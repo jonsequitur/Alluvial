@@ -132,7 +132,7 @@
       <Project>{199FDA52-CB10-4B05-B39E-AF79EC56B3C9}</Project>
       <Name>Alluvial.Distributors.Sql</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Alluvial.ForItsCqrs\Alluvial.For.ItsDomainSql.csproj">
+    <ProjectReference Include="..\Alluvial.For.ItsDomainSql\Alluvial.For.ItsDomainSql.csproj">
       <Project>{91d10713-fc52-4744-9cb2-16b6dfecdbe2}</Project>
       <Name>Alluvial.For.ItsDomainSql</Name>
     </ProjectReference>

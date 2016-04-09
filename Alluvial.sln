@@ -13,9 +13,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "source", "source", "{3F716C
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{CE3EDE6E-21A0-4D4A-B9DB-630EF1243E19}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Alluvial.For.ItsDomainSql", "Alluvial.ForItsCqrs\Alluvial.For.ItsDomainSql.csproj", "{91D10713-FC52-4744-9CB2-16B6DFECDBE2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Alluvial.For.ItsDomainSql", "Alluvial.For.ItsDomainSql\Alluvial.For.ItsDomainSql.csproj", "{91D10713-FC52-4744-9CB2-16B6DFECDBE2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Alluvial.Streams.ForItsDomainSql.Tests", "Alluvial.ForItsCqrs.Tests\Alluvial.Streams.ForItsDomainSql.Tests.csproj", "{308346D2-73FD-42DF-8403-44481D192FDF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Alluvial.Streams.ForItsDomainSql.Tests", "Alluvial.For.ItsDomainSql.Tests\Alluvial.Streams.ForItsDomainSql.Tests.csproj", "{308346D2-73FD-42DF-8403-44481D192FDF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
