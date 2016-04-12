@@ -181,7 +181,4 @@
   </Choose>
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup>
-    <PostBuildEvent>"C:\Program Files\Microsoft SQL Server\110\Tools\Binn\SqlLocalDB.exe" create "v11.0" 11.0 -s</PostBuildEvent>
-  </PropertyGroup>
 </Project>
