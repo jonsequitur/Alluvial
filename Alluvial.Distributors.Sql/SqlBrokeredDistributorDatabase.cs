@@ -229,7 +229,6 @@ IF NOT EXISTS (SELECT * FROM [Alluvial].[Leases]
             foreach (var script in scripts)
             {
                 using (var cmd = connection.CreateCommand())
-
                 {
                     cmd.CommandText = script;
                     cmd.CommandType = CommandType.Text;

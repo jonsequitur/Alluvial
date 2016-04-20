@@ -1,6 +1,7 @@
 using System;
 using System.Data;
 using System.Data.Common;
+using System.Data.Entity;
 using System.Threading.Tasks;
 using Alluvial.Distributors.Sql;
 using Microsoft.Its.Domain.Sql.Migrations;
@@ -29,12 +30,13 @@ namespace Alluvial.For.ItsDomainSql
             this.pool = pool;
         }
 
-        public MigrationResult Migrate(IDbConnection connection)
+        public MigrationResult Migrate(DbContext context)
         {
-            var dbConnection = (DbConnection) connection;
 
             Task.Run(async () =>
             {
+                var dbConnection = context.Database.Connection;
+
                 await SqlBrokeredDistributorDatabase.InitializeSchema(dbConnection);
                 await SqlBrokeredDistributorDatabase.RegisterLeasableResources(
                     leasables, 
