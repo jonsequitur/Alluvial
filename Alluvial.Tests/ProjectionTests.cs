@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using FluentAssertions;
 using System.Linq;
 using System.Threading.Tasks;
 using Alluvial.Tests.BankDomain;
+using Microsoft.CSharp.RuntimeBinder;
 using NEventStore;
 using NUnit.Framework;
 
@@ -66,6 +68,51 @@ namespace Alluvial.Tests
 
             finalProjection.ShouldBeEquivalentTo(initialProjection,
                                                  "the projection cursor is past the end of the event stream so no events should be applied");
+        }
+
+        [Test]
+        public async Task When_a_catchup_throws_outside_of_the_aggregate_function_then_an_informative_exception_can_be_observed()
+        {
+            // arrange
+            var projections = new List<Projection<InternalType, int>>();
+
+            var aggregator = Aggregator.Create<Projection<InternalType, int>, int>(async (projection, batch) => { projections.Add(projection); }).Trace();
+
+            var partitionedStream = Stream
+                .Partitioned<int, int, int>(
+                    query: async (q, p) =>
+                    {
+                        return Enumerable.Range(1, 1000)
+                                         .Where(i => i.IsWithinPartition(p))
+                                         .Skip(q.Cursor.Position)
+                                         .Take(q.BatchSize.Value);
+                    },
+                    advanceCursor: (query, batch) =>
+                    {
+                        // putting the cursor and the partition on the same field is a little weird because a batch of zero doesn't necessarily signify the end of the batch
+                        if (batch.Any())
+                        {
+                            query.Cursor.AdvanceTo(batch.Last());
+                        }
+                    });
+
+            var catchup = partitionedStream.CreateDistributedCatchup()
+                                           .DistributeInMemoryAmong(Partition.ByRange(1, 1000).Among(1));
+
+            Exception caught = null;
+
+            catchup.Subscribe(aggregator, onError: ex => { caught = ex.Exception; });
+
+            // act
+            await catchup.RunSingleBatch();
+
+            // assert
+            caught.Should().BeOfType<RuntimeBinderException>();
+        }
+
+        internal class InternalType
+        {
+            
         }
 
         private static IStreamAggregator<BalanceProjection, EventMessage> AccountBalanceProjector()
