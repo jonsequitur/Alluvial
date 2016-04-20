@@ -314,13 +314,35 @@ namespace Alluvial
         /// <param name="catchup">The catchup.</param>
         /// <param name="aggregator">The aggregator.</param>
         /// <param name="projectionStore">The projection store.</param>
+        /// <param name="onError">A function to handle exceptions thrown during aggregation.</param>
         /// <returns>A disposable that, when disposed, unsubscribes the aggregator.</returns>
         public static IDisposable Subscribe<TProjection, TData>(
             this IStreamCatchup<TData> catchup,
             IStreamAggregator<TProjection, TData> aggregator,
-            IProjectionStore<string, TProjection> projectionStore = null) =>
+            IProjectionStore<string, TProjection> projectionStore = null,
+            HandleAggregatorError<TProjection> onError = null) =>
                 catchup.Subscribe(aggregator,
-                                  projectionStore.AsHandler());
+                                  projectionStore.AsHandler(), 
+                                  onError);
+
+        /// <summary>
+        /// Subscribes the specified aggregator to a catchup.
+        /// </summary>
+        /// <typeparam name="TProjection">The type of the projection.</typeparam>
+        /// <typeparam name="TData">The type of the stream's data.</typeparam>
+        /// <param name="catchup">The catchup.</param>
+        /// <param name="aggregator">The aggregator.</param>
+        /// <param name="manage">A delegate to fetch and store the projection each time the query is performed.</param>
+        /// <param name="onError">A function to handle exceptions thrown during aggregation.</param>
+        /// <returns>A disposable that, when disposed, unsubscribes the aggregator.</returns>
+        public static IDisposable Subscribe<TProjection, TData>(
+            this IStreamCatchup<TData> catchup,
+            IStreamAggregator<TProjection, TData> aggregator,
+            FetchAndSave<TProjection> manage,
+            HandleAggregatorError<TProjection> onError = null) =>
+                catchup.SubscribeAggregator(aggregator,
+                                            manage,
+                                            onError);
 
         /// <summary>
         /// Subscribes the specified aggregator to a catchup.
@@ -330,15 +352,58 @@ namespace Alluvial
         /// <param name="catchup">The catchup.</param>
         /// <param name="aggregate">A delegate that performs an aggregate operation on projections receiving new data.</param>
         /// <param name="projectionStore">The projection store.</param>
+        /// <param name="onError">A function to handle exceptions thrown during aggregation.</param>
+        /// <returns>
+        /// A disposable that, when disposed, unsubscribes the aggregator.
+        /// </returns>
+        public static IDisposable Subscribe<TProjection, TData>(
+            this IStreamCatchup<TData> catchup,
+            Aggregate<TProjection, TData> aggregate,
+            IProjectionStore<string, TProjection> projectionStore = null,
+            HandleAggregatorError<TProjection> onError = null) =>
+                catchup.Subscribe(Aggregator.Create(aggregate),
+                                  projectionStore.AsHandler(),
+                                  onError);
+
+        /// <summary>
+        /// Subscribes the specified aggregator to a catchup.
+        /// </summary>
+        /// <typeparam name="TProjection">The type of the projection.</typeparam>
+        /// <typeparam name="TData">The type of the stream's data.</typeparam>
+        /// <param name="catchup">The catchup.</param>
+        /// <param name="aggregate">An aggregator function.</param>
+        /// <param name="manage">A delegate to fetch and store the projection each time the query is performed.</param>
+        /// <param name="onError">A function to handle exceptions thrown during aggregation.</param>
+        /// <returns>
+        /// A disposable that, when disposed, unsubscribes the aggregator.
+        /// </returns>
+        public static IDisposable Subscribe<TProjection, TData>(
+            this IStreamCatchup<TData> catchup,
+            Aggregate<TProjection, TData> aggregate,
+            FetchAndSave<TProjection> manage,
+            HandleAggregatorError<TProjection> onError = null) =>
+                catchup.Subscribe(Aggregator.Create(aggregate), manage, onError);
+
+        /// <summary>
+        /// Subscribes the specified aggregator to a catchup.
+        /// </summary>
+        /// <typeparam name="TProjection">The type of the projection.</typeparam>
+        /// <typeparam name="TData">The type of the stream's data.</typeparam>
+        /// <param name="catchup">The catchup.</param>
+        /// <param name="aggregate">A delegate that performs an aggregate operation on projections receiving new data.</param>
+        /// <param name="projectionStore">The projection store.</param>
+        /// <param name="onError">A function to handle exceptions thrown during aggregation.</param>
         /// <returns>
         /// A disposable that, when disposed, unsubscribes the aggregator.
         /// </returns>
         public static IDisposable Subscribe<TProjection, TData>(
             this IStreamCatchup<TData> catchup,
             AggregateAsync<TProjection, TData> aggregate,
-            IProjectionStore<string, TProjection> projectionStore = null) =>
+            IProjectionStore<string, TProjection> projectionStore = null,
+            HandleAggregatorError<TProjection> onError = null) =>
                 catchup.Subscribe(Aggregator.Create(aggregate),
-                                  projectionStore.AsHandler());
+                                  projectionStore.AsHandler(),
+                                  onError);
 
         /// <summary>
         /// Subscribes the specified aggregator to a catchup.
@@ -362,26 +427,9 @@ namespace Alluvial
         /// <summary>
         /// Subscribes the specified aggregator to a catchup.
         /// </summary>
-        /// <typeparam name="TProjection">The type of the projection.</typeparam>
         /// <typeparam name="TData">The type of the stream's data.</typeparam>
         /// <param name="catchup">The catchup.</param>
-        /// <param name="aggregator">The aggregator.</param>
-        /// <param name="manage">A delegate to fetch and store the projection each time the query is performed.</param>
-        /// <param name="onError">A function to handle exceptions thrown during aggregation.</param>
-        /// <returns>A disposable that, when disposed, unsubscribes the aggregator.</returns>
-        public static IDisposable Subscribe<TProjection, TData>(
-            this IStreamCatchup<TData> catchup,
-            IStreamAggregator<TProjection, TData> aggregator,
-            FetchAndSave<TProjection> manage,
-            HandleAggregatorError<TProjection> onError = null) =>
-                catchup.SubscribeAggregator(aggregator, manage, onError);
-
-        /// <summary>
-        /// Subscribes the specified aggregator to a catchup.
-        /// </summary>
-        /// <typeparam name="TData">The type of the stream's data.</typeparam>
-        /// <param name="catchup">The catchup.</param>
-        /// <param name="aggregate">The aggregate.</param>
+        /// <param name="aggregate">A side-effecting aggregator function.</param>
         /// <returns>A disposable that, when disposed, unsubscribes the aggregator.</returns>
         public static IDisposable Subscribe<TData>(
             this IStreamCatchup<TData> catchup,
