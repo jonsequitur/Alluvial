@@ -13,7 +13,7 @@
     <description>Build projections and deliver scheduled commands for Its.Domain using SQL and Alluvial.</description>
     <tags>data projections stream-processing CQRS Its.Cqrs Its.Domain event-sourcing</tags>
     <dependencies>
-        <dependency id="Alluvial" version="[0.1.23,)" />
+        <dependency id="Alluvial" version="[0.1.24,)" />
         <dependency id="Its.Domain" version="[0.14.9-beta,)" />
         <dependency id="Its.Domain.Sql" version="[0.14.9-beta,)" />
     </dependencies>
