@@ -57,11 +57,7 @@ namespace Alluvial
             Exception exception,
             TProjection projection = default(TProjection))
         {
-            var error = new StreamCatchupError<TProjection>
-            {
-                Exception = exception,
-                Projection = projection
-            };
+            var error = new StreamCatchupError<TProjection>(exception, projection);
 
             onError(error);
 

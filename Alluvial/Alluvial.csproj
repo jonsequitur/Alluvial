@@ -96,6 +96,7 @@
     <Compile Include="StreamCatchupBase{T}.cs" />
     <Compile Include="PipeAsync{TProjection,TData}.cs" />
     <Compile Include="StreamCatchupError.cs" />
+    <Compile Include="StreamCatchupError{T}.cs" />
     <Compile Include="StreamQueryPartition{T}.cs" />
     <Compile Include="StreamQueryRangePartition{T}.cs" />
     <Compile Include="StreamQueryValuePartition{T}.cs" />
