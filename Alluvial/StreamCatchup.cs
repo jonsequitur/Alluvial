@@ -20,6 +20,11 @@ namespace Alluvial
             this IStreamCatchup<TData> catchup,
             TimeSpan duration)
         {
+            if (catchup == null)
+            {
+                throw new ArgumentNullException(nameof(catchup));
+            }
+
             return catchup.Wrap(
                 runSingleBatch: async lease =>
                 {
@@ -48,6 +53,11 @@ namespace Alluvial
             this IDistributedStreamCatchup<TData, TPartition> catchup,
             TimeSpan duration)
         {
+            if (catchup == null)
+            {
+                throw new ArgumentNullException(nameof(catchup));
+            }
+
             return catchup.Wrap<TData, TPartition>(
                 runSingleBatch: async lease =>
                 {
@@ -102,11 +112,18 @@ namespace Alluvial
         public static IStreamCatchup<TData> Create<TData, TCursor>(
             IStream<TData, TCursor> stream,
             ICursor<TCursor> initialCursor = null,
-            int? batchSize = null) =>
-                new SingleStreamCatchup<TData, TCursor>(
-                    stream,
-                    initialCursor,
-                    batchSize);
+            int? batchSize = null)
+        {
+            if (stream == null)
+            {
+                throw new ArgumentNullException(nameof(stream));
+            }
+
+            return new SingleStreamCatchup<TData, TCursor>(
+                stream,
+                initialCursor,
+                batchSize);
+        }
 
         /// <summary>
         /// Creates a multiple-stream catchup.
@@ -143,6 +160,15 @@ namespace Alluvial
             FetchAndSave<ICursor<TUpstreamCursor>> manageUpstreamCursor,
             int? batchSize = null)
         {
+            if (stream == null)
+            {
+                throw new ArgumentNullException(nameof(stream));
+            }
+            if (manageUpstreamCursor == null)
+            {
+                throw new ArgumentNullException(nameof(manageUpstreamCursor));
+            }
+
             var upstreamCatchup = new SingleStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor>(
                 stream,
                 batchSize: batchSize);
@@ -166,6 +192,15 @@ namespace Alluvial
             IProjectionStore<string, ICursor<TUpstreamCursor>> upstreamCursorStore,
             int? batchSize = null)
         {
+            if (stream == null)
+            {
+                throw new ArgumentNullException(nameof(stream));
+            }
+            if (upstreamCursorStore == null)
+            {
+                throw new ArgumentNullException(nameof(upstreamCursorStore));
+            }
+
             var upstreamCatchup = new SingleStreamCatchup<IStream<TData, TDownstreamCursor>, TUpstreamCursor>(
                 stream,
                 batchSize: batchSize);
@@ -184,6 +219,11 @@ namespace Alluvial
             int? batchSize = null,
             FetchAndSave<ICursor<TCursor>> fetchAndSavePartitionCursor = null)
         {
+            if (streams == null)
+            {
+                throw new ArgumentNullException(nameof(streams));
+            }
+
             var catchup = new DistributedSingleStreamCatchup<TData, TCursor, TPartition>(
                 streams,
                 batchSize,
@@ -201,6 +241,11 @@ namespace Alluvial
             int? batchSize = null,
             FetchAndSave<ICursor<TUpstreamCursor>> fetchAndSavePartitionCursor = null)
         {
+            if (streams == null)
+            {
+                throw new ArgumentNullException(nameof(streams));
+            }
+
             var catchup = new DistributedMultiStreamCatchup<TData, TUpstreamCursor, TDownstreamCursor, TPartition>(
                 streams,
                 batchSize,
@@ -222,6 +267,19 @@ namespace Alluvial
             IEnumerable<IStreamQueryPartition<TPartition>> partitions,
             IDistributor<IStreamQueryPartition<TPartition>> distributor)
         {
+            if (catchup == null)
+            {
+                throw new ArgumentNullException(nameof(catchup));
+            }
+            if (partitions == null)
+            {
+                throw new ArgumentNullException(nameof(partitions));
+            }
+            if (distributor == null)
+            {
+                throw new ArgumentNullException(nameof(distributor));
+            }
+
             var queryPartitions = partitions as IStreamQueryPartition<TPartition>[] ?? partitions.ToArray();
 
             var wrapped = catchup.Wrap<TData, TPartition>(
@@ -244,6 +302,15 @@ namespace Alluvial
             this IDistributedStreamCatchup<TData, TPartition> catchup,
             IEnumerable<IStreamQueryPartition<TPartition>> partitions)
         {
+            if (catchup == null)
+            {
+                throw new ArgumentNullException(nameof(catchup));
+            }
+            if (partitions == null)
+            {
+                throw new ArgumentNullException(nameof(partitions));
+            }
+
             var queryPartitions = partitions as IStreamQueryPartition<TPartition>[] ?? partitions.ToArray();
 
             var distributor = queryPartitions.CreateInMemoryDistributor();
@@ -258,6 +325,11 @@ namespace Alluvial
             this IStreamCatchup<TData> catchup,
             ILease lease = null)
         {
+            if (catchup == null)
+            {
+                throw new ArgumentNullException(nameof(catchup));
+            }
+
             using (var counter = catchup.Count())
             {
                 int countBefore;
@@ -280,6 +352,11 @@ namespace Alluvial
             this IStreamCatchup<TData> catchup,
             TimeSpan pollInterval)
         {
+            if (catchup == null)
+            {
+                throw new ArgumentNullException(nameof(catchup));
+            }
+
             var canceled = false;
 
             Task.Run(async () =>
@@ -303,6 +380,11 @@ namespace Alluvial
         /// </returns>
         public static async Task RunSingleBatch<T>(this IStreamCatchup<T> catchup)
         {
+            if (catchup == null)
+            {
+                throw new ArgumentNullException(nameof(catchup));
+            }
+
             await catchup.RunSingleBatch(Lease.CreateDefault());
         }
 
@@ -320,10 +402,21 @@ namespace Alluvial
             this IStreamCatchup<TData> catchup,
             IStreamAggregator<TProjection, TData> aggregator,
             IProjectionStore<string, TProjection> projectionStore = null,
-            HandleAggregatorError<TProjection> onError = null) =>
-                catchup.Subscribe(aggregator,
-                                  projectionStore.AsHandler(), 
-                                  onError);
+            HandleAggregatorError<TProjection> onError = null)
+        {
+            if (catchup == null)
+            {
+                throw new ArgumentNullException(nameof(catchup));
+            }
+            if (aggregator == null)
+            {
+                throw new ArgumentNullException(nameof(aggregator));
+            }
+
+            return catchup.Subscribe(aggregator,
+                                     projectionStore.AsHandler(),
+                                     onError);
+        }
 
         /// <summary>
         /// Subscribes the specified aggregator to a catchup.
@@ -339,10 +432,25 @@ namespace Alluvial
             this IStreamCatchup<TData> catchup,
             IStreamAggregator<TProjection, TData> aggregator,
             FetchAndSave<TProjection> manage,
-            HandleAggregatorError<TProjection> onError = null) =>
-                catchup.SubscribeAggregator(aggregator,
-                                            manage,
-                                            onError);
+            HandleAggregatorError<TProjection> onError = null)
+        {
+            if (catchup == null)
+            {
+                throw new ArgumentNullException(nameof(catchup));
+            }
+            if (aggregator == null)
+            {
+                throw new ArgumentNullException(nameof(aggregator));
+            }
+            if (manage == null)
+            {
+                throw new ArgumentNullException(nameof(manage));
+            }
+
+            return catchup.SubscribeAggregator(aggregator,
+                                               manage,
+                                               onError);
+        }
 
         /// <summary>
         /// Subscribes the specified aggregator to a catchup.
@@ -360,10 +468,21 @@ namespace Alluvial
             this IStreamCatchup<TData> catchup,
             Aggregate<TProjection, TData> aggregate,
             IProjectionStore<string, TProjection> projectionStore = null,
-            HandleAggregatorError<TProjection> onError = null) =>
-                catchup.Subscribe(Aggregator.Create(aggregate),
-                                  projectionStore.AsHandler(),
-                                  onError);
+            HandleAggregatorError<TProjection> onError = null)
+        {
+            if (catchup == null)
+            {
+                throw new ArgumentNullException(nameof(catchup));
+            }
+            if (aggregate == null)
+            {
+                throw new ArgumentNullException(nameof(aggregate));
+            }
+
+            return catchup.Subscribe(Aggregator.Create(aggregate),
+                                     projectionStore.AsHandler(),
+                                     onError);
+        }
 
         /// <summary>
         /// Subscribes the specified aggregator to a catchup.
@@ -381,8 +500,23 @@ namespace Alluvial
             this IStreamCatchup<TData> catchup,
             Aggregate<TProjection, TData> aggregate,
             FetchAndSave<TProjection> manage,
-            HandleAggregatorError<TProjection> onError = null) =>
-                catchup.Subscribe(Aggregator.Create(aggregate), manage, onError);
+            HandleAggregatorError<TProjection> onError = null)
+        {
+            if (catchup == null)
+            {
+                throw new ArgumentNullException(nameof(catchup));
+            }
+            if (aggregate == null)
+            {
+                throw new ArgumentNullException(nameof(aggregate));
+            }
+            if (manage == null)
+            {
+                throw new ArgumentNullException(nameof(manage));
+            }
+
+            return catchup.Subscribe(Aggregator.Create(aggregate), manage, onError);
+        }
 
         /// <summary>
         /// Subscribes the specified aggregator to a catchup.
@@ -400,10 +534,21 @@ namespace Alluvial
             this IStreamCatchup<TData> catchup,
             AggregateAsync<TProjection, TData> aggregate,
             IProjectionStore<string, TProjection> projectionStore = null,
-            HandleAggregatorError<TProjection> onError = null) =>
-                catchup.Subscribe(Aggregator.Create(aggregate),
-                                  projectionStore.AsHandler(),
-                                  onError);
+            HandleAggregatorError<TProjection> onError = null)
+        {
+            if (catchup == null)
+            {
+                throw new ArgumentNullException(nameof(catchup));
+            }
+            if (aggregate == null)
+            {
+                throw new ArgumentNullException(nameof(aggregate));
+            }
+
+            return catchup.Subscribe(Aggregator.Create(aggregate),
+                                     projectionStore.AsHandler(),
+                                     onError);
+        }
 
         /// <summary>
         /// Subscribes the specified aggregator to a catchup.
@@ -421,8 +566,23 @@ namespace Alluvial
             this IStreamCatchup<TData> catchup,
             AggregateAsync<TProjection, TData> aggregate,
             FetchAndSave<TProjection> manage,
-            HandleAggregatorError<TProjection> onError = null) =>
-                catchup.Subscribe(Aggregator.Create(aggregate), manage, onError);
+            HandleAggregatorError<TProjection> onError = null)
+        {
+            if (catchup == null)
+            {
+                throw new ArgumentNullException(nameof(catchup));
+            }
+            if (aggregate == null)
+            {
+                throw new ArgumentNullException(nameof(aggregate));
+            }
+            if (manage == null)
+            {
+                throw new ArgumentNullException(nameof(manage));
+            }
+
+            return catchup.Subscribe(Aggregator.Create(aggregate), manage, onError);
+        }
 
         /// <summary>
         /// Subscribes the specified aggregator to a catchup.
@@ -433,14 +593,25 @@ namespace Alluvial
         /// <returns>A disposable that, when disposed, unsubscribes the aggregator.</returns>
         public static IDisposable Subscribe<TData>(
             this IStreamCatchup<TData> catchup,
-            Func<IStreamBatch<TData>, Task> aggregate) =>
-                catchup.Subscribe(
-                    Aggregator.Create<Projection<Unit, Unit>, TData>(async (p, b) =>
-                    {
-                        await aggregate(b);
-                        return p;
-                    }),
-                    new InMemoryProjectionStore<Projection<Unit, Unit>>());
+            Func<IStreamBatch<TData>, Task> aggregate)
+        {
+            if (catchup == null)
+            {
+                throw new ArgumentNullException(nameof(catchup));
+            }
+            if (aggregate == null)
+            {
+                throw new ArgumentNullException(nameof(aggregate));
+            }
+
+            return catchup.Subscribe(
+                Aggregator.Create<Projection<Unit, Unit>, TData>(async (p, b) =>
+                {
+                    await aggregate(b);
+                    return p;
+                }),
+                new InMemoryProjectionStore<Projection<Unit, Unit>>());
+        }
 
         private static FetchAndSave<TProjection> NoCursor<TProjection>(TProjection projection) =>
             (streamId, aggregate) => aggregate(projection);

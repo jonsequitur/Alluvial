@@ -26,6 +26,18 @@ namespace Alluvial
             Func<int, Task<IEnumerable<T>>> distribute) =>
                 new AnonymousDistributor<T>(start, onReceive, stop, distribute);
 
+        /// <summary>
+        /// Creates an in-memory distributor.
+        /// </summary>
+        /// <typeparam name="TPartition">The type of the partitions.</typeparam>
+        /// <param name="partitions">The partitions to be leased out.</param>
+        /// <param name="maxDegreesOfParallelism">The maximum degrees of parallelism.</param>
+        /// <param name="named">The named.</param>
+        /// <param name="pool">The pool.</param>
+        /// <param name="waitInterval">The wait interval. If not specified, the default is 1 minute.</param>
+        /// <param name="defaultLeaseDuration">Default duration of the lease.</param>
+        /// <returns></returns>
+        /// <exception cref="System.ArgumentNullException"></exception>
         public static IDistributor<IStreamQueryPartition<TPartition>> CreateInMemoryDistributor<TPartition>(
             this IEnumerable<IStreamQueryPartition<TPartition>> partitions,
             int maxDegreesOfParallelism = 5,
@@ -34,6 +46,11 @@ namespace Alluvial
             TimeSpan? waitInterval = null,
             TimeSpan? defaultLeaseDuration = null)
         {
+            if (partitions == null)
+            {
+                throw new ArgumentNullException(nameof(partitions));
+            }
+
             var leasables = partitions.Leasable(named);
 
             return new InMemoryDistributor<IStreamQueryPartition<TPartition>>(
@@ -112,6 +129,10 @@ namespace Alluvial
             this IDistributor<T> distributor,
             Func<Lease<T>, Task> receive)
         {
+            if (distributor == null)
+            {
+                throw new ArgumentNullException(nameof(distributor));
+            }
             if (receive == null)
             {
                 throw new ArgumentNullException(nameof(receive));
