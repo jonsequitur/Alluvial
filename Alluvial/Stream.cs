@@ -244,7 +244,7 @@ namespace Alluvial
             }
 
             return new AnonymousPartitionedStream<TTo, TCursor, TPartition>(
-                id: id,
+                id: id ?? $"{source.Id}->Map(d:{typeof (TTo).ReadableName()})",
                 getStream: async partition =>
                 {
                     var stream = await source.GetStream(partition);
