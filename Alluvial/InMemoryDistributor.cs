@@ -28,7 +28,7 @@ namespace Alluvial
         /// <exception cref="System.ArgumentNullException"></exception>
         public InMemoryDistributor(
             Leasable<T>[] leasables,
-            string pool,
+            string pool = "default",
             int maxDegreesOfParallelism = 5,
             TimeSpan? waitInterval = null,
             TimeSpan? defaultLeaseDuration = null) :
@@ -36,9 +36,9 @@ namespace Alluvial
                      maxDegreesOfParallelism,
                      waitInterval)
         {
-            if (pool == null)
+            if (string.IsNullOrWhiteSpace(pool))
             {
-                throw new ArgumentNullException(nameof(pool));
+                throw new ArgumentException("Argument 'pool' cannot be null, empty, or consist entirely of whitespace.");
             }
 
             workInProgress = workInProgressGlobal.GetOrAdd(pool, s => new ConcurrentDictionary<Leasable<T>, Lease<T>>());

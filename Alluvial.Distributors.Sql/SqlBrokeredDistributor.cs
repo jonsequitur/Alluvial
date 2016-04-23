@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
@@ -51,6 +52,18 @@ namespace Alluvial.Distributors.Sql
             this.database = database;
             this.pool = pool;
             this.defaultLeaseDuration = defaultLeaseDuration ?? TimeSpan.FromMinutes(5);
+        }
+
+        public override async Task<IEnumerable<T>> Distribute(int count)
+        {
+            await EnsureDatabaseIsInitialized();
+            return await base.Distribute(count);
+        }
+
+        public override async Task Start()
+        {
+            await EnsureDatabaseIsInitialized();
+            await base.Start();
         }
 
         /// <summary>
@@ -152,6 +165,14 @@ namespace Alluvial.Distributors.Sql
                     }
                 }
             }
+        }
+
+        private async Task EnsureDatabaseIsInitialized()
+        {
+            await database.InitializeSchema();
+            await database.RegisterLeasableResources(
+                Leasables,
+                pool);
         }
     }
 }
