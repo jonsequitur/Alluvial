@@ -68,13 +68,14 @@ namespace Alluvial.For.ItsDomainSql
         /// <exception cref="ArgumentException">Clock name cannot be null, empty, or consist entirely of whitespace.</exception>
         public static IPartitionedStream<ScheduledCommand, DateTimeOffset, Guid> CommandsDueOnClock(string clockName)
         {
-            if (String.IsNullOrWhiteSpace(clockName))
+            if (string.IsNullOrWhiteSpace(clockName))
             {
                 throw new ArgumentException("Clock name cannot be null, empty, or consist entirely of whitespace.", nameof(clockName));
             }
 
             return Stream.PartitionedByRange<ScheduledCommand, DateTimeOffset, Guid>(
-                async (q, partition) =>
+                id: $"CommandsDueOnClock({clockName})",
+                query: async (q, partition) =>
                 {
                     using (var db = new CommandSchedulerDbContext())
                     {
@@ -84,8 +85,7 @@ namespace Alluvial.For.ItsDomainSql
                                       .Where(c => c.Clock.Name == clockName)
                                       .WithinPartition(e => e.AggregateId, partition)
                                       .Take(() => batchCount);
-                        var scheduledCommands = await query.ToArrayAsync();
-                        return scheduledCommands;
+                        return await query.ToArrayAsync();
                     }
                 },
                 advanceCursor: (q, b) => q.Cursor.AdvanceTo(DomainClock.Now()));

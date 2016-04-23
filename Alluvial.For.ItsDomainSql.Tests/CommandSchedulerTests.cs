@@ -5,12 +5,13 @@ using FluentAssertions;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Threading.Tasks;
+using Alluvial.Distributors.Sql;
+using Alluvial.Tests;
 using Microsoft.Its.Domain;
 using Microsoft.Its.Domain.Sql;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 using NUnit.Framework;
 using Clock = Microsoft.Its.Domain.Clock;
-using SchedulerClock = Microsoft.Its.Domain.Sql.CommandScheduler.Clock;
 
 namespace Alluvial.For.ItsDomainSql.Tests
 {
@@ -18,7 +19,8 @@ namespace Alluvial.For.ItsDomainSql.Tests
     public class CommandSchedulerTests
     {
         private CompositeDisposable disposables;
-        private String clockName;
+        private string clockName;
+        private IStreamQueryRangePartition<Guid>[] partitionsByAggregateId;
 
         [TestFixtureSetUp]
         public void Init()
@@ -38,6 +40,8 @@ namespace Alluvial.For.ItsDomainSql.Tests
                 .UseDependency<GetClockName>(c => _ => clockName)
                 .TraceScheduledCommands();
 
+            partitionsByAggregateId = Partition.AllGuids().Among(16).ToArray();
+
             disposables.Add(ConfigurationContext.Establish(configuration));
         }
 
@@ -55,14 +59,17 @@ namespace Alluvial.For.ItsDomainSql.Tests
 
             var catchup = CommandScheduler.CommandsDueOnClock(clockName)
                                           .CreateDistributedCatchup()
-                                          .DistributeInMemoryAmong(Partition.AllGuids().Among(16).ToArray());
+                                          .DistributeUsingSqlBrokerAmong(
+                                              partitionsByAggregateId,
+                                              new SqlBrokeredDistributorDatabase(CommandSchedulerDbContext.NameOrConnectionString),
+                                              CommandScheduler.CommandsDueOnClock(clockName).Id);
 
             var store = new InMemoryProjectionStore<CommandsApplied>();
 
             catchup.Subscribe(CommandScheduler.DeliverScheduledCommands().Trace(), store);
 
             // act
-            await catchup.RunSingleBatch();
+            await catchup.RunSingleBatch().Timeout();
 
             // assert
             store.Sum(c => c.Value.Count).Should().Be(50);

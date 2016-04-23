@@ -73,7 +73,7 @@ ELSE
                 }
             }
         }
-
+        
         public async Task<IEnumerable<Leasable>> GetLeasables()
         {
             var leasables = new List<Leasable>();
