@@ -59,7 +59,7 @@ namespace Alluvial.For.ItsDomainSql.Tests
 
             var catchup = CommandScheduler.CommandsDueOnClock(clockName)
                                           .CreateDistributedCatchup()
-                                          .DistributeUsingSqlBrokerAmong(
+                                          .DistributeSqlBrokeredLeasesAmong(
                                               partitionsByAggregateId,
                                               new SqlBrokeredDistributorDatabase(CommandSchedulerDbContext.NameOrConnectionString),
                                               CommandScheduler.CommandsDueOnClock(clockName).Id);
