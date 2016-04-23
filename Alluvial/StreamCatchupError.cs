@@ -45,5 +45,14 @@ namespace Alluvial
         /// <returns></returns>
         public static StreamCatchupError<TProjection> Create<TProjection>(Exception exception, TProjection projection) =>
             new StreamCatchupError<TProjection>(exception, projection);
+
+        /// <summary>
+        /// Returns a <see cref="System.String" /> that represents this instance.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="System.String" /> that represents this instance.
+        /// </returns>
+        public override string ToString() =>
+            $"[StreamCatchupError] {(ShouldContinue ? "will continue" : "won't continue")} {Exception}";
     }
 }

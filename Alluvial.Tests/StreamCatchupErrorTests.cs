@@ -34,6 +34,26 @@ namespace Alluvial.Tests
         }
 
         [Test]
+        public async Task StreamCatchupError_ToString_contains_exception_message()
+        {
+            var error = new StreamCatchupError(new Exception("drat!"));
+
+            error.ToString().Should().Contain("drat!");
+        }
+
+        [Test]
+        public async Task StreamCatchupError_indicates_whether_the_catchup_will_continue()
+        {
+            var error = new StreamCatchupError(new Exception("drat!"));
+
+            error.ToString().Should().Contain("won't continue");
+
+            error.Continue();
+
+            error.ToString().Should().Contain("will continue");
+        }
+
+        [Test]
         public async Task When_an_aggregation_fails_then_the_projection_is_not_updated()
         {
             var projections = new InMemoryProjectionStore<BalanceProjection>();
