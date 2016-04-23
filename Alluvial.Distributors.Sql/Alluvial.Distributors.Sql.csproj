@@ -42,6 +42,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Distributor.cs" />
     <Compile Include="Leasable.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SqlBrokeredDistributor.cs" />
