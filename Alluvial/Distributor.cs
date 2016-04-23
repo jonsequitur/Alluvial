@@ -62,8 +62,6 @@ namespace Alluvial
         public static Leasable<IStreamQueryPartition<TPartition>>[] CreateLeasables<TPartition>(
             this IEnumerable<IStreamQueryPartition<TPartition>> partitions)
         {
-            // FIX: (Leasable) this needs a better name
-
             if (partitions == null)
             {
                 throw new ArgumentNullException(nameof(partitions));
