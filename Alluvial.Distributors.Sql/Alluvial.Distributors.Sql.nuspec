@@ -3,7 +3,7 @@
   <metadata>
     <id>Alluvial.Distributors.Sql</id>
     <title>Alluvial.Distributors.Sql</title>
-    <version>0.1.15</version>
+    <version>0.1.16</version>
     <authors>jonsequitur</authors>
     <owners>jonsequitur</owners>
     <projectUrl>https://github.com/jonsequitur/Alluvial</projectUrl>
@@ -13,7 +13,7 @@
     <description>A SQL-based query distributor for Alluvial</description>
     <tags>data projections stream-processing</tags>
     <dependencies>
-        <dependency id="Alluvial" version="[0.1.25,)" />
+        <dependency id="Alluvial" version="[0.1.26,)" />
     </dependencies>
 </metadata>
 </package>
