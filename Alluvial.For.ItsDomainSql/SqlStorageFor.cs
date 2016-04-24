@@ -6,6 +6,39 @@ namespace Alluvial.For.ItsDomainSql
 {
     public static class SqlStorageFor
     {
+        public static FetchAndSave<ICursor<long>> Cursor<TDbContext>(
+            string streamId,
+            Func<TDbContext> createDbContext = null)
+            where TDbContext : DbContext, new()
+        {
+            createDbContext = createDbContext ?? (() => new TDbContext());
+
+            return async (partitionId, callAggregatorPipeline) =>
+            {
+                using (var db = createDbContext())
+                {
+                    var projection = await db.Set<PartitionCursor>()
+                                             .SingleOrDefaultAsync(p => p.StreamId == streamId &&
+                                                                        p.PartitionId == partitionId);
+
+                    if (projection == null)
+                    {
+                        projection = new PartitionCursor
+                        {
+                            StreamId = streamId,
+                            PartitionId = partitionId
+                        };
+
+                        db.Set<PartitionCursor>().Add(projection);
+                    }
+
+                    await callAggregatorPipeline(projection);
+
+                    await db.SaveChangesAsync();
+                }
+            };
+        }
+
         public static FetchAndSave<TProjection> Projection<TProjection, TDbContext>(
             Func<TDbContext, string, Task<TProjection>> getSingle,
             Func<string, TProjection> createNew,
