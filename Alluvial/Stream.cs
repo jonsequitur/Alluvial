@@ -131,13 +131,15 @@ namespace Alluvial
         /// <typeparam name="TCursor">The type of the cursor.</typeparam>
         /// <param name="query">The query.</param>
         /// <param name="advanceCursor">A delegate that advances the cursor after a batch is pulled from the stream.</param>
+        /// <param name="id">The stream identifier.</param>
         /// <param name="newCursor">A delegate that returns a new cursor.</param>
         public static IStream<TData, TCursor> Create<TData, TCursor>(
             Func<IStreamQuery<TCursor>, IEnumerable<TData>> query,
             Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor,
+            string id = null,
             Func<ICursor<TCursor>> newCursor = null) =>
                 Create(query,
-                       null,
+                       id,
                        advanceCursor,
                        newCursor);
 
@@ -147,9 +149,11 @@ namespace Alluvial
         /// <typeparam name="TData">The type of the stream's data.</typeparam>
         /// <param name="query">The query.</param>
         /// <param name="advanceCursor">A delegate that advances the cursor after a batch is pulled from the stream.</param>
+        /// <param name="id">The stream identifier.</param>
         /// <param name="newCursor">A delegate that returns a new cursor.</param>
         public static IStream<TData, TData> Create<TData>(
             Func<IStreamQuery<TData>, IEnumerable<TData>> query,
+            string id = null,
             Action<IStreamQuery<TData>, IStreamBatch<TData>> advanceCursor = null,
             Func<ICursor<TData>> newCursor = null)
         {
@@ -159,15 +163,17 @@ namespace Alluvial
             }
 
             return Create<TData, TData>(
-                query,
-                advanceCursor ?? ((q, batch) =>
+                id: id,
+                query: query,
+                advanceCursor: advanceCursor ?? ((q, batch) =>
                 {
                     var last = batch.LastOrDefault();
                     if (last != null)
                     {
                         q.Cursor.AdvanceTo(last);
                     }
-                }), newCursor);
+                }),
+                newCursor: newCursor);
         }
 
         private static IStream<TData, TCursor> Create<TData, TCursor>(
