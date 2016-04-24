@@ -103,14 +103,14 @@ namespace Alluvial
             new StreamQueryValuePartition<TPartition>(value);
 
         /// <summary>
-        /// Distributes values among a set of partitions.
+        /// Distributes values into a set of partitions.
         /// </summary>
         /// <typeparam name="TPartition">The type of the partition.</typeparam>
         /// <typeparam name="T">The types of the values to partition.</typeparam>
         /// <param name="values">The values.</param>
         /// <param name="partitions">The partitions.</param>
         /// <returns>A sequence of groupings, by partition.</returns>
-        public static IEnumerable<IGrouping<TPartition, T>> DistributeAmong<TPartition, T>(
+        public static IEnumerable<IGrouping<TPartition, T>> DistributeInto<TPartition, T>(
             this IEnumerable<T> values,
             IEnumerable<TPartition> partitions)
              where TPartition : IStreamQueryPartition<T>
