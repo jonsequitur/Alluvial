@@ -91,6 +91,7 @@
     <Compile Include="EventStream.cs" />
     <Compile Include="EventStreamChange.cs" />
     <Compile Include="%28Pocket%29\MaybeExtensions.cs" />
+    <Compile Include="PartitionCursor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SqlStorageFor.cs" />
   </ItemGroup>
