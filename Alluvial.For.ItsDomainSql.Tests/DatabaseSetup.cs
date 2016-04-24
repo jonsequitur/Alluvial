@@ -12,11 +12,6 @@ namespace Alluvial.For.ItsDomainSql.Tests
         {
             SetConnectionStrings();
 
-            using (var db = new CommandSchedulerDbContext())
-            {
-                new CommandSchedulerDatabaseInitializer().InitializeDatabase(db);
-            }
-
             lock (lockObj)
             {
                 if (databasesInitialized)
@@ -24,6 +19,10 @@ namespace Alluvial.For.ItsDomainSql.Tests
                     return;
                 }
 
+                using (var db = new CommandSchedulerDbContext())
+                {
+                    new CommandSchedulerDatabaseInitializer().InitializeDatabase(db);
+                }
                 databasesInitialized = true;
             }
         }
