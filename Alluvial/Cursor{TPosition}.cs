@@ -4,7 +4,7 @@ using System.Diagnostics;
 namespace Alluvial
 {
     [DebuggerDisplay("{ToString()}")]
-    internal class Cursor<T> : ICursor<T>, ITrackCursorPosition
+    public class Cursor<T> : ICursor<T>, ITrackCursorPosition
     {
         private static readonly Func<Cursor<T>, T, bool> hasCursorReached;
         private readonly T originalPosition;
@@ -35,6 +35,9 @@ namespace Alluvial
             }
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Cursor{T}"/> class.
+        /// </summary>
         public Cursor() : this(default(T))
         {
         }
