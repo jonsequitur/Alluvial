@@ -122,6 +122,7 @@
     <Compile Include="QueryableTests.cs" />
     <Compile Include="QueryableTestsForInMemoryQueryable.cs" />
     <Compile Include="QueryableTestsForSql.cs" />
+    <Compile Include="StreamBuilderTests.cs" />
     <Compile Include="StreamCompositionTests.cs" />
     <Compile Include="StreamCatchupErrorTests.cs" />
     <Compile Include="SingleStreamCatchupTests.cs" />
