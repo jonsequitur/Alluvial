@@ -21,6 +21,7 @@ namespace Alluvial.Tests
         {
             ints = Enumerable.Range(1, 1000).ToArray();
             disposables = new CompositeDisposable();
+
             partitionedStream = Stream
                 .Partitioned<int, int, int>(
                     query: async (q, p) =>
