@@ -36,16 +36,14 @@ namespace Alluvial.Distributors.Sql
                 throw new ArgumentNullException(nameof(partitions));
             }
 
-            var partitionsArray = partitions.ToArray();
-
-            var queryPartitions = partitions as IStreamQueryPartition<TPartition>[] ?? partitionsArray;
+            var partitionsArray = partitions as IStreamQueryPartition<TPartition>[] ?? partitions.ToArray();
 
             var distributor = new SqlBrokeredDistributor<IStreamQueryPartition<TPartition>>(
                 partitionsArray.CreateLeasables(),
                 database,
                 pool);
 
-            return catchup.DistributeAmong(queryPartitions, distributor);
+            return catchup.DistributeAmong(partitionsArray, distributor);
         }
     }
 }
