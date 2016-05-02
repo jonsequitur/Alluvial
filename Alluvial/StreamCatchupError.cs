@@ -32,8 +32,9 @@ namespace Alluvial
         internal bool ShouldContinue { get; private set; }
 
         /// <summary>
-        /// Notified the catchup that the it should continue despite the error.
+        /// Notifie the catchup that it should continue despite the error.
         /// </summary>
+        /// <remarks>By default, the catchup will stop when an exception is thrown.</remarks>
         public void Continue() => ShouldContinue = true;
 
         /// <summary>

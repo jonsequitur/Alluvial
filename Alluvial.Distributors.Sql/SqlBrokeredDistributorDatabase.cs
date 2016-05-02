@@ -232,9 +232,6 @@ IF NOT EXISTS (SELECT * FROM [Alluvial].[Leases]
                 {
                     cmd.CommandText = script;
                     cmd.CommandType = CommandType.Text;
-
-                    Trace.WriteLine(script, typeof (SqlBrokeredDistributorDatabase).Name);
-
                     await cmd.ExecuteNonQueryAsync();
                 }
             }
