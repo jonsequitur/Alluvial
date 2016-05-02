@@ -57,12 +57,14 @@ namespace Alluvial.For.ItsDomainSql.Tests
             // arrange
             await ScheduleSomeCommands(50);
 
-            var catchup = CommandScheduler.CommandsDueOnClock(clockName)
-                                          .CreateDistributedCatchup()
-                                          .DistributeSqlBrokeredLeasesAmong(
-                                              partitionsByAggregateId,
-                                              new SqlBrokeredDistributorDatabase(CommandSchedulerDbContext.NameOrConnectionString),
-                                              CommandScheduler.CommandsDueOnClock(clockName).Id);
+            var commandsDue = CommandScheduler.CommandsDueOnClock(clockName);
+
+            var catchup = commandsDue
+                .CreateDistributedCatchup()
+                .DistributeSqlBrokeredLeasesAmong(
+                    partitionsByAggregateId,
+                    new SqlBrokeredDistributorDatabase(CommandSchedulerDbContext.NameOrConnectionString),
+                    commandsDue.Id);
 
             var store = new InMemoryProjectionStore<CommandsApplied>();
 
@@ -76,11 +78,11 @@ namespace Alluvial.For.ItsDomainSql.Tests
 
             using (var db = new CommandSchedulerDbContext())
             {
-                var commandsDue = await db.ScheduledCommands
+                var remainingCommandsDue = await db.ScheduledCommands
                                           .Where(c => c.Clock.Name == clockName)
                                           .Due()
                                           .CountAsync();
-                commandsDue.Should().Be(0);
+                remainingCommandsDue.Should().Be(0);
             }
         }
 
