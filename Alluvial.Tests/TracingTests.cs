@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using FluentAssertions;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Alluvial.Tests.BankDomain;
 using NUnit.Framework;
@@ -224,7 +223,6 @@ namespace Alluvial.Tests
         {
             var distributor = CreateDistributor()
                 .Trace();
-
             distributor.OnReceive(async lease =>
             {
                 throw new Exception("oops!");
@@ -236,7 +234,7 @@ namespace Alluvial.Tests
                          .Should()
                          .ContainSingle(m => m.Contains("oops!"));
         }
-
+        
         [Test]
         public async Task Distributor_Trace_default_behavior_can_be_overridden()
         {
@@ -345,7 +343,7 @@ namespace Alluvial.Tests
             var distributor = new InMemoryDistributor<int>(new[]
             {
                 new Leasable<int>(1, "1")
-            }).Trace();
+            });
 
             distributor.OnReceive(onReceive ?? (async _ => { }));
 

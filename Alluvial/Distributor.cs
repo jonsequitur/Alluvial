@@ -120,7 +120,11 @@ namespace Alluvial
                         try
                         {
                             await next(lease);
-                            WriteLine($"[Distribute] Exception: {lease.Exception}");
+
+                            if (lease.Exception != null)
+                            {
+                                WriteLine($"[Distribute] Exception: {lease.Exception}");
+                            }
                         }
                         catch (Exception exception)
                         {
