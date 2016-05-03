@@ -29,15 +29,53 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task By_default_Aggregator_Trace_writes_projections_and_batches_to_trace_output()
+        public async Task By_default_IStreamAggregator_Trace_writes_projections_and_batches_to_trace_output()
         {
-            var aggregagator = Aggregator.Create<Projection<int, int>, string>((p, es) =>
+            var aggregator = Aggregator.Create<Projection<int, int>, string>((p, es) =>
             {
                 p.Value += es.Count;
                 return p;
             }).Trace();
 
-            await aggregagator.Aggregate(new Projection<int, int>
+            await aggregator.Aggregate(new Projection<int, int>
+            {
+                Value = 1
+            }, StreamBatch.Create(new[] { "hi", "there" }, Cursor.New(0)));
+
+            traceListener.Messages
+                         .Should()
+                         .Contain("[Aggregate] Projection(Int32,Int32): 1 @ cursor 0 / batch of 2 starts @ 0");
+        }
+
+        [Test]
+        public async Task By_default_Aggregate_Trace_writes_projections_and_batches_to_trace_output()
+        {
+            Aggregate<Projection<int, int>, string> aggregator = new Aggregate<Projection<int, int>, string>((p, es) =>
+            {
+                p.Value += es.Count;
+                return p;
+            }).Trace();
+
+            aggregator(new Projection<int, int>
+            {
+                Value = 1
+            }, StreamBatch.Create(new[] { "hi", "there" }, Cursor.New(0)));
+
+            traceListener.Messages
+                         .Should()
+                         .Contain("[Aggregate] Projection(Int32,Int32): 1 @ cursor 0 / batch of 2 starts @ 0");
+        }
+
+        [Test]
+        public async Task By_default_AggregateAsync_Trace_writes_projections_and_batches_to_trace_output()
+        {
+             AggregateAsync<Projection<int, int>, string> aggregator = new AggregateAsync<Projection<int, int>, string>(async (p, es) =>
+            {
+                p.Value += es.Count;
+                return p;
+            }).Trace();
+
+            await aggregator(new Projection<int, int>
             {
                 Value = 1
             }, StreamBatch.Create(new[] { "hi", "there" }, Cursor.New(0)));
@@ -184,7 +222,8 @@ namespace Alluvial.Tests
         [Test]
         public async Task Distributor_Trace_writes_OnReceive_exceptions_to_trace_output()
         {
-            var distributor = CreateDistributor().Trace();
+            var distributor = CreateDistributor()
+                .Trace();
 
             distributor.OnReceive(async lease =>
             {
@@ -207,7 +246,7 @@ namespace Alluvial.Tests
             var distributor1 = new InMemoryDistributor<int>(new[]
             {
                 new Leasable<int>(1, "1")
-            }, "").Trace(
+            }).Trace(
                 onLeaseAcquired: l => { leaseAcquired = l; },
                 onLeaseReleasing: l => { leaseReleased = l; });
 
@@ -306,7 +345,7 @@ namespace Alluvial.Tests
             var distributor = new InMemoryDistributor<int>(new[]
             {
                 new Leasable<int>(1, "1")
-            }, "");
+            }).Trace();
 
             distributor.OnReceive(onReceive ?? (async _ => { }));
 

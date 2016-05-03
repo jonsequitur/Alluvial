@@ -38,57 +38,29 @@ namespace Alluvial.Tests
             TimeSpan? pollInterval = null,
             TimeSpan? timeout = null)
         {
-            if (Debugger.IsAttached)
-            {
-                timeout = timeout ?? TimeSpan.FromMinutes(5);
-            }
-            else
-            {
-                timeout = timeout ?? TimeSpan.FromSeconds(20);
-            }
+            timeout = timeout ??
+                      (Debugger.IsAttached
+                           ? (TimeSpan.FromMinutes(5))
+                           : (TimeSpan.FromSeconds(20)));
 
             pollInterval = pollInterval ?? TimeSpan.FromMilliseconds(100);
-
-            var tcs = new TaskCompletionSource<bool>();
 
             var timer = new Stopwatch();
             timer.Start();
 
-            Task.Run(async () =>
+            while (true)
             {
-                while (!tcs.Task.IsCompleted &&
-                       !tcs.Task.IsFaulted &&
-                       !tcs.Task.IsCanceled)
+                if (until())
                 {
-                    if (timer.Elapsed >= timeout)
-                    {
-                        tcs.SetException(new TimeoutException());
-                        break;
-                    }
-
-                    try
-                    {
-                        if (until())
-                        {
-                            tcs.SetResult(true);
-                        }
-                        else
-                        {
-                            await Task.Delay(pollInterval.Value);
-                        }
-                    }
-                    catch (Exception exception)
-                    {
-                        tcs.SetException(exception);
-                    }
+                    return;
                 }
-            });
 
-            await tcs.Task;
+                if (timer.Elapsed > timeout)
+                {
+                    throw new TimeoutException();
+                }
 
-            if (tcs.Task.IsFaulted)
-            {
-                throw tcs.Task.Exception;
+                await Task.Delay(pollInterval.Value);
             }
         }
     }

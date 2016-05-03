@@ -251,12 +251,14 @@ namespace Alluvial.Tests
                 // write more events
                 Task.Run(async () =>
                 {
+                    Console.WriteLine($"there are {streamIds.Length} stream ids");
+
                     foreach (var streamId in streamIds.Take(20))
                     {
+                        await Task.Delay(2);
                         store.WriteEvents(streamId);
-                        await Task.Delay(1);
+                        Console.WriteLine("wrote 1 event");
                     }
-                    Console.WriteLine("wrote 20 more events");
                 });
 
                 await Wait.Until(() =>
@@ -264,7 +266,7 @@ namespace Alluvial.Tests
                     var sum = projectionStore.Sum(b => b.Balance);
                     Console.WriteLine("sum is " + sum);
                     return sum >= 120;
-                });
+                }, pollInterval: 20.Milliseconds());
             }
         }
 

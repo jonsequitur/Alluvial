@@ -4,7 +4,7 @@ namespace Alluvial
 {
     internal class AggregatorSubscription<TProjection, TData> : IAggregatorSubscription
     {
-        internal readonly HandleAggregatorError<TProjection> OnError;
+        private readonly HandleAggregatorError<TProjection> onError;
 
         public AggregatorSubscription(
             IStreamAggregator<TProjection, TData> aggregator,
@@ -16,7 +16,7 @@ namespace Alluvial
                 throw new ArgumentNullException(nameof(aggregator));
             }
             
-            OnError = onError ?? (error => { });
+            this.onError = onError ?? (error => { });
 
             if (onError != null)
             {
@@ -38,5 +38,26 @@ namespace Alluvial
         public Type ProjectionType => typeof (TProjection);
 
         public Type StreamDataType => typeof (TData);
+
+        StreamCatchupError IAggregatorSubscription.HandleError(
+            Exception exception, 
+            object projection)
+        {
+            if (projection != null)
+            {
+                return this.HandleError(exception, (dynamic) projection);
+            }
+
+            return this.HandleError(exception, default(TProjection));
+        }
+
+        public StreamCatchupError HandleError(
+            Exception exception,
+            TProjection projection)
+        {
+            var catchupError = StreamCatchupError.Create(exception, projection);
+            onError(catchupError);
+            return catchupError;
+        }
     }
 }

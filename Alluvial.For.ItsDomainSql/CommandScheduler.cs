@@ -7,7 +7,7 @@ using Microsoft.Its.Domain.Sql.CommandScheduler;
 using SchedulerClock = Microsoft.Its.Domain.Sql.CommandScheduler.Clock;
 using DomainClock = Microsoft.Its.Domain.Clock;
 
-namespace Alluvial.Streams.ItsDomainSql
+namespace Alluvial.For.ItsDomainSql
 {
     public static class CommandScheduler
     {
@@ -64,19 +64,26 @@ namespace Alluvial.Streams.ItsDomainSql
         /// Creates a partitioned stream of scheduled commands due on a specified scheduler clock.
         /// </summary>
         /// <param name="clockName">Name of the scheduler clock.</param>
-        /// <returns></returns>
+        /// <param name="createDbContext">A delegate to create a CommandSchedulerDbContext to be used when delivering scheduled commands.</param>
         /// <exception cref="ArgumentException">Clock name cannot be null, empty, or consist entirely of whitespace.</exception>
-        public static IPartitionedStream<ScheduledCommand, DateTimeOffset, Guid> CommandsDueOnClock(string clockName)
+        public static IPartitionedStream<ScheduledCommand, DateTimeOffset, Guid> CommandsDueOnClock(
+            string clockName,
+            Func<CommandSchedulerDbContext> createDbContext = null)
         {
-            if (String.IsNullOrWhiteSpace(clockName))
+            if (string.IsNullOrWhiteSpace(clockName))
             {
                 throw new ArgumentException("Clock name cannot be null, empty, or consist entirely of whitespace.", nameof(clockName));
             }
 
+            createDbContext = createDbContext ??
+                              (() =>
+                               new CommandSchedulerDbContext());
+
             return Stream.PartitionedByRange<ScheduledCommand, DateTimeOffset, Guid>(
-                async (q, partition) =>
+                id: $"CommandsDueOnClock({clockName})",
+                query: async (q, partition) =>
                 {
-                    using (var db = new CommandSchedulerDbContext())
+                    using (var db = createDbContext())
                     {
                         var batchCount = q.BatchSize ?? 5;
                         var query = db.ScheduledCommands
@@ -84,8 +91,7 @@ namespace Alluvial.Streams.ItsDomainSql
                                       .Where(c => c.Clock.Name == clockName)
                                       .WithinPartition(e => e.AggregateId, partition)
                                       .Take(() => batchCount);
-                        var scheduledCommands = await query.ToArrayAsync();
-                        return scheduledCommands;
+                        return await query.ToArrayAsync();
                     }
                 },
                 advanceCursor: (q, b) => q.Cursor.AdvanceTo(DomainClock.Now()));

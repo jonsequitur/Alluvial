@@ -122,7 +122,26 @@ namespace Alluvial
 
             // create one aggregation task for each subscribed aggregator and await completion of all of them
             var aggregationTasks = aggregatorSubscriptions
-                .Select(v => Aggregate(stream, (dynamic) v, waitForProjectionsThenQueryTheStream) as Task);
+                .Select(async subscription =>
+                {
+                    try
+                    {
+                        await Aggregate(stream,
+                                        (dynamic) subscription,
+                                        waitForProjectionsThenQueryTheStream);
+                    }
+                    catch (Exception exception)
+                    {
+                        var error = subscription.HandleError(
+                            exception,
+                            null);
+
+                        if (!error.ShouldContinue)
+                        {
+                            throw;
+                        }
+                    }
+                });
 
             await Task.WhenAll(aggregationTasks);
 
@@ -155,11 +174,10 @@ namespace Alluvial
                         }
                         catch (Exception exception)
                         {
-                            var error = subscription.OnError
-                                                    .CheckErrorHandler(
+                            var error = subscription.HandleError(
                                                         exception,
                                                         projection);
-
+                      
                             if (!error.ShouldContinue)
                             {
                                 throw;

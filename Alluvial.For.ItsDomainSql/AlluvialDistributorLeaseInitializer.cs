@@ -1,12 +1,11 @@
 using System;
-using System.Data;
-using System.Data.Common;
+using System.Data.Entity;
 using System.Threading.Tasks;
 using Alluvial.Distributors.Sql;
 using Microsoft.Its.Domain.Sql.Migrations;
 using Newtonsoft.Json;
 
-namespace Alluvial.Streams.ItsDomainSql
+namespace Alluvial.For.ItsDomainSql
 {
     public class AlluvialDistributorLeaseInitializer<T> : IDbMigrator
     {
@@ -29,12 +28,13 @@ namespace Alluvial.Streams.ItsDomainSql
             this.pool = pool;
         }
 
-        public MigrationResult Migrate(IDbConnection connection)
+        public MigrationResult Migrate(DbContext context)
         {
-            var dbConnection = (DbConnection) connection;
 
             Task.Run(async () =>
             {
+                var dbConnection = context.Database.Connection;
+
                 await SqlBrokeredDistributorDatabase.InitializeSchema(dbConnection);
                 await SqlBrokeredDistributorDatabase.RegisterLeasableResources(
                     leasables, 

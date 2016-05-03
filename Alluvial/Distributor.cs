@@ -27,15 +27,30 @@ namespace Alluvial
             Func<int, Task<IEnumerable<T>>> distribute) =>
                 new AnonymousDistributor<T>(start, onReceive, stop, distribute);
 
+        /// <summary>
+        /// Creates an in-memory distributor.
+        /// </summary>
+        /// <typeparam name="TPartition">The type of the partitions.</typeparam>
+        /// <param name="partitions">The partitions to be leased out.</param>
+        /// <param name="maxDegreesOfParallelism">The maximum degrees of parallelism.</param>
+        /// <param name="pool">The pool.</param>
+        /// <param name="waitInterval">The wait interval. If not specified, the default is 1 minute.</param>
+        /// <param name="defaultLeaseDuration">Default duration of the lease.</param>
+        /// <returns></returns>
+        /// <exception cref="System.ArgumentNullException"></exception>
         public static IDistributor<IStreamQueryPartition<TPartition>> CreateInMemoryDistributor<TPartition>(
             this IEnumerable<IStreamQueryPartition<TPartition>> partitions,
             int maxDegreesOfParallelism = 5,
-            Func<IStreamQueryPartition<TPartition>, string> named = null,
-            string pool = "",
+            string pool = "default",
             TimeSpan? waitInterval = null,
             TimeSpan? defaultLeaseDuration = null)
         {
-            var leasables = partitions.Leasable(named);
+            if (partitions == null)
+            {
+                throw new ArgumentNullException(nameof(partitions));
+            }
+
+            var leasables = partitions.CreateLeasables();
 
             return new InMemoryDistributor<IStreamQueryPartition<TPartition>>(
                 leasables,
@@ -45,18 +60,15 @@ namespace Alluvial
                 defaultLeaseDuration);
         }
 
-        private static Leasable<IStreamQueryPartition<TPartition>>[] Leasable<TPartition>(
-            this IEnumerable<IStreamQueryPartition<TPartition>> partitions,
-            Func<IStreamQueryPartition<TPartition>, string> named = null)
+        public static Leasable<IStreamQueryPartition<TPartition>>[] CreateLeasables<TPartition>(
+            this IEnumerable<IStreamQueryPartition<TPartition>> partitions)
         {
             if (partitions == null)
             {
                 throw new ArgumentNullException(nameof(partitions));
             }
 
-            named = named ?? (p => p.ToString());
-
-            return partitions.Select(p => new Leasable<IStreamQueryPartition<TPartition>>(p, named(p)))
+            return partitions.Select(p => new Leasable<IStreamQueryPartition<TPartition>>(p, p.ToString()))
                              .ToArray();
         }
 
@@ -132,6 +144,10 @@ namespace Alluvial
             this IDistributor<T> distributor,
             Func<Lease<T>, Task> receive)
         {
+            if (distributor == null)
+            {
+                throw new ArgumentNullException(nameof(distributor));
+            }
             if (receive == null)
             {
                 throw new ArgumentNullException(nameof(receive));

@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("Alluvial.Distributors.Sql")]
-[assembly: AssemblyCopyright("Copyright ©  2015 Jon Sequeira")]
+[assembly: AssemblyCopyright("Copyright © 2016 Jon Sequeira")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -22,4 +22,4 @@ using System.Runtime.InteropServices;
 [assembly: Guid("0a610216-4ec8-4058-9c71-1d74bd7cdc8a")]
 
 [assembly: AssemblyVersion("0.1.0")]
-[assembly: AssemblyInformationalVersion("0.1.14-beta")]
+[assembly: AssemblyInformationalVersion("0.1.17")]

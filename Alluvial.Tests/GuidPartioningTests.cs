@@ -248,7 +248,7 @@ namespace Alluvial.Tests
 
             var partitions = Partition.AllGuids().Among(10);
 
-            var partitioned = guids.DistributeAmong(partitions);
+            var partitioned = guids.DistributeInto(partitions);
 
             foreach (var x in partitioned)
             {

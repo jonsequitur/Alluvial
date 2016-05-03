@@ -129,10 +129,55 @@ namespace Alluvial
         /// <param name="aggregate">The aggregator function.</param>
         /// <param name="write">A delegate that can be used to specify how the arguments should be traced. If this is not provided, output is sent to <see cref="System.Diagnostics.Trace" />.</param>
         /// <returns>The original aggregator wrapped in a tracing decorator.</returns>
-        public static IStreamAggregator<TProjection, TData> Trace<TProjection, TData>(
+        public static AggregateAsync<TProjection, TData> Trace<TProjection, TData>(
             this AggregateAsync<TProjection, TData> aggregate,
-            Action<TProjection, IStreamBatch<TData>> write = null) =>
-                Create(aggregate).Trace(write);
+            Action<TProjection, IStreamBatch<TData>> write = null)
+        {
+            write = write ?? TraceDefault;
+
+            return async (projection, batch) =>
+            {
+                try
+                {
+                    write(projection, batch);
+                    return await aggregate(projection, batch);
+                }
+                catch (Exception exception)
+                {
+                    System.Diagnostics.Trace.WriteLine("[Aggregate] Exception: " + exception);
+                    throw;
+                }
+            };
+        }
+
+        /// <summary>
+        /// Traces calls to the specified aggregator function.
+        /// </summary>
+        /// <typeparam name="TProjection">The type of the projection.</typeparam>
+        /// <typeparam name="TData">The type of the data.</typeparam>
+        /// <param name="aggregate">The aggregator function.</param>
+        /// <param name="write">A delegate that can be used to specify how the arguments should be traced. If this is not provided, output is sent to <see cref="System.Diagnostics.Trace" />.</param>
+        /// <returns>The original aggregator wrapped in a tracing decorator.</returns>
+        public static Aggregate<TProjection, TData> Trace<TProjection, TData>(
+            this Aggregate<TProjection, TData> aggregate,
+            Action<TProjection, IStreamBatch<TData>> write = null)
+        {
+            write = write ?? TraceDefault;
+
+            return (projection, batch) =>
+            {
+                try
+                {
+                    write(projection, batch);
+                    return aggregate(projection, batch);
+                }
+                catch (Exception exception)
+                {
+                    System.Diagnostics.Trace.WriteLine("[Aggregate] Exception: " + exception);
+                    throw;
+                }
+            };
+        }
 
         private static void TraceDefault<TProjection, TData>(
             TProjection projection,

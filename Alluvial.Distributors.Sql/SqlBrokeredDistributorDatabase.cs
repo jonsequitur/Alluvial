@@ -73,7 +73,7 @@ ELSE
                 }
             }
         }
-
+        
         public async Task<IEnumerable<Leasable>> GetLeasables()
         {
             var leasables = new List<Leasable>();
@@ -229,13 +229,9 @@ IF NOT EXISTS (SELECT * FROM [Alluvial].[Leases]
             foreach (var script in scripts)
             {
                 using (var cmd = connection.CreateCommand())
-
                 {
                     cmd.CommandText = script;
                     cmd.CommandType = CommandType.Text;
-
-                    Trace.WriteLine(script, typeof (SqlBrokeredDistributorDatabase).Name);
-
                     await cmd.ExecuteNonQueryAsync();
                 }
             }

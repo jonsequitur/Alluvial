@@ -16,12 +16,19 @@ namespace Alluvial
         public static IStreamIterator<TData, TCursor> CreateQuery<TData, TCursor>(
             this IStream<TData, TCursor> stream,
             ICursor<TCursor> cursor = null,
-            int? batchSize = null) =>
-                new StreamQuery<TData, TCursor>(
-                    stream,
-                    cursor ?? stream.NewCursor())
-                {
-                    BatchSize = batchSize
-                };
+            int? batchSize = null)
+        {
+            if (stream == null)
+            {
+                throw new ArgumentNullException(nameof(stream));
+            }
+
+            return new StreamQuery<TData, TCursor>(
+                stream,
+                cursor ?? stream.NewCursor())
+            {
+                BatchSize = batchSize
+            };
+        }
     }
 }
