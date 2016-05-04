@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using static System.Diagnostics.Trace;
 
 namespace Alluvial
 {
@@ -99,16 +100,39 @@ namespace Alluvial
             var newDistributor = Create(
                 start: () =>
                 {
-                    System.Diagnostics.Trace.WriteLine("[Distribute] Start");
+                    WriteLine("[Distribute] Start");
                     return distributor.Start();
                 },
                 stop: () =>
                 {
-                    System.Diagnostics.Trace.WriteLine("[Distribute] Stop");
+                    WriteLine("[Distribute] Stop");
                     return distributor.Stop();
                 },
                 distribute: distributor.Distribute,
-                onReceive: distributor.OnReceive);
+                onReceive: @async =>
+                {
+                    // when someone calls OnReceive on the AnonymousDistributor, pass the call along to the wrapped distributor...
+                    distributor.OnReceive(@async);
+
+                    // ... then add another call to the pipeline to check for exceptions
+                    distributor.OnReceive(async (lease, next) =>
+                    {
+                        try
+                        {
+                            await next(lease);
+
+                            if (lease.Exception != null)
+                            {
+                                WriteLine($"[Distribute] Exception: {lease.Exception}");
+                            }
+                        }
+                        catch (Exception exception)
+                        {
+                            WriteLine($"[Distribute] Exception: {exception}");
+                            throw;
+                        }
+                    });
+                });
 
             distributor.OnReceive(async (lease, next) =>
             {
@@ -135,15 +159,15 @@ namespace Alluvial
 
             distributor.OnReceive(async (lease, next) =>
             {
-                await next(lease);
                 await receive(lease);
+                await next(lease);
             });
         }
 
         private static void TraceOnLeaseAcquired<T>(Lease<T> lease) =>
-            System.Diagnostics.Trace.WriteLine("[Distribute] OnReceive " + lease);
+            WriteLine("[Distribute] OnReceive " + lease);
 
         private static void TraceOnLeaseReleasing<T>(Lease<T> lease) =>
-            System.Diagnostics.Trace.WriteLine("[Distribute] OnReceive (done) " + lease);
+            WriteLine("[Distribute] OnReceive (done) " + lease);
     }
 }

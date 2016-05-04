@@ -83,6 +83,11 @@ namespace Alluvial
             Debug.WriteLine($"[Lease] extended by {@by}: {this}");
         }
 
+        /// <summary>
+        /// Gets an exception caught during handling of the lease, if any.
+        /// </summary>
+        public Exception Exception { get; internal set; }
+
         internal static ILease CreateDefault()
         {
             return new Lease(TimeSpan.FromMinutes(5));
