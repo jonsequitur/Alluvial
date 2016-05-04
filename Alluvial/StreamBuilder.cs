@@ -58,11 +58,18 @@ namespace Alluvial
 
     public class StreamBuilder<TData, TCursor> : StreamBuilder
     {
-        internal StreamBuilder()
+        internal StreamBuilder(CursorBuilder<TCursor> cursorBuilder)
         {
+            if (cursorBuilder == null)
+            {
+                throw new ArgumentNullException(nameof(cursorBuilder));
+            }
+            CursorBuilder = cursorBuilder;
         }
 
         internal Action<IStreamQuery<TCursor>, IStreamBatch<TData>> AdvanceCursor { get; set; }
+
+        internal CursorBuilder<TCursor> CursorBuilder { get; }
 
         public IStream<TData, TCursor> CreateStream()
         {
@@ -78,7 +85,8 @@ namespace Alluvial
 
         internal StreamBuilder(
             StreamBuilder<TData, TCursor> streamBuilder,
-            PartitionBuilder<TPartition> partitionBuilder)
+            CursorBuilder<TCursor> cursorBuilder,
+            PartitionBuilder<TPartition> partitionBuilder) : base(cursorBuilder)
         {
             if (streamBuilder == null)
             {
@@ -90,7 +98,11 @@ namespace Alluvial
             }
         }
 
-        public StreamBuilder(StreamBuilder<TData, TCursor> streamBuilder, Func<PartitionBuilder, PartitionBuilder<TPartition>> partitionBuilder)
+        public StreamBuilder(
+            StreamBuilder<TData, TCursor> streamBuilder,
+            CursorBuilder<TCursor> cursorBuilder,
+            Func<PartitionBuilder, PartitionBuilder<TPartition>> partitionBuilder)
+            : base(cursorBuilder)
         {
             this.streamBuilder = streamBuilder;
             this.partitionBuilder = partitionBuilder;
@@ -108,7 +120,7 @@ namespace Alluvial
             this StreamBuilder<TData> source,
             Func<CursorBuilder, CursorBuilder<TCursor>> build)
         {
-            return new StreamBuilder<TData, TCursor>();
+            return new StreamBuilder<TData, TCursor>(build(new CursorBuilder()));
         }
 
         public static StreamBuilder<TData, TCursor> Advance<TData, TCursor>(
@@ -133,7 +145,10 @@ namespace Alluvial
             this StreamBuilder<TData, TCursor> source,
             Func<PartitionBuilder, PartitionBuilder<TPartition>> build)
         {
-            return new StreamBuilder<TData, TCursor, TPartition>(source, build);
+            return new StreamBuilder<TData, TCursor, TPartition>(
+                source, 
+                source.CursorBuilder,
+                build);
         }
     }
 }
