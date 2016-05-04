@@ -9,6 +9,9 @@ namespace Alluvial
         private static readonly Regex nameParser = new Regex(@"([0-9\w\+]+\.)|([0-9\w\+]+\+)([\(\)]*)", RegexOptions.Compiled);
 
         public static string ReadableName(this Type type) =>
-            nameParser.Replace(AttributedModelServices.GetContractName(type), "$3");
+            nameParser
+                .Replace(AttributedModelServices.GetContractName(type), "$3")
+                .Replace("(", "<")
+                .Replace(")", ">");
     }
 }
