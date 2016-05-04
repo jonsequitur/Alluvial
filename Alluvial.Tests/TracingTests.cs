@@ -43,7 +43,7 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .Contain("[Aggregate] Projection(Int32,Int32): 1 @ cursor 0 / batch of 2 starts @ 0");
+                         .Contain("[Aggregate] Projection<Int32,Int32>: 1 @ cursor 0 / batch of 2 starts @ 0");
         }
 
         [Test]
@@ -62,7 +62,7 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .Contain("[Aggregate] Projection(Int32,Int32): 1 @ cursor 0 / batch of 2 starts @ 0");
+                         .Contain("[Aggregate] Projection<Int32,Int32>: 1 @ cursor 0 / batch of 2 starts @ 0");
         }
 
         [Test]
@@ -81,7 +81,7 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .Contain("[Aggregate] Projection(Int32,Int32): 1 @ cursor 0 / batch of 2 starts @ 0");
+                         .Contain("[Aggregate] Projection<Int32,Int32>: 1 @ cursor 0 / batch of 2 starts @ 0");
         }
 
         [Test]
@@ -142,7 +142,7 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .Contain("[Store.Put] Projection(IDomainEvent,Int32): null @ cursor 0 for stream the-stream-id");
+                         .Contain("[Store.Put] Projection<IDomainEvent,Int32>: null @ cursor 0 for stream the-stream-id");
         }
 
         [Test]
@@ -155,7 +155,7 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .Contain("[Store.Get] Projection(IDomainEvent,Int32): null @ cursor 0 for stream the-stream-id");
+                         .Contain("[Store.Get] Projection<IDomainEvent,Int32>: null @ cursor 0 for stream the-stream-id");
         }
 
         [Test]
