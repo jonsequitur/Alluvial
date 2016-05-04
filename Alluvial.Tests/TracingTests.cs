@@ -128,8 +128,8 @@ namespace Alluvial.Tests
             traceListener.Messages
                          .ShouldBeEquivalentTo(new[]
                          {
-                             string.Format("[Query] stream {0} @ cursor 15", stream.Id),
-                             string.Format("      [Fetched] stream {0} batch of 10, now @ cursor 25", stream.Id)
+                             $"[Query] stream {stream.Id} @ cursor 15",
+                             $"      [Fetched] stream {stream.Id} batch of 10, now @ cursor 25"
                          });
         }
 
@@ -173,9 +173,9 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task By_default_QueryStreamDistributor_Trace_writes_start_events_to_trace_output()
+        public async Task By_default_Distributor_Trace_writes_start_events_to_trace_output()
         {
-            using (var distributor = CreateDistributor())
+            using (var distributor = CreateDistributor().Trace())
             {
                 await distributor.Start();
 
@@ -186,9 +186,9 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task By_default_QueryStreamDistributor_Trace_writes_stop_events_to_trace_output()
+        public async Task By_default_Distributor_Trace_writes_stop_events_to_trace_output()
         {
-            using (var distributor = CreateDistributor())
+            using (var distributor = CreateDistributor().Trace())
             {
                 await distributor.Start();
 
@@ -204,7 +204,7 @@ namespace Alluvial.Tests
         public async Task By_default_Distributor_Trace_writes_onReceive_events_to_trace_output()
         {
             Lease<int> lease = null;
-            using (var distributor = CreateDistributor(async l => lease = l))
+            using (var distributor = CreateDistributor(async l => lease = l).Trace())
             {
                 await distributor.Distribute(1);
 
@@ -218,6 +218,23 @@ namespace Alluvial.Tests
             }
         }
 
+        [Test]
+        public async Task Distributor_Trace_writes_OnReceive_exceptions_to_trace_output()
+        {
+            var distributor = CreateDistributor()
+                .Trace();
+            distributor.OnReceive(async lease =>
+            {
+                throw new Exception("oops!");
+            });
+
+            await distributor.Distribute(1);
+
+            traceListener.Messages
+                         .Should()
+                         .ContainSingle(m => m.Contains("oops!"));
+        }
+        
         [Test]
         public async Task Distributor_Trace_default_behavior_can_be_overridden()
         {
@@ -326,7 +343,7 @@ namespace Alluvial.Tests
             var distributor = new InMemoryDistributor<int>(new[]
             {
                 new Leasable<int>(1, "1")
-            }).Trace();
+            });
 
             distributor.OnReceive(onReceive ?? (async _ => { }));
 
@@ -348,13 +365,7 @@ namespace Alluvial.Tests
                 messages.Add(message);
             }
 
-            public List<string> Messages
-            {
-                get
-                {
-                    return messages;
-                }
-            }
+            public IEnumerable<string> Messages => messages;
         }
     }
 }
