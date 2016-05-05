@@ -2,6 +2,44 @@ using System;
 
 namespace Alluvial
 {
+    public static class StreamBuilderExtensions
+    {
+        public static StreamBuilder<TData, TCursor> Cursor<TData, TCursor>(
+            this StreamBuilder<TData> source,
+            Func<CursorBuilder, CursorBuilder<TCursor>> build)
+        {
+            return new StreamBuilder<TData, TCursor>(build(new CursorBuilder()));
+        }
+
+        public static StreamBuilder<TData, TCursor> Advance<TData, TCursor>(
+            this StreamBuilder<TData, TCursor> builder,
+            Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advance)
+
+        {
+            builder.AdvanceCursor = advance;
+            return builder;
+        }
+
+        public static StreamBuilder<TData, TCursor, TPartition> Advance<TData, TCursor, TPartition>(
+            this StreamBuilder<TData, TCursor, TPartition> builder,
+            Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advance)
+
+        {
+            builder.AdvanceCursor = advance;
+            return builder;
+        }
+
+        public static StreamBuilder<TData, TCursor, TPartition> Partition<TData, TCursor, TPartition>(
+            this StreamBuilder<TData, TCursor> source,
+            Func<PartitionBuilder, PartitionBuilder<TPartition>> build)
+        {
+            return new StreamBuilder<TData, TCursor, TPartition>(
+                source, 
+                source.CursorBuilder,
+                build);
+        }
+    }
+
     public class CursorBuilder
     {
         public CursorBuilder<TCursor> By<TCursor>()
@@ -111,44 +149,6 @@ namespace Alluvial
         public IPartitionedStream<TData, TCursor, TPartition> CreateStream()
         {
             return null;
-        }
-    }
-
-    public static class StreamBuilderExtensions
-    {
-        public static StreamBuilder<TData, TCursor> Cursor<TData, TCursor>(
-            this StreamBuilder<TData> source,
-            Func<CursorBuilder, CursorBuilder<TCursor>> build)
-        {
-            return new StreamBuilder<TData, TCursor>(build(new CursorBuilder()));
-        }
-
-        public static StreamBuilder<TData, TCursor> Advance<TData, TCursor>(
-            this StreamBuilder<TData, TCursor> builder,
-            Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advance)
-
-        {
-            builder.AdvanceCursor = advance;
-            return builder;
-        }
-
-        public static StreamBuilder<TData, TCursor, TPartition> Advance<TData, TCursor, TPartition>(
-            this StreamBuilder<TData, TCursor, TPartition> builder,
-            Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advance)
-
-        {
-            builder.AdvanceCursor = advance;
-            return builder;
-        }
-
-        public static StreamBuilder<TData, TCursor, TPartition> Partition<TData, TCursor, TPartition>(
-            this StreamBuilder<TData, TCursor> source,
-            Func<PartitionBuilder, PartitionBuilder<TPartition>> build)
-        {
-            return new StreamBuilder<TData, TCursor, TPartition>(
-                source, 
-                source.CursorBuilder,
-                build);
         }
     }
 }
