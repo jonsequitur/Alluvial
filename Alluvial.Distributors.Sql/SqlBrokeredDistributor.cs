@@ -17,7 +17,8 @@ namespace Alluvial.Distributors.Sql
         private readonly SqlBrokeredDistributorDatabase database;
         private readonly string pool;
         private readonly TimeSpan defaultLeaseDuration;
-
+        private bool isDatabaseInitialized = false;
+         
         /// <summary>
         /// Initializes a new instance of the <see cref="SqlBrokeredDistributor{T}"/> class.
         /// </summary>
@@ -176,6 +177,11 @@ namespace Alluvial.Distributors.Sql
 
         private async Task EnsureDatabaseIsInitialized()
         {
+            if (isDatabaseInitialized)
+            {
+                return;
+            }
+
             await database.InitializeSchema();
             await database.RegisterLeasableResources(
                 Leasables,
