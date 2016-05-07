@@ -26,7 +26,7 @@ namespace Alluvial
         /// </summary>
         /// <param name="leasables">The leasable resources to be distributed by the distributor.</param>
         /// <param name="maxDegreesOfParallelism">The maximum number of leases to be distributed at one time by this distributor instance.</param>
-        /// <param name="waitInterval">The interval to wait after a lease is released before which leased resource should not become available again.</param>
+        /// <param name="waitInterval">The interval to wait after a lease is released before which leased resource should not become available again. If not specified, the default is .5 seconds.</param>
         /// <exception cref="System.ArgumentNullException"></exception>
         /// <exception cref="System.ArgumentException">
         /// There must be at least one leasable.
@@ -42,7 +42,7 @@ namespace Alluvial
             {
                 throw new ArgumentNullException(nameof(leasables));
             }
-            if (leasables.Length ==0)
+            if (leasables.Length == 0)
             {
                 throw new ArgumentException("There must be at least one leasable.");
             }
@@ -103,6 +103,8 @@ namespace Alluvial
             EnsureOnReceiveHasBeenCalled();
 
             var acquired = new List<T>();
+
+            count = Math.Min(count, leasables.Length);
 
             while (acquired.Count < count)
             {

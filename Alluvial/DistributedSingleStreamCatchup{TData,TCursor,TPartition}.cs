@@ -24,13 +24,21 @@ namespace Alluvial
 
         public DistributedSingleStreamCatchup(
             IPartitionedStream<TData, TCursor, TPartition> partitionedStream,
+            IDistributor<IStreamQueryPartition<TPartition>> distributor, 
             int? batchSize = null,
             FetchAndSave<ICursor<TCursor>> fetchAndSavePartitionCursor = null) :
                 base(batchSize)
         {
+            if (distributor == null)
+            {
+                throw new ArgumentNullException(nameof(distributor));
+            }
             this.partitionedStream = partitionedStream;
+            Distributor = distributor;
             this.fetchAndSavePartitionCursor = fetchAndSavePartitionCursor ??
                                                new InMemoryProjectionStore<ICursor<TCursor>>(id => Cursor.New<TCursor>()).AsHandler();
+
+            distributor.OnReceive(ReceiveLease);
         }
 
         public virtual async Task ReceiveLease(
@@ -39,7 +47,7 @@ namespace Alluvial
                     lease.ResourceName,
                     async cursor =>
                     {
-                        IStreamCatchup<TData> upstreamCatchup = new SingleStreamCatchup<TData, TCursor>(
+                        var upstreamCatchup = new SingleStreamCatchup<TData, TCursor>(
                             await partitionedStream.GetStream(lease.Resource),
                             initialCursor: cursor,
                             batchSize: BatchSize,
@@ -50,12 +58,14 @@ namespace Alluvial
                         return cursor;
                     });
 
+        public IDistributor<IStreamQueryPartition<TPartition>> Distributor { get; }
+
         /// <summary>
         /// Consumes a single batch from the source stream and updates the subscribed aggregators.
         /// </summary>
         public override async Task RunSingleBatch(ILease lease)
         {
-            throw new InvalidOperationException("You must subscribe the catchup to a distributor before calling RunSingleBatch.");
+            await Distributor.DistributeAll();
         }
         
         /// <summary>

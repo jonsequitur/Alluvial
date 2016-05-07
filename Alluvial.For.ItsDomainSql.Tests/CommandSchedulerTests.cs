@@ -59,12 +59,12 @@ namespace Alluvial.For.ItsDomainSql.Tests
 
             var commandsDue = CommandScheduler.CommandsDueOnClock(clockName);
 
+            var distributor = partitionsByAggregateId.CreateSqlBrokeredDistributor(
+                new SqlBrokeredDistributorDatabase(CommandSchedulerDbContext.NameOrConnectionString),
+                commandsDue.Id);
+
             var catchup = commandsDue
-                .CreateDistributedCatchup()
-                .DistributeSqlBrokeredLeasesAmong(
-                    partitionsByAggregateId,
-                    new SqlBrokeredDistributorDatabase(CommandSchedulerDbContext.NameOrConnectionString),
-                    commandsDue.Id);
+                .CreateDistributedCatchup(distributor);
 
             var store = new InMemoryProjectionStore<CommandsApplied>();
 
@@ -108,10 +108,12 @@ namespace Alluvial.For.ItsDomainSql.Tests
                 Partition.ByRange("v", "zz")
             };
 
+            var distributor = partitions.CreateInMemoryDistributor();
+
             var catchup = CommandScheduler.ClocksWithCommandsDue()
                                           .Trace()
-                                          .CreateDistributedCatchup()
-                                          .DistributeInMemoryAmong(partitions);
+                                          .CreateDistributedCatchup(distributor);
+
             var store = new InMemoryProjectionStore<CommandsApplied>();
             var aggregator = CommandScheduler.AdvanceClocks();
             catchup.Subscribe(aggregator, store);

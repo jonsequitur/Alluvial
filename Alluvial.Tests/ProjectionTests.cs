@@ -96,8 +96,11 @@ namespace Alluvial.Tests
                         }
                     });
 
-            var catchup = partitionedStream.CreateDistributedCatchup()
-                                           .DistributeInMemoryAmong(Partition.ByRange(1, 1000).Among(1));
+            var distributor = Partition.ByRange(1, 1000)
+                                       .Among(1)
+                                       .CreateInMemoryDistributor();
+
+            var catchup = partitionedStream.CreateDistributedCatchup(distributor);
 
             Exception caught = null;
 

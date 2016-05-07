@@ -555,16 +555,15 @@ namespace Alluvial.Tests
                                    .Select(Partition.ByValue)
                                    .ToArray();
 
-            var distributor = partitions
-                .CreateInMemoryDistributor(
-                    waitInterval: TimeSpan.FromSeconds(.5),
-                    maxDegreesOfParallelism: 30,
-                    defaultLeaseDuration: 5.Seconds())
-                .Trace();
+            var distributor = partitions.CreateInMemoryDistributor(
+                waitInterval: TimeSpan.FromSeconds(.5),
+                maxDegreesOfParallelism: 30,
+                defaultLeaseDuration: 5.Seconds())
+                                        .Trace();
 
-            var catchup = streams.CreateDistributedCatchup()
-                                 .Backoff(5.Seconds())
-                                 .DistributeAmong(partitions, distributor);
+            var catchup = streams.CreateDistributedCatchup(distributor)
+                                 .Backoff(5.Seconds());
+
 
             catchup.Subscribe(async (p, b) =>
             {

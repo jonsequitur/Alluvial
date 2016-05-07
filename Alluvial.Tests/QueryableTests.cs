@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using FluentAssertions;
 using System.Linq;
 using System.Threading.Tasks;
@@ -28,8 +29,10 @@ namespace Alluvial.Tests
                     .ToArray();
             });
 
-            var catchup = stream.CreateDistributedCatchup()
-                                .DistributeInMemoryAmong(Partition.AllGuids().Among(20));
+            var catchup = stream.CreateDistributedCatchup(
+                Partition.AllGuids()
+                         .Among(20)
+                         .CreateInMemoryDistributor());
 
             var store = new InMemoryProjectionStore<int>();
 
@@ -59,8 +62,12 @@ namespace Alluvial.Tests
                     .ToArray();
             });
 
-            var catchup = stream.CreateDistributedCatchup()
-                                .DistributeInMemoryAmong(Partition.ByRange(0, 100).Among(5));
+            var distributor = Partition
+                .ByRange(0, 100)
+                .Among(5)
+                .CreateInMemoryDistributor();
+
+            var catchup = stream.CreateDistributedCatchup(distributor);
 
             var store = new InMemoryProjectionStore<int>();
 
@@ -100,8 +107,7 @@ namespace Alluvial.Tests
                     .ToArray();
             });
 
-            var catchup = stream.CreateDistributedCatchup()
-                                .DistributeInMemoryAmong(partitions);
+            var catchup = stream.CreateDistributedCatchup(partitions.CreateInMemoryDistributor());
 
             var store = new InMemoryProjectionStore<int>();
 
