@@ -59,7 +59,7 @@ namespace Alluvial
                 throw new ArgumentNullException(nameof(catchup));
             }
 
-            catchup.Distributor.OnReceive(async (lease, next) =>
+            catchup.OnReceive(async (lease, next) =>
             {
                 using (var counter = catchup.Count())
                 {
@@ -659,7 +659,15 @@ namespace Alluvial
                 this.inner = inner;
             }
 
-            public IDistributor<IStreamQueryPartition<TPartition>> Distributor => inner.Distributor;
+            public void Dispose() => inner.Dispose();
+
+            public void OnReceive(DistributorPipeAsync<IStreamQueryPartition<TPartition>> onReceive) => inner.OnReceive(onReceive);
+
+            public Task Start() => inner.Start();
+
+            public Task<IEnumerable<IStreamQueryPartition<TPartition>>> Distribute(int count) => inner.Distribute(count);
+
+            public Task Stop() => inner.Stop();
         }
     }
 }

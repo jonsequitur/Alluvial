@@ -564,7 +564,6 @@ namespace Alluvial.Tests
             var catchup = streams.CreateDistributedCatchup(distributor)
                                  .Backoff(5.Seconds());
 
-
             catchup.Subscribe(async (p, b) =>
             {
                 p.Value = p.Value ?? new List<string>();

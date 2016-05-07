@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -76,5 +77,15 @@ namespace Alluvial
         /// </returns>
         public override string ToString() =>
             $"{catchupTypeDescription}->{partitionedStream}->{string.Join(" + ", aggregatorSubscriptions.Select(s => s.ProjectionType.ReadableName()))}";
+
+        public void Dispose() => Distributor.Dispose();
+
+        public void OnReceive(DistributorPipeAsync<IStreamQueryPartition<TPartition>> onReceive) => Distributor.OnReceive(onReceive);
+
+        public Task Start() => Distributor.Start();
+
+        public Task<IEnumerable<IStreamQueryPartition<TPartition>>> Distribute(int count) => Distributor.Distribute(count);
+
+        public Task Stop() => Distributor.Stop();
     }
 }
