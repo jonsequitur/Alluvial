@@ -1,9 +1,8 @@
-using System.Threading.Tasks;
-
 namespace Alluvial
 {
-    public interface IDistributedStreamCatchup<out TData, TPartition> : IStreamCatchup<TData>
+    public interface IDistributedStreamCatchup<out TData, TPartition> :
+        IStreamCatchup<TData>,
+        IDistributor<IStreamQueryPartition<TPartition>>
     {
-        Task ReceiveLease(Lease<IStreamQueryPartition<TPartition>> lease);
     }
 }

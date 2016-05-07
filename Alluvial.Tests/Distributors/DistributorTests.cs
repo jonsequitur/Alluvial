@@ -405,29 +405,6 @@ namespace Alluvial.Tests.Distributors
         }
 
         [Test]
-        public async Task Distribute_completes_only_after_the_requested_number_of_leases_has_been_acquired()
-        {
-            var acquireCount = 0;
-            var distributor = CreateDistributor(
-                onReceive: async lease =>
-                {
-                    Interlocked.Increment(ref acquireCount);
-                },
-                leasables: new[]
-                {
-                    new Leasable<int>(1, "one")
-                    {
-                        LeaseLastGranted = DateTimeOffset.UtcNow,
-                        LeaseLastReleased = DateTimeOffset.UtcNow.Add(DefaultLeaseDuration),
-                    }
-                }, maxDegreesOfParallelism: 1);
-
-            await distributor.Distribute(6);
-
-            acquireCount.Should().Be(6);
-        }
-
-        [Test]
         public async Task Distributor_rate_can_be_slowed()
         {
             var receivedLeases = new ConcurrentBag<Lease<int>>();
@@ -448,6 +425,22 @@ namespace Alluvial.Tests.Distributors
             await distributor.Stop();
 
             receivedLeases.Count().Should().Be(10);
+        }
+
+
+        [Test]
+        public async Task Distribute_will_not_distribute_more_leases_than_there_are_leasables()
+        {
+            var leasesDistributed = 0;
+
+            var distributor = CreateDistributor(async lease =>
+            {
+                Interlocked.Increment(ref leasesDistributed);
+            });
+
+            await distributor.Distribute(10000000);
+
+            leasesDistributed.Should().Be(DefaultLeasables.Length);
         }
     }
 }

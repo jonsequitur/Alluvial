@@ -523,9 +523,8 @@ namespace Alluvial.Tests
                 defaultLeaseDuration: 5.Seconds())
                                         .Trace();
 
-            var catchup = stream.CreateDistributedCatchup()
-                                .Backoff(5.Seconds())
-                                .DistributeAmong(partitions, distributor);
+            var catchup = stream.CreateDistributedCatchup(distributor)
+                                .Backoff(5.Seconds());
 
             catchup.Subscribe(async (p, b) =>
             {

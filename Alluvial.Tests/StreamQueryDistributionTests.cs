@@ -67,8 +67,9 @@ namespace Alluvial.Tests
             }).Trace();
 
             var catchup = partitionedStream.Trace()
-                                           .CreateDistributedCatchup(batchSize: 15)
-                                           .DistributeInMemoryAmong(partitions);
+                                           .CreateDistributedCatchup(
+                                               partitions.CreateInMemoryDistributor(),
+                                               batchSize: 15);
 
             catchup.Subscribe(aggregator, store.Trace());
 
@@ -102,9 +103,9 @@ namespace Alluvial.Tests
 
             var catchup = partitionedStream
                 .CreateDistributedCatchup(
+                    partitions.CreateInMemoryDistributor(),
                     batchSize: 73,
-                    fetchAndSavePartitionCursor: cursorStore.Trace().AsHandler())
-                .DistributeInMemoryAmong(partitions);
+                    fetchAndSavePartitionCursor: cursorStore.Trace().AsHandler());
 
             catchup.Subscribe(aggregator);
 
@@ -132,36 +133,25 @@ namespace Alluvial.Tests
                 }
             }).Trace();
 
+            var distributor = new[]
+            {
+                Partition.ByRange("a", "f"),
+                Partition.ByRange("f", "j"),
+                Partition.ByRange("k", "z")
+            }.CreateInMemoryDistributor();
+
             var catchup = partitionedStream
                 .IntoMany(async (word, b, c, p) => new[] { word }.AsStream())
-                .CreateDistributedCatchup(batchSize: 10,
-                                          fetchAndSavePartitionCursor: cursorStore.Trace().AsHandler())
-                .DistributeInMemoryAmong(new[]
-                {
-                    Partition.ByRange("a", "f"),
-                    Partition.ByRange("f", "j"),
-                    Partition.ByRange("k", "z")
-                });
+                .CreateDistributedCatchup(
+                    distributor,
+                    batchSize: 10,
+                    fetchAndSavePartitionCursor: cursorStore.Trace().AsHandler());
 
             catchup.Subscribe(aggregator);
 
             await catchup.RunSingleBatch();
 
             cursorStore.Count().Should().Be(3);
-        }
-
-        [Test]
-        public async Task When_a_distributed_catchup_has_not_been_subscribed_to_a_distributor_then_RunSingleBatch_throws()
-        {
-            var catchup = partitionedStream.CreateDistributedCatchup();
-
-            Action runSingleBatch = () => catchup.RunSingleBatch().Wait();
-
-            runSingleBatch.ShouldThrow<InvalidOperationException>()
-                .And
-                .Message
-                .Should()
-                .Contain("You must subscribe the catchup to a distributor before calling RunSingleBatch.");
         }
     }
 }
