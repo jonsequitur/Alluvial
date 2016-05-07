@@ -3,7 +3,7 @@
   <metadata>
     <id>Alluvial.For.ItsDomainSql</id>
     <title>Alluvial for Its.Domain.Sql</title>
-    <version>0.1.9-alpha</version>
+    <version>0.2.0-beta</version>
     <authors>jonsequitur</authors>
     <owners>jonsequitur</owners>
     <projectUrl>https://github.com/jonsequitur/Alluvial</projectUrl>
@@ -13,7 +13,7 @@
     <description>Build projections and deliver scheduled commands for Its.Domain using SQL and Alluvial.</description>
     <tags>data projections stream-processing CQRS Its.Cqrs Its.Domain event-sourcing</tags>
     <dependencies>
-        <dependency id="Alluvial" version="[0.1.28,)" />
+        <dependency id="Alluvial" version="[0.2.0-beta,)" />
         <dependency id="Its.Domain" version="[0.14.19-beta,)" />
         <dependency id="Its.Domain.Sql" version="[0.14.19-beta,)" />
     </dependencies>
