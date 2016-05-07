@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using FluentAssertions;
 using System.Linq;
 using System.Threading.Tasks;
@@ -64,10 +65,13 @@ namespace Alluvial.Tests
             var domainEvents = partitionedStream.Map(es => es.Select(e => e.Body).OfType<IDomainEvent>());
 
             // catch up
-            var catchup = domainEvents.CreateDistributedCatchup(batchSize: 2)
-                                      .DistributeInMemoryAmong(
-                                          Enumerable.Range(1, 10)
-                                                    .Select(i => Partition.ByValue(i.ToString())));
+            var distributor = Enumerable.Range(1, 10)
+                                        .Select(i => Partition.ByValue(i.ToString()))
+                                        .CreateInMemoryDistributor();
+
+            var catchup = domainEvents.CreateDistributedCatchup(
+                distributor,
+                batchSize: 2);
 
             var receivedEvents = new ConcurrentBag<IDomainEvent>();
 

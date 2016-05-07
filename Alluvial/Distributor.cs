@@ -73,6 +73,13 @@ namespace Alluvial
         }
 
         /// <summary>
+        /// Distributes all available leases.
+        /// </summary>
+        /// <param name="distributor">The distributor.</param>
+        public static async Task<IEnumerable<T>> DistributeAll<T>(this IDistributor<T> distributor) => 
+            await distributor.Distribute(int.MaxValue);
+
+        /// <summary>
         /// Wraps a distributor with tracing behaviors when leases are acquired and released.
         /// </summary>
         /// <exception cref="System.ArgumentNullException"></exception>

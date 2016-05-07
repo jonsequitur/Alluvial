@@ -17,15 +17,16 @@ namespace Alluvial.Distributors.Sql
         private readonly SqlBrokeredDistributorDatabase database;
         private readonly string pool;
         private readonly TimeSpan defaultLeaseDuration;
+        private readonly bool isDatabaseInitialized = false;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SqlBrokeredDistributor{T}"/> class.
         /// </summary>
         /// <param name="leasables">The leasable resources.</param>
-        /// <param name="database">The database.</param>
+        /// <param name="database">The database where the leases are stored.</param>
         /// <param name="pool">The name of the pool of leasable resources from which leases are acquired.</param>
-        /// <param name="maxDegreesOfParallelism">The maximum degrees of parallelism per machine.</param>
-        /// <param name="waitInterval">The interval to wait before a released lease can be reacquired.</param>
+        /// <param name="maxDegreesOfParallelism">The maximum number of leases to be distributed at one time by this distributor instance.</param>
+        /// <param name="waitInterval">The interval to wait after a lease is released before which leased resource should not become available again. If not specified, the default is .5 seconds.</param>
         /// <param name="defaultLeaseDuration">The default duration of a lease. If not specified, the default duration is five minutes.</param>
         /// <exception cref="System.ArgumentNullException">
         /// database
@@ -176,6 +177,11 @@ namespace Alluvial.Distributors.Sql
 
         private async Task EnsureDatabaseIsInitialized()
         {
+            if (isDatabaseInitialized)
+            {
+                return;
+            }
+
             await database.InitializeSchema();
             await database.RegisterLeasableResources(
                 Leasables,

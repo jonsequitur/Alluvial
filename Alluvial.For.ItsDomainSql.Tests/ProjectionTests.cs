@@ -84,8 +84,11 @@ namespace Alluvial.For.ItsDomainSql.Tests
                 projection.Value.AddRange(eventType14s);
             }).Trace();
 
-            var catchup = streams.CreateDistributedCatchup()
-                                 .DistributeInMemoryAmong(Partition.AllGuids().Among(10));
+            var distributor = Partition.AllGuids()
+                                       .Among(10)
+                                       .CreateInMemoryDistributor();
+
+            var catchup = streams.CreateDistributedCatchup(distributor);
 
             var store = new InMemoryProjectionStore<MatchingEvents>();
             catchup.Subscribe(aggregator, store.Trace());
