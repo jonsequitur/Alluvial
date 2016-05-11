@@ -33,14 +33,10 @@ namespace Alluvial
             TimeSpan? waitInterval = null,
             TimeSpan? defaultLeaseDuration = null) :
                 base(leasables,
+                     pool,
                      maxDegreesOfParallelism,
                      waitInterval)
         {
-            if (string.IsNullOrWhiteSpace(pool))
-            {
-                throw new ArgumentException("Argument 'pool' cannot be null, empty, or consist entirely of whitespace.");
-            }
-
             workInProgress = workInProgressGlobal.GetOrAdd(pool, s => new ConcurrentDictionary<Leasable<T>, Lease<T>>());
             this.defaultLeaseDuration = defaultLeaseDuration ?? TimeSpan.FromMinutes(1);
         }
