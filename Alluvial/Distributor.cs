@@ -76,7 +76,7 @@ namespace Alluvial
         /// Distributes all available leases.
         /// </summary>
         /// <param name="distributor">The distributor.</param>
-        public static async Task<IEnumerable<T>> DistributeAll<T>(this IDistributor<T> distributor) => 
+        public static async Task<IEnumerable<T>> DistributeAll<T>(this IDistributor<T> distributor) =>
             await distributor.Distribute(int.MaxValue);
 
         /// <summary>
@@ -95,8 +95,8 @@ namespace Alluvial
 
             if (onLeaseAcquired == null && onLeaseReleasing == null)
             {
-                onLeaseAcquired = TraceOnLeaseAcquired;
-                onLeaseReleasing = TraceOnLeaseReleasing;
+                onLeaseAcquired = lease => TraceOnLeaseAcquired(distributor, lease);
+                onLeaseReleasing = lease => TraceOnLeaseReleasing(distributor, lease);
             }
             else
             {
@@ -107,12 +107,12 @@ namespace Alluvial
             var newDistributor = Create(
                 start: () =>
                 {
-                    WriteLine("[Distribute] Start");
+                    WriteLine($"[Distribute] {distributor}: Start");
                     return distributor.Start();
                 },
                 stop: () =>
                 {
-                    WriteLine("[Distribute] Stop");
+                    WriteLine($"[Distribute] {distributor}: Stop");
                     return distributor.Stop();
                 },
                 distribute: distributor.Distribute,
@@ -130,12 +130,12 @@ namespace Alluvial
 
                             if (lease.Exception != null)
                             {
-                                WriteLine($"[Distribute] Exception: {lease.Exception}");
+                                WriteLine($"[Distribute] {distributor}: Exception: {lease.Exception}");
                             }
                         }
                         catch (Exception exception)
                         {
-                            WriteLine($"[Distribute] Exception: {exception}");
+                            WriteLine($"[Distribute] {distributor}: Exception: {exception}");
                             throw;
                         }
                     });
@@ -150,7 +150,7 @@ namespace Alluvial
 
             return newDistributor;
         }
-        
+
         public static void OnReceive<T>(
             this IDistributor<T> distributor,
             Func<Lease<T>, Task> receive)
@@ -171,10 +171,10 @@ namespace Alluvial
             });
         }
 
-        private static void TraceOnLeaseAcquired<T>(Lease<T> lease) =>
-            WriteLine("[Distribute] OnReceive " + lease);
+        private static void TraceOnLeaseAcquired<T>(IDistributor<T> distributor, Lease<T> lease) =>
+            WriteLine($"[Distribute] {distributor}: OnReceive " + lease);
 
-        private static void TraceOnLeaseReleasing<T>(Lease<T> lease) =>
-            WriteLine("[Distribute] OnReceive (done) " + lease);
+        private static void TraceOnLeaseReleasing<T>(IDistributor<T> distributor, Lease<T> lease) =>
+            WriteLine($"[Distribute] {distributor}: OnReceive (done) " + lease);
     }
 }
