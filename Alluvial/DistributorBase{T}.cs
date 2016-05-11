@@ -161,11 +161,11 @@ namespace Alluvial
         {
             if (stopped)
             {
-                Debug.WriteLine($"[Distribute] {ToString()} Aborting");
+                Debug.WriteLine($"[Distribute] {ToString()}: Aborting");
                 return LeaseAcquisitionAttempt.Failed();
             }
 
-            Debug.WriteLine($"[Distribute] {ToString()} Trying to acquire lease");
+            Debug.WriteLine($"[Distribute] {ToString()}: Trying to acquire lease");
 
             Lease<T> lease = null;
             try
@@ -174,7 +174,7 @@ namespace Alluvial
             }
             catch (Exception exception)
             {
-                Debug.WriteLine($"[Distribute] {ToString()} Exception during AcquireLease:\n{exception}");
+                Debug.WriteLine($"[Distribute] {ToString()}: Exception during AcquireLease:\n{exception}");
             }
 
             if (lease != null)
@@ -204,14 +204,14 @@ namespace Alluvial
                 }
                 catch (Exception exception)
                 {
-                    Debug.WriteLine($"[Distribute] {ToString()} Exception during ReleaseLease for lease {lease}:\n{exception}");
+                    Debug.WriteLine($"[Distribute] {ToString()}: Exception during ReleaseLease for lease {lease}:\n{exception}");
                 }
 
                 Interlocked.Decrement(ref leasesHeld);
             }
             else
             {
-                Debug.WriteLine($"[Distribute] {ToString()} Did not acquire lease");
+                Debug.WriteLine($"[Distribute] {ToString()}: Did not acquire lease");
 
                 if (loop)
                 {
@@ -259,7 +259,7 @@ namespace Alluvial
 
             while (leasesHeld > 0)
             {
-                Debug.WriteLine($"[Distribute] {ToString()} Stop: waiting for {leasesHeld} to complete");
+                Debug.WriteLine($"[Distribute] {ToString()}: Stop: waiting for {leasesHeld} to complete");
                 await Task.Delay(waitInterval);
             }
         }
