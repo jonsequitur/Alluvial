@@ -181,7 +181,7 @@ namespace Alluvial.Tests
 
                 traceListener.Messages
                              .Should()
-                             .Contain("[Distribute] Start");
+                             .Contain("[Distribute] default: Start");
             }
         }
 
@@ -196,7 +196,7 @@ namespace Alluvial.Tests
 
                 traceListener.Messages
                              .Should()
-                             .Contain("[Distribute] Stop");
+                             .Contain("[Distribute] default: Stop");
             }
         }
 
@@ -210,11 +210,11 @@ namespace Alluvial.Tests
 
                 traceListener.Messages
                              .Should()
-                             .Contain(m => m.Contains("[Distribute] OnReceive lease:1"));
+                             .Contain(m => m.Contains("[Distribute] default: OnReceive lease:1"));
 
                 traceListener.Messages
                              .Should()
-                             .Contain(m => m.Contains("[Distribute] OnReceive (done) lease:1"));
+                             .Contain(m => m.Contains("[Distribute] default: OnReceive (done) lease:1"));
             }
         }
 
@@ -234,7 +234,24 @@ namespace Alluvial.Tests
                          .Should()
                          .ContainSingle(m => m.Contains("oops!"));
         }
-        
+
+        [Test]
+        public async Task Distributor_Trace_writes_pool_name_on_all_trace_events()
+        {
+            var poolName = "this-is-the-pool";
+            var distributor = CreateDistributor(pool: poolName).Trace();
+
+            await distributor.Distribute(1);
+
+            distributor.OnReceive(async lease => { throw new Exception("oops!"); });
+
+            await distributor.Distribute(1);
+
+            traceListener.Messages
+                         .Should()
+                         .OnlyContain(m => m.Contains(poolName));
+        }
+
         [Test]
         public async Task Distributor_Trace_default_behavior_can_be_overridden()
         {
@@ -338,12 +355,15 @@ namespace Alluvial.Tests
             receivedBatch.Should().ContainInOrder(16, 17, 18);
         }
 
-        private static IDistributor<int> CreateDistributor(Func<Lease<int>, Task> onReceive = null)
+        private static IDistributor<int> CreateDistributor(
+            Func<Lease<int>, Task> onReceive = null,
+            string pool = "default")
         {
             var distributor = new InMemoryDistributor<int>(new[]
             {
                 new Leasable<int>(1, "1")
-            });
+            },
+                                                           pool: pool);
 
             distributor.OnReceive(onReceive ?? (async _ => { }));
 

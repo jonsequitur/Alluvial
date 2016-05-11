@@ -15,7 +15,6 @@ namespace Alluvial.Distributors.Sql
     public class SqlBrokeredDistributor<T> : DistributorBase<T>
     {
         private readonly SqlBrokeredDistributorDatabase database;
-        private readonly string pool;
         private readonly TimeSpan defaultLeaseDuration;
         private readonly bool isDatabaseInitialized = false;
 
@@ -40,18 +39,17 @@ namespace Alluvial.Distributors.Sql
             int maxDegreesOfParallelism = 5,
             TimeSpan? waitInterval = null,
             TimeSpan? defaultLeaseDuration = null)
-            : base(leasables, maxDegreesOfParallelism, waitInterval)
+            : base(leasables,
+                   pool,
+                   maxDegreesOfParallelism,
+                   waitInterval)
         {
             if (database == null)
             {
                 throw new ArgumentNullException(nameof(database));
             }
-            if (pool == null)
-            {
-                throw new ArgumentNullException(nameof(pool));
-            }
+          
             this.database = database;
-            this.pool = pool;
             this.defaultLeaseDuration = defaultLeaseDuration ?? TimeSpan.FromMinutes(5);
         }
 
@@ -90,7 +88,7 @@ namespace Alluvial.Distributors.Sql
                     cmd.CommandText = @"Alluvial.AcquireLease";
                     cmd.Parameters.AddWithValue(@"@waitIntervalMilliseconds", WaitInterval.TotalMilliseconds);
                     cmd.Parameters.AddWithValue(@"@leaseDurationMilliseconds", defaultLeaseDuration.TotalMilliseconds);
-                    cmd.Parameters.AddWithValue(@"@pool", pool);
+                    cmd.Parameters.AddWithValue(@"@pool", Pool);
 
                     using (var reader = await cmd.ExecuteReaderAsync())
                     {
@@ -185,7 +183,7 @@ namespace Alluvial.Distributors.Sql
             await database.InitializeSchema();
             await database.RegisterLeasableResources(
                 Leasables,
-                pool);
+                Pool);
         }
     }
 }
