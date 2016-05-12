@@ -13,7 +13,6 @@ namespace Alluvial.Tests.Distributors
             Func<Lease<int>, Task> onReceive = null,
             Leasable<int>[] leasables = null,
             int maxDegreesOfParallelism = 5,
-            string name = null,
             TimeSpan? waitInterval = null,
             string pool = null)
         {
