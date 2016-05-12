@@ -9,7 +9,7 @@ namespace Alluvial
     /// <summary>
     /// Methods for working with streams.
     /// </summary>
-    public static class Stream
+    public static partial class Stream
     {
         /// <summary>
         /// Creates a stream based on an enumerable sequence.

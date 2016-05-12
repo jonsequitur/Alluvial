@@ -1,7 +1,18 @@
 using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Alluvial
 {
+    public static partial class Stream
+    {
+        public static StreamBuilder<TData> Of<TData>(
+            string streamId = null)
+        {
+            return new StreamBuilder<TData>(streamId);
+        }
+    }
+
     public static class StreamBuilderExtensions
     {
         public static StreamBuilder<TData, TCursor> Cursor<TData, TCursor>(
@@ -23,7 +34,6 @@ namespace Alluvial
         public static StreamBuilder<TData, TCursor, TPartition> Advance<TData, TCursor, TPartition>(
             this StreamBuilder<TData, TCursor, TPartition> builder,
             Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advance)
-
         {
             builder.AdvanceCursor = advance;
             return builder;
@@ -34,7 +44,7 @@ namespace Alluvial
             Func<PartitionBuilder, PartitionBuilder<TPartition>> build)
         {
             return new StreamBuilder<TData, TCursor, TPartition>(
-                source, 
+                source,
                 source.CursorBuilder,
                 build);
         }
@@ -66,7 +76,12 @@ namespace Alluvial
 
     public class PartitionBuilder
     {
-        public PartitionBuilder<TPartition> By<TPartition>()
+        public PartitionBuilder<TPartition> ByRange<TPartition>()
+        {
+            return new PartitionBuilder<TPartition>();
+        }
+
+        public PartitionBuilder<TPartition> ByValue<TPartition>()
         {
             return new PartitionBuilder<TPartition>();
         }
@@ -109,9 +124,23 @@ namespace Alluvial
 
         internal CursorBuilder<TCursor> CursorBuilder { get; }
 
-        public IStream<TData, TCursor> CreateStream()
+        public IStream<TData, TCursor> CreateStream(
+            Func<IStreamQuery<TCursor>, Task<IEnumerable<TData>>> query)
         {
-            return null;
+            return Stream.Create(query: query,
+                                 advanceCursor: AdvanceCursor,
+                                 newCursor: CursorBuilder.NewCursor,
+                                 id: StreamId);
+        }
+
+        public IStream<TData, TCursor> CreateStream(
+            Func<IStreamQuery<TCursor>, IEnumerable<TData>> query)
+        {
+            return Stream.Create(
+                query: query,
+                advanceCursor: AdvanceCursor,
+                newCursor: CursorBuilder.NewCursor,
+                id: StreamId);
         }
     }
 
@@ -146,72 +175,22 @@ namespace Alluvial
             this.partitionBuilder = partitionBuilder;
         }
 
-        public IPartitionedStream<TData, TCursor, TPartition> CreateStream()
+        public IPartitionedStream<TData, TCursor, TPartition> CreateStream(Func<IStreamQuery<TCursor>, IStreamQueryRangePartition<TPartition>, Task<IEnumerable<TData>>> query)
         {
-            return null;
+            return Stream.PartitionedByRange(
+                query: query,
+                id: StreamId,
+                advanceCursor: AdvanceCursor,
+                newCursor: CursorBuilder.NewCursor);
+        }
+
+        public IPartitionedStream<TData, TCursor, TPartition> CreateStream(Func<IStreamQuery<TCursor>, IStreamQueryRangePartition<TPartition>, IEnumerable<TData>> query)
+        {
+            return Stream.PartitionedByRange<TData, TCursor, TPartition>(
+                query: (q, p) => query(q, p).CompletedTask(),
+                id: StreamId,
+                advanceCursor: AdvanceCursor,
+                newCursor: CursorBuilder.NewCursor);
         }
     }
 }
-
-//
-//    public static class StreamOf<TData>
-//    {
-//        public static IStream<TData, TCursor> CursorBy<TCursor>(
-//            Func<IStreamQuery<TCursor>, Task<IEnumerable<TData>>> query,
-//            string id = null,
-//            Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor = null,
-//            Func<ICursor<TCursor>> newCursor = null)
-//        {
-//            return Stream.Create(
-//                id: id,
-//                query: query,
-//                advanceCursor: advanceCursor,
-//                newCursor: newCursor);
-//        }
-//
-//        public static IStream<TData, TCursor> CursorBy<TCursor>(
-//            Func<IStreamQuery<TCursor>, IEnumerable<TData>> query,
-//            string id = null,
-//            Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor = null,
-//            Func<ICursor<TCursor>> newCursor = null)
-//        {
-//            return Stream.Create(
-//                id: id,
-//                query: query,
-//                advanceCursor: advanceCursor,
-//                newCursor: newCursor);
-//        }
-//
-//        public static class Cursor<TCursor>
-//        {
-//            public static class Partition<TPartition>
-//            {
-//                public static IPartitionedStream<TData, TCursor, TPartition> ByRange(
-//                    Func<IStreamQuery<TCursor>, IStreamQueryRangePartition<TPartition>, Task<IEnumerable<TData>>> query,
-//                    string id = null,
-//                    Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor = null,
-//                    Func<ICursor<TCursor>> newCursor = null)
-//                {
-//                    return Stream.PartitionedByRange(
-//                        id: id,
-//                        query: query,
-//                        advanceCursor: advanceCursor,
-//                        newCursor: newCursor);
-//                }
-//
-//                public static IPartitionedStream<TData, TCursor, TPartition> ByValue(
-//                    Func<IStreamQuery<TCursor>, IStreamQueryValuePartition<TPartition>, Task<IEnumerable<TData>>> query,
-//                    string id = null,
-//                    Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor = null,
-//                    Func<ICursor<TCursor>> newCursor = null)
-//                {
-//                    return Stream.PartitionedByValue(
-//                        id: id,
-//                        query: query,
-//                        advanceCursor: advanceCursor,
-//                        newCursor: newCursor);
-//                }
-//            }
-//        }
-//    }
-//}
