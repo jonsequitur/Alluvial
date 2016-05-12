@@ -26,7 +26,7 @@ namespace Alluvial
         /// </summary>
         /// <param name="leasables">The leasable resources to be distributed by the distributor.</param>
         /// <param name="maxDegreesOfParallelism">The maximum number of leases to be distributed at one time by this distributor instance.</param>
-        /// <param name="waitInterval">The interval to wait after a lease is released before which leased resource should not become available again. If not specified, the default is .5 seconds.</param>
+        /// <param name="waitInterval">The interval to wait after a lease is released before which leased resource should not become available again. If not specified, the default is 5 seconds.</param>
         /// <param name="pool">The name of the pool of leasable resources from which leases are acquired.</param>
         /// <exception cref="System.ArgumentNullException"></exception>
         /// <exception cref="System.ArgumentException">
@@ -60,7 +60,7 @@ namespace Alluvial
             Pool = pool;
             this.leasables = leasables;
             this.maxDegreesOfParallelism = Math.Min(maxDegreesOfParallelism, leasables.Length);
-            this.waitInterval = waitInterval ?? TimeSpan.FromSeconds(.5);
+            this.waitInterval = waitInterval ?? TimeSpan.FromSeconds(5);
         }
 
         /// <summary>

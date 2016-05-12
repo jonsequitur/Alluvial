@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using FluentAssertions;
 using Its.Log.Instrumentation;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -18,7 +17,6 @@ namespace Alluvial.Tests.Distributors
             Func<Lease<int>, Task> onReceive = null,
             Leasable<int>[] leasables = null,
             int maxDegreesOfParallelism = 5,
-            [CallerMemberName] string name = null,
             TimeSpan? waitInterval = null,
             string pool = null);
 
@@ -285,7 +283,6 @@ namespace Alluvial.Tests.Distributors
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("CAUGHT " + ex);
                     exception = ex;
                 }
 

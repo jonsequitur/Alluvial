@@ -25,7 +25,7 @@ namespace Alluvial.Distributors.Sql
         /// <param name="database">The database where the leases are stored.</param>
         /// <param name="pool">The name of the pool of leasable resources from which leases are acquired.</param>
         /// <param name="maxDegreesOfParallelism">The maximum number of leases to be distributed at one time by this distributor instance.</param>
-        /// <param name="waitInterval">The interval to wait after a lease is released before which leased resource should not become available again. If not specified, the default is .5 seconds.</param>
+        /// <param name="waitInterval">The interval to wait after a lease is released before which leased resource should not become available again. If not specified, the default is 5 seconds.</param>
         /// <param name="defaultLeaseDuration">The default duration of a lease. If not specified, the default duration is five minutes.</param>
         /// <exception cref="System.ArgumentNullException">
         /// database

@@ -67,7 +67,7 @@ namespace Alluvial.Tests
             // catch up
             var distributor = Enumerable.Range(1, 10)
                                         .Select(i => Partition.ByValue(i.ToString()))
-                                        .CreateInMemoryDistributor();
+                                        .CreateInMemoryDistributor(waitInterval: TimeSpan.FromSeconds(.5));
 
             var catchup = domainEvents.CreateDistributedCatchup(
                 distributor,

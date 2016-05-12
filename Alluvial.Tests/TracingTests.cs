@@ -242,7 +242,7 @@ namespace Alluvial.Tests
         public async Task Distributor_Trace_writes_pool_name_on_all_trace_events()
         {
             var poolName = "this-is-the-pool";
-            var distributor = CreateDistributor(pool: poolName).Trace();
+            var distributor = CreateDistributor(pool: poolName, waitInterval: TimeSpan.FromSeconds(.5)).Trace();
 
             await distributor.Distribute(1);
 
@@ -360,13 +360,15 @@ namespace Alluvial.Tests
 
         private static IDistributor<int> CreateDistributor(
             Func<Lease<int>, Task> onReceive = null,
-            string pool = "default")
+            string pool = "default",
+            TimeSpan? waitInterval = null)
         {
             var distributor = new InMemoryDistributor<int>(new[]
             {
                 new Leasable<int>(1, "1")
             },
-                                                           pool: pool);
+                                                           pool: pool,
+                                                           waitInterval: waitInterval);
 
             distributor.OnReceive(onReceive ?? (async _ => { }));
 
