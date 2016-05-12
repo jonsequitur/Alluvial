@@ -43,7 +43,7 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .Contain("[Aggregate] Projection<Int32,Int32>: 1 @ cursor 0 / batch of 2 starts @ 0");
+                         .ContainSingle("[Aggregate] Projection<Int32,Int32>: 1 @ cursor 0 / batch of 2 starts @ 0");
         }
 
         [Test]
@@ -62,7 +62,7 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .Contain("[Aggregate] Projection<Int32,Int32>: 1 @ cursor 0 / batch of 2 starts @ 0");
+                         .ContainSingle("[Aggregate] Projection<Int32,Int32>: 1 @ cursor 0 / batch of 2 starts @ 0");
         }
 
         [Test]
@@ -81,7 +81,7 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .Contain("[Aggregate] Projection<Int32,Int32>: 1 @ cursor 0 / batch of 2 starts @ 0");
+                         .ContainSingle("[Aggregate] Projection<Int32,Int32>: 1 @ cursor 0 / batch of 2 starts @ 0");
         }
 
         [Test]
@@ -108,9 +108,9 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .Contain(m => m.Contains("[Aggregate] Exception:"))
+                         .ContainSingle(m => m.Contains("[Aggregate] Exception:"))
                          .And
-                         .Contain(m => m.Contains("OUCH!"));
+                         .ContainSingle(m => m.Contains("OUCH!"));
         }
 
         [Test]
@@ -142,7 +142,7 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .Contain("[Store.Put] Projection<IDomainEvent,Int32>: null @ cursor 0 for stream the-stream-id");
+                         .ContainSingle("[Store.Put] Projection<IDomainEvent,Int32>: null @ cursor 0 for stream the-stream-id");
         }
 
         [Test]
@@ -155,7 +155,7 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .Contain("[Store.Get] Projection<IDomainEvent,Int32>: null @ cursor 0 for stream the-stream-id");
+                         .ContainSingle("[Store.Get] Projection<IDomainEvent,Int32>: null @ cursor 0 for stream the-stream-id");
         }
 
         [Test]
@@ -169,7 +169,7 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .Contain("[Store.Get] no projection for stream the-stream-id");
+                         .ContainSingle("[Store.Get] no projection for stream the-stream-id");
         }
 
         [Test]
@@ -179,9 +179,11 @@ namespace Alluvial.Tests
             {
                 await distributor.Start();
 
+                await Task.Delay(50);
+
                 traceListener.Messages
                              .Should()
-                             .Contain("[Distribute] Start");
+                             .ContainSingle(m => m == "[Distribute] default: Start");
             }
         }
 
@@ -196,7 +198,7 @@ namespace Alluvial.Tests
 
                 traceListener.Messages
                              .Should()
-                             .Contain("[Distribute] Stop");
+                             .ContainSingle(m => m == "[Distribute] default: Stop");
             }
         }
 
@@ -204,25 +206,26 @@ namespace Alluvial.Tests
         public async Task By_default_Distributor_Trace_writes_onReceive_events_to_trace_output()
         {
             Lease<int> lease = null;
+
             using (var distributor = CreateDistributor(async l => lease = l).Trace())
             {
                 await distributor.Distribute(1);
 
                 traceListener.Messages
                              .Should()
-                             .Contain(m => m.Contains("[Distribute] OnReceive lease:1"));
+                             .ContainSingle(m => m.Contains("[Distribute] default: OnReceive lease:1"));
 
                 traceListener.Messages
                              .Should()
-                             .Contain(m => m.Contains("[Distribute] OnReceive (done) lease:1"));
+                             .ContainSingle(m => m.Contains("[Distribute] default: OnReceive (done) lease:1"));
             }
         }
 
         [Test]
         public async Task Distributor_Trace_writes_OnReceive_exceptions_to_trace_output()
         {
-            var distributor = CreateDistributor()
-                .Trace();
+            var distributor = CreateDistributor().Trace();
+
             distributor.OnReceive(async lease =>
             {
                 throw new Exception("oops!");
@@ -234,7 +237,24 @@ namespace Alluvial.Tests
                          .Should()
                          .ContainSingle(m => m.Contains("oops!"));
         }
-        
+
+        [Test]
+        public async Task Distributor_Trace_writes_pool_name_on_all_trace_events()
+        {
+            var poolName = "this-is-the-pool";
+            var distributor = CreateDistributor(pool: poolName).Trace();
+
+            await distributor.Distribute(1);
+
+            distributor.OnReceive(async lease => { throw new Exception("oops!"); });
+
+            await distributor.Distribute(1);
+
+            traceListener.Messages
+                         .Should()
+                         .OnlyContain(m => m.Contains(poolName));
+        }
+
         [Test]
         public async Task Distributor_Trace_default_behavior_can_be_overridden()
         {
@@ -338,12 +358,15 @@ namespace Alluvial.Tests
             receivedBatch.Should().ContainInOrder(16, 17, 18);
         }
 
-        private static IDistributor<int> CreateDistributor(Func<Lease<int>, Task> onReceive = null)
+        private static IDistributor<int> CreateDistributor(
+            Func<Lease<int>, Task> onReceive = null,
+            string pool = "default")
         {
             var distributor = new InMemoryDistributor<int>(new[]
             {
                 new Leasable<int>(1, "1")
-            });
+            },
+                                                           pool: pool);
 
             distributor.OnReceive(onReceive ?? (async _ => { }));
 

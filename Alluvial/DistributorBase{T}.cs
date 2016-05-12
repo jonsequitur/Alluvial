@@ -27,6 +27,7 @@ namespace Alluvial
         /// <param name="leasables">The leasable resources to be distributed by the distributor.</param>
         /// <param name="maxDegreesOfParallelism">The maximum number of leases to be distributed at one time by this distributor instance.</param>
         /// <param name="waitInterval">The interval to wait after a lease is released before which leased resource should not become available again. If not specified, the default is .5 seconds.</param>
+        /// <param name="pool">The name of the pool of leasable resources from which leases are acquired.</param>
         /// <exception cref="System.ArgumentNullException"></exception>
         /// <exception cref="System.ArgumentException">
         /// There must be at least one leasable.
@@ -35,6 +36,7 @@ namespace Alluvial
         /// </exception>
         protected DistributorBase(
             Leasable<T>[] leasables,
+            string pool,
             int maxDegreesOfParallelism = 5,
             TimeSpan? waitInterval = null)
         {
@@ -46,14 +48,25 @@ namespace Alluvial
             {
                 throw new ArgumentException("There must be at least one leasable.");
             }
+            if (string.IsNullOrWhiteSpace(pool))
+            {
+                throw new ArgumentException("Argument 'pool' cannot be null, empty, or consist entirely of whitespace.");
+            }
             if (maxDegreesOfParallelism <= 0)
             {
                 throw new ArgumentException("maxDegreesOfParallelism must be at least 1.");
             }
+
+            Pool = pool;
             this.leasables = leasables;
             this.maxDegreesOfParallelism = Math.Min(maxDegreesOfParallelism, leasables.Length);
             this.waitInterval = waitInterval ?? TimeSpan.FromSeconds(.5);
         }
+
+        /// <summary>
+        /// Gets or sets the name of the pool from which the distributor distributes leases.
+        /// </summary>
+        protected string Pool { get; set; }
 
         /// <summary>
         /// Gets the interval to wait after a lease is released before which leased resource should not become available again.
@@ -148,11 +161,11 @@ namespace Alluvial
         {
             if (stopped)
             {
-                Debug.WriteLine("[Distribute] Aborting");
+                Debug.WriteLine($"[Distribute] {ToString()}: Aborting");
                 return LeaseAcquisitionAttempt.Failed();
             }
 
-            Debug.WriteLine("[Distribute] Trying to acquire lease");
+            Debug.WriteLine($"[Distribute] {ToString()}: Trying to acquire lease");
 
             Lease<T> lease = null;
             try
@@ -161,7 +174,7 @@ namespace Alluvial
             }
             catch (Exception exception)
             {
-                Debug.WriteLine($"[Distribute] Exception during AcquireLease:\n{exception}");
+                Debug.WriteLine($"[Distribute] {ToString()}: Exception during AcquireLease:\n{exception}");
             }
 
             if (lease != null)
@@ -191,14 +204,14 @@ namespace Alluvial
                 }
                 catch (Exception exception)
                 {
-                    Debug.WriteLine($"[Distribute] Exception during ReleaseLease for lease {lease}:\n{exception}");
+                    Debug.WriteLine($"[Distribute] {ToString()}: Exception during ReleaseLease for lease {lease}:\n{exception}");
                 }
 
                 Interlocked.Decrement(ref leasesHeld);
             }
             else
             {
-                Debug.WriteLine("[Distribute] Did not acquire lease");
+                Debug.WriteLine($"[Distribute] {ToString()}: Did not acquire lease");
 
                 if (loop)
                 {
@@ -246,7 +259,7 @@ namespace Alluvial
 
             while (leasesHeld > 0)
             {
-                Debug.WriteLine($"[Distribute] Stop: waiting for {leasesHeld} to complete");
+                Debug.WriteLine($"[Distribute] {ToString()}: Stop: waiting for {leasesHeld} to complete");
                 await Task.Delay(waitInterval);
             }
         }
@@ -255,6 +268,17 @@ namespace Alluvial
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
         public void Dispose() => Task.Run(() => Stop()).Wait();
+
+        /// <summary>
+        /// Returns a <see cref="System.String" /> that represents this instance.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="System.String" /> that represents this instance.
+        /// </returns>
+        public override string ToString()
+        {
+            return Pool;
+        }
 
         private struct LeaseAcquisitionAttempt
         {
