@@ -21,7 +21,7 @@ namespace Alluvial.Tests
                                     Enumerable.Range(1, 1000)
                                               .Select(i => i.ToString())
                                               .Skip(query.Cursor.Position)
-                                            //  .Where(s => partition.Contains(s))
+                                        //  .Where(s => partition.Contains(s))
                                               .Take(query.BatchSize.Value));
 
             IPartitionedStream<int, int, string> partitioned2;
@@ -40,7 +40,9 @@ namespace Alluvial.Tests
                 Stream.Of<Event>("nonpartitioned")
                       .Cursor(_ => _.StartsAt(() => Cursor.New<DateTimeOffset>()))
                       .Advance((q, b) => q.Cursor.AdvanceTo(b.Last().Timestamp))
-                      .CreateStream(query => null);
+                      .CreateStream(query => Enumerable.Range(1, 1000)
+                                                       .Take(query.BatchSize.Value)
+                                                       .Select(_ => new Event()));
 
             // FIX (testname) write test
             Assert.Fail("Test not written yet.");
