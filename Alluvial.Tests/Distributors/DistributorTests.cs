@@ -424,7 +424,6 @@ namespace Alluvial.Tests.Distributors
             receivedLeases.Count().Should().Be(10);
         }
 
-
         [Test]
         public async Task Distribute_will_not_distribute_more_leases_than_there_are_leasables()
         {
