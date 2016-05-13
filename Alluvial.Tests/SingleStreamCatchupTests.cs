@@ -518,13 +518,13 @@ namespace Alluvial.Tests
                                    .ToArray();
 
             var distributor = partitions.CreateInMemoryDistributor(
-                waitInterval: TimeSpan.FromSeconds(.5),
+                waitInterval: TimeSpan.FromSeconds(.1),
                 maxDegreesOfParallelism: 30,
                 defaultLeaseDuration: 5.Seconds())
                                         .Trace();
 
             var catchup = stream.CreateDistributedCatchup(distributor)
-                                .Backoff(5.Seconds());
+                                .Backoff(1.Seconds());
 
             catchup.Subscribe(async (p, b) =>
             {
