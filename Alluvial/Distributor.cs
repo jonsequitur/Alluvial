@@ -34,8 +34,8 @@ namespace Alluvial
         /// <param name="partitions">The partitions to be leased out.</param>
         /// <param name="maxDegreesOfParallelism">The maximum degrees of parallelism.</param>
         /// <param name="pool">The pool.</param>
-        /// <param name="waitInterval">The wait interval. If not specified, the default is 1 minute.</param>
-        /// <param name="defaultLeaseDuration">Default duration of the lease.</param>
+        /// <param name="waitInterval">The wait interval. If not specified, the default is 5 seconds.</param>
+        /// <param name="defaultLeaseDuration">Default duration of the lease. If not specified, the default is 1 minute.</param>
         /// <returns></returns>
         /// <exception cref="System.ArgumentNullException"></exception>
         public static IDistributor<IStreamQueryPartition<TPartition>> CreateInMemoryDistributor<TPartition>(

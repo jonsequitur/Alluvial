@@ -24,7 +24,7 @@ namespace Alluvial
         /// <param name="pool">The pool.</param>
         /// <param name="maxDegreesOfParallelism">The maximum degrees of parallelism.</param>
         /// <param name="waitInterval">The interval to wait after a lease is released before which leased resource should not become available again. If not specified, the default is 5 seconds.</param>
-        /// <param name="defaultLeaseDuration">Default duration of the lease. If not specified, the default is one minute.</param>
+        /// <param name="defaultLeaseDuration">Default duration of the lease. If not specified, the default is 1 minute.</param>
         /// <exception cref="System.ArgumentNullException"></exception>
         public InMemoryDistributor(
             Leasable<T>[] leasables,
