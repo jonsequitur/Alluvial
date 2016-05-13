@@ -55,6 +55,14 @@
     <Compile Include="Cursor{TPosition}.cs" />
     <Compile Include="DistributedMultiStreamCatchup{TData,TUpstreamCursor,TDownstreamCursor,TPartition}.cs" />
     <Compile Include="DistributorPipeAsync{T}.cs" />
+    <Compile Include="Fluent\CursorBuilder.cs" />
+    <Compile Include="Fluent\CursorBuilder{T}.cs" />
+    <Compile Include="Fluent\PartitionBuilder.cs" />
+    <Compile Include="Fluent\PartitionBuilder{T}.cs" />
+    <Compile Include="Fluent\StreamBuilderExtensions.cs" />
+    <Compile Include="Fluent\StreamBuilder{TData,TCursor,TPartition}.cs" />
+    <Compile Include="Fluent\StreamBuilder{TData,TCursor}.cs" />
+    <Compile Include="Fluent\StreamBuilder{TData}.cs" />
     <Compile Include="IDistributedStreamCatchup{TData,TPartition}.cs" />
     <Compile Include="ILease.cs" />
     <Compile Include="Leasable{T}.cs" />
@@ -97,7 +105,7 @@
     <Compile Include="PipeAsync{TProjection,TData}.cs" />
     <Compile Include="StreamCatchupError.cs" />
     <Compile Include="StreamCatchupError{T}.cs" />
-    <Compile Include="StreamBuilder.cs" />
+    <Compile Include="Fluent\StreamBuilder.cs" />
     <Compile Include="StreamQueryPartition{T}.cs" />
     <Compile Include="StreamQueryRangePartition{T}.cs" />
     <Compile Include="StreamQueryValuePartition{T}.cs" />

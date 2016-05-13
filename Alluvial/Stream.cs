@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Alluvial.Fluent;
 using trace = System.Diagnostics.Trace;
 
 namespace Alluvial
@@ -195,6 +196,13 @@ namespace Alluvial
                 newCursor,
                 source);
         }
+
+        /// <summary>
+        /// Creates a stream builder.
+        /// </summary>
+        public static StreamBuilder<TData> Of<TData>(
+            string streamId = null) =>
+                new StreamBuilder<TData>(streamId);
 
         /// <summary>
         /// Maps data from a stream into a new form.

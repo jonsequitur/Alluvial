@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Alluvial.Fluent;
 using NUnit.Framework;
 
 namespace Alluvial.Tests
@@ -17,7 +18,7 @@ namespace Alluvial.Tests
                       .Cursor(_ => _.StartsAt(() => Cursor.New(0)))
                       .Advance((q, b) => q.Cursor.AdvanceTo(b.Count()))
                       .Partition(_ => _.ByRange<Guid>())
-                      .CreateStream(async (query, partition) =>
+                      .Create(async (query, partition) =>
                                     Enumerable.Range(1, 1000)
                                               .Select(i => i.ToString())
                                               .Skip(query.Cursor.Position)
@@ -30,7 +31,7 @@ namespace Alluvial.Tests
                       .Cursor(_ => _.By<int>())
                       .Partition(_ => _.ByValue<string>())
                       .Advance((q, b) => q.Cursor.AdvanceTo(1))
-                      .CreateStream(async (query, partition) =>
+                      .Create(async (query, partition) =>
                                     Enumerable.Range(1, 1000)
                                               .Skip(query.Cursor.Position)
                                               .Take(query.BatchSize.Value));
@@ -40,12 +41,9 @@ namespace Alluvial.Tests
                 Stream.Of<Event>("nonpartitioned")
                       .Cursor(_ => _.StartsAt(() => Cursor.New<DateTimeOffset>()))
                       .Advance((q, b) => q.Cursor.AdvanceTo(b.Last().Timestamp))
-                      .CreateStream(query => Enumerable.Range(1, 1000)
+                      .Create(query => Enumerable.Range(1, 1000)
                                                        .Take(query.BatchSize.Value)
                                                        .Select(_ => new Event()));
-
-            // FIX (testname) write test
-            Assert.Fail("Test not written yet.");
         }
     }
 }
