@@ -38,6 +38,35 @@ namespace Alluvial.Tests.Distributors
 
             receiveCount.Should().BeGreaterThan(5);
         }
+
+        [Test]
+        public async Task An_exception_during_ReleaseLease_doesnt_stop_the_distributor()
+        {
+            var releaseCount = 0;
+            var receiveCount = 0;
+
+            var leasables = Enumerable.Range(1, 10)
+                                      .Select(i => new Leasable<int>(i, i.ToString()))
+                                      .ToArray();
+
+            var distributor = new TestDistributor<int>(
+                leasables,
+                beforeRelease: async lease =>
+                {
+                    if (Interlocked.Increment(ref releaseCount) == 2)
+                    {
+                        throw new Exception("dang!");
+                    }
+                }).Trace();
+
+            distributor.OnReceive(async (lease, next) => { Interlocked.Increment(ref receiveCount); });
+
+            await distributor.Start();
+
+            await Task.Delay(100);
+
+            receiveCount.Should().BeGreaterThan(5);
+        }
     }
 
     public class TestDistributor<T> : InMemoryDistributor<T>
