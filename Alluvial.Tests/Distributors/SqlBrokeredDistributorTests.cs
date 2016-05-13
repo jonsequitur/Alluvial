@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Alluvial.Distributors.Sql;
 using FluentAssertions;
@@ -29,7 +30,7 @@ namespace Alluvial.Tests.Distributors
                 Database,
                 pool,
                 maxDegreesOfParallelism,
-                waitInterval,
+                waitInterval ?? TimeSpan.FromSeconds(1),
                 DefaultLeaseDuration);
 
             if (onReceive != null)
