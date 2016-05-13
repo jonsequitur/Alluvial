@@ -5,6 +5,7 @@ using FluentAssertions;
 using System.Linq;
 using System.Threading.Tasks;
 using Alluvial.Tests.BankDomain;
+using Alluvial.Tests.Distributors;
 using NUnit.Framework;
 
 namespace Alluvial.Tests
@@ -68,7 +69,7 @@ namespace Alluvial.Tests
         [Test]
         public async Task By_default_AggregateAsync_Trace_writes_projections_and_batches_to_trace_output()
         {
-             AggregateAsync<Projection<int, int>, string> aggregator = new AggregateAsync<Projection<int, int>, string>(async (p, es) =>
+            AggregateAsync<Projection<int, int>, string> aggregator = new AggregateAsync<Projection<int, int>, string>(async (p, es) =>
             {
                 p.Value += es.Count;
                 return p;
@@ -226,16 +227,49 @@ namespace Alluvial.Tests
         {
             var distributor = CreateDistributor().Trace();
 
-            distributor.OnReceive(async lease =>
-            {
-                throw new Exception("oops!");
-            });
+            distributor.OnReceive(async lease => { throw new Exception("oops!"); });
 
             await distributor.Distribute(1);
 
             traceListener.Messages
                          .Should()
                          .ContainSingle(m => m.Contains("oops!"));
+        }
+
+        [Test]
+        public async Task DistributorBase_exceptions_on_AcquireLease_can_be_observed()
+        {
+            Exception caughtException = null;
+
+            var distributor = new TestDistributor<int>(
+                Enumerable.Range(1, 10)
+                          .Select(i => new Leasable<int>(i, i.ToString()))
+                          .ToArray(),
+                beforeAcquire: async () => { throw new Exception("dang!"); },
+                maxDegreesOfParallelism: 1)
+                .Trace(onException: (ex, lease) => caughtException = ex);
+
+            await distributor.Start();
+            await Task.Delay(100);
+            await distributor.Stop();
+
+            caughtException.Should().NotBeNull();
+        }
+
+        [Test]
+        public async Task DistributorBase_exceptions_on_ReleaseLease_can_be_observed()
+        {
+            Exception caughtException = null;
+            var distributor = new TestDistributor<int>(
+                Enumerable.Range(1, 10)
+                          .Select(i => new Leasable<int>(i, i.ToString()))
+                          .ToArray(),
+                beforeRelease: async lease => { throw new Exception("dang!"); })
+                .Trace(onException: (ex, lease) => caughtException = ex);
+
+            await distributor.Distribute(1);
+
+            caughtException.Should().NotBeNull();
         }
 
         [Test]
@@ -290,7 +324,7 @@ namespace Alluvial.Tests
                                            receivedBatch = b;
                                        });
 
-            var sentBatch =  StreamBatch.Create(Enumerable.Range(1, 10).ToArray(),Cursor.New<int>());
+            var sentBatch = StreamBatch.Create(Enumerable.Range(1, 10).ToArray(), Cursor.New<int>());
             await aggregator.Aggregate(41, sentBatch);
 
             receivedProjection.Should().Be(41);

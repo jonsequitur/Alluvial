@@ -21,6 +21,8 @@ namespace Alluvial
         private int leasesHeld;
         private DistributorPipeAsync<T> pipeline;
 
+        private event Action<Exception, Lease<T>> CaughtException;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="DistributorBase{T}"/> class.
         /// </summary>
@@ -103,9 +105,17 @@ namespace Alluvial
                 pipeline = (lease, next) =>
                            receive(lease,
                                    l => previousPipeline(l,
-                                                                           _ => Unit.Default.CompletedTask()));
+                                                         _ => Unit.Default.CompletedTask()));
             }
         }
+
+        /// <summary>
+        ///  Specifies a delegate to be called when an exception is thrown when acquiring, distributing out, or releasing a lease.
+        /// </summary>
+        /// <remarks>
+        /// The lease argument may be null if the exception occurs during lease acquisition.
+        /// </remarks>
+        public void OnException(Action<Exception, Lease<T>> onException) => CaughtException += onException;
 
         /// <summary>
         /// Distributes the specified number of leases.
@@ -119,7 +129,8 @@ namespace Alluvial
 
             count = Math.Min(count, leasables.Length);
 
-            while (acquired.Count < count)
+            while (acquired.Count < count &&
+                   !stopped)
             {
                 var acquisition = await TryRunOne(loop: false);
                 if (acquisition.Acquired)
@@ -174,7 +185,7 @@ namespace Alluvial
             }
             catch (Exception exception)
             {
-                Debug.WriteLine($"[Distribute] {ToString()}: Exception during AcquireLease:\n{exception}");
+                CaughtException?.Invoke(exception, lease);
             }
 
             if (lease != null)
@@ -191,6 +202,8 @@ namespace Alluvial
                     if (r.Status == TaskStatus.Faulted)
                     {
                         lease.Exception = r.Exception;
+
+                        CaughtException?.Invoke(lease.Exception, lease);
                     }
                 }
                 catch (Exception exception)
@@ -204,7 +217,7 @@ namespace Alluvial
                 }
                 catch (Exception exception)
                 {
-                    Debug.WriteLine($"[Distribute] {ToString()}: Exception during ReleaseLease for lease {lease}:\n{exception}");
+                    CaughtException?.Invoke(exception, lease);
                 }
 
                 Interlocked.Decrement(ref leasesHeld);
