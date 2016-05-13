@@ -15,7 +15,7 @@ namespace Alluvial.Distributors.Sql
     {
         private readonly SqlBrokeredDistributorDatabase database;
         private readonly TimeSpan defaultLeaseDuration;
-        private bool isDatabaseInitialized = false;
+        private bool isDatabaseInitialized;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SqlBrokeredDistributor{T}"/> class.

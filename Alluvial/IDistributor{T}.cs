@@ -17,6 +17,14 @@ namespace Alluvial
         void OnReceive(DistributorPipeAsync<T> onReceive);
 
         /// <summary>
+        ///  Specifies a delegate to be called when an exception is thrown when acquiring, distributing out, or releasing a lease.
+        /// </summary>
+        /// <remarks>
+        /// The lease argument may be null if the exception occurs during lease acquisition.
+        /// </remarks>
+        void OnException(Action<Exception, Lease<T>> onException);
+
+        /// <summary>
         /// Starts distributing work.
         /// </summary>
         Task Start();

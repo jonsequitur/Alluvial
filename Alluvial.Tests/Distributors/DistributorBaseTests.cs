@@ -10,15 +10,21 @@ namespace Alluvial.Tests.Distributors
     [TestFixture]
     public class DistributorBaseTests
     {
+        private Leasable<int>[] leasables;
+
+        [SetUp]
+        public void SetUp()
+        {
+            leasables = Enumerable.Range(1, 10)
+                                  .Select(i => new Leasable<int>(i, i.ToString()))
+                                  .ToArray();
+        }
+
         [Test]
         public async Task An_exception_during_AcquireLease_doesnt_stop_the_distributor()
         {
             var acquireCount = 0;
             var receiveCount = 0;
-
-            var leasables = Enumerable.Range(1, 10)
-                                      .Select(i => new Leasable<int>(i, i.ToString()))
-                                      .ToArray();
 
             var distributor = new TestDistributor<int>(
                 leasables,
@@ -44,10 +50,6 @@ namespace Alluvial.Tests.Distributors
         {
             var releaseCount = 0;
             var receiveCount = 0;
-
-            var leasables = Enumerable.Range(1, 10)
-                                      .Select(i => new Leasable<int>(i, i.ToString()))
-                                      .ToArray();
 
             var distributor = new TestDistributor<int>(
                 leasables,
@@ -97,7 +99,6 @@ namespace Alluvial.Tests.Distributors
         {
             await beforeAcquire();
             return await base.AcquireLease();
-            ;
         }
     }
 }

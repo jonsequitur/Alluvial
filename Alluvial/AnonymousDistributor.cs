@@ -8,6 +8,7 @@ namespace Alluvial
     {
         private readonly Func<Task> start;
         private readonly Action<DistributorPipeAsync<T>> onReceive;
+        private readonly Action<Action<Exception, Lease<T>>> onException;
         private readonly Func<Task> stop;
         private readonly Func<int, Task<IEnumerable<T>>> distribute;
 
@@ -15,7 +16,7 @@ namespace Alluvial
             Func<Task> start,
             Action<DistributorPipeAsync<T>> onReceive,
             Func<Task> stop,
-            Func<int, Task<IEnumerable<T>>> distribute)
+            Func<int, Task<IEnumerable<T>>> distribute, Action<Action<Exception, Lease<T>>> onException)
         {
             if (start == null)
             {
@@ -39,12 +40,15 @@ namespace Alluvial
             this.onReceive = onReceive;
             this.stop = stop;
             this.distribute = distribute;
+            this.onException = onException;
         }
 
-        public void OnReceive(DistributorPipeAsync<T> receive)
-        {
+        public void OnReceive(DistributorPipeAsync<T> receive) => 
             onReceive(receive);
-        }
+
+        public void OnException(Action<Exception, Lease<T>> notify) =>
+            onException(notify);
+     
 
         public Task Start() => start();
 
