@@ -186,7 +186,9 @@ namespace Alluvial
             try
             {
                 lease = await AcquireLease();
+#if DEBUG
                 Debug.WriteLine($"[Distribute] {ToString()}: Acquired lease @ {stopwatch.ElapsedMilliseconds}ms");
+#endif
             }
             catch (Exception exception)
             {
@@ -229,7 +231,10 @@ namespace Alluvial
             }
             else
             {
+#if DEBUG
                 Debug.WriteLine($"[Distribute] {ToString()}: Did not acquire lease @ {stopwatch.ElapsedMilliseconds}ms");
+#endif
+
 
                 if (loop)
                 {
