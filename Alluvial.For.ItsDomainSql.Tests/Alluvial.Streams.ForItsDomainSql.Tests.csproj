@@ -118,6 +118,7 @@
     <Compile Include="DatabaseSetup.cs" />
     <Compile Include="DatabaseSetupTests.cs" />
     <Compile Include="MatchingEvents.cs" />
+    <Compile Include="PerformanceTests.cs" />
     <Compile Include="ProjectionTests.cs" />
     <Compile Include="%28Pocket%29\MaybeExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

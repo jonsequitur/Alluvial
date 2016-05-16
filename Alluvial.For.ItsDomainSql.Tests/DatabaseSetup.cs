@@ -12,7 +12,6 @@ namespace Alluvial.For.ItsDomainSql.Tests
 
         private static void SetConnectionStrings()
         {
-            // local
             EventStoreDbContext.NameOrConnectionString =
                 @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=AlluvialEventStore";
 

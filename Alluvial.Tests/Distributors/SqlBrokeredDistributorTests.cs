@@ -1,8 +1,8 @@
 using System;
-using System.Linq;
-using System.Threading.Tasks;
 using Alluvial.Distributors.Sql;
 using FluentAssertions;
+using System.Linq;
+using System.Threading.Tasks;
 using NUnit.Framework;
 
 namespace Alluvial.Tests.Distributors
@@ -12,8 +12,11 @@ namespace Alluvial.Tests.Distributors
     {
         private SqlBrokeredDistributor<int> distributor;
 
+        private static readonly string connectionString =
+            @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=AlluvialSqlDistributorTests";
+
         public static readonly SqlBrokeredDistributorDatabase Database = new SqlBrokeredDistributorDatabase(
-            @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=AlluvialSqlDistributorTests");
+            connectionString);
 
         protected override IDistributor<int> CreateDistributor(
             Func<Lease<int>, Task> onReceive = null,
@@ -25,6 +28,7 @@ namespace Alluvial.Tests.Distributors
             leasables = leasables ?? DefaultLeasables;
 
             pool = pool ?? DateTimeOffset.UtcNow.Ticks.ToString();
+
             distributor = new SqlBrokeredDistributor<int>(
                 leasables,
                 Database,
@@ -37,8 +41,6 @@ namespace Alluvial.Tests.Distributors
             {
                 distributor.OnReceive(onReceive);
             }
-
-            Database.RegisterLeasableResources(leasables, pool).Wait();
 
             return distributor;
         }
