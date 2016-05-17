@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using FluentAssertions;
 using System.Linq;
 using System.Threading;
@@ -190,7 +191,8 @@ namespace Alluvial.Tests
         public async Task Catchup_Poll_keeps_projections_updated_as_new_events_are_written()
         {
             var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
-
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
             var catchup = StreamCatchup.Create(stream, batchSize: 50);
             catchup.Subscribe(new BalanceProjector().Trace(), projectionStore);
 
@@ -201,7 +203,7 @@ namespace Alluvial.Tests
                     await Wait.Until(() =>
                     {
                         var sum = projectionStore.Sum(b => b.Balance);
-                        Console.WriteLine("sum is " + sum);
+                        Console.WriteLine($"sum is {sum} @ {stopwatch.ElapsedMilliseconds}ms");
                         return sum >= 500;
                     });
                 }
