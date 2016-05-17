@@ -82,9 +82,16 @@ namespace Alluvial.PerformanceTests
 
         [Test]
         [Explicit]
-        public async Task ConnectionPool_64_Partitions_64_Parallelism_8()
+        public async Task ConnectionPool_2048_Partitions_64_Parallelism_8()
         {
-            await ConnectionPool_vs_partitions_vs_parallelism(64, 64, 8);
+            await ConnectionPool_vs_partitions_vs_parallelism(2048, 64, 8);
+        }
+
+        [Test]
+        [Explicit]
+        public async Task ConnectionPool_2048_Partitions_64_Parallelism_4()
+        {
+            await ConnectionPool_vs_partitions_vs_parallelism(2048, 64, 4);
         }
 
         public async Task ConnectionPool_vs_partitions_vs_parallelism(
