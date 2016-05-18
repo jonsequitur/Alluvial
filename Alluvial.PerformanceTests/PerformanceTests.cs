@@ -32,63 +32,63 @@ namespace Alluvial.PerformanceTests
         }
 
         [Test]
-        [Explicit]
+        //[Explicit]
         public async Task ConnectionPool_128_Partitions_128_Parallelism_128()
         {
             await ConnectionPool_vs_partitions_vs_parallelism(128, 128, 128);
         }
 
         [Test]
-        [Explicit]
+        //[Explicit]
         public async Task ConnectionPool_64_Partitions_64_Parallelism_64()
         {
             await ConnectionPool_vs_partitions_vs_parallelism(64, 64, 64);
         }
 
         [Test]
-        [Explicit]
+        //[Explicit]
         public async Task ConnectionPool_1_Partitions_64_Parallelism_1()
         {
             await ConnectionPool_vs_partitions_vs_parallelism(1, 64, 1);
         }
 
         [Test]
-        [Explicit]
+        //[Explicit]
         public async Task ConnectionPool_1_Partitions_64_Parallelism_4()
         {
             await ConnectionPool_vs_partitions_vs_parallelism(1, 64, 4);
         }
 
         [Test]
-        [Explicit]
+        //[Explicit]
         public async Task ConnectionPool_4_Partitions_64_Parallelism_4()
         {
             await ConnectionPool_vs_partitions_vs_parallelism(4, 64, 4);
         }
 
         [Test]
-        [Explicit]
+        //[Explicit]
         public async Task ConnectionPool_4_Partitions_64_Parallelism_8()
         {
             await ConnectionPool_vs_partitions_vs_parallelism(4, 64, 8);
         }
 
         [Test]
-        [Explicit]
+        //[Explicit]
         public async Task ConnectionPool_2_Partitions_64_Parallelism_8()
         {
             await ConnectionPool_vs_partitions_vs_parallelism(2, 64, 8);
         }
 
         [Test]
-        [Explicit]
+        //[Explicit]
         public async Task ConnectionPool_2048_Partitions_64_Parallelism_8()
         {
             await ConnectionPool_vs_partitions_vs_parallelism(2048, 64, 8);
         }
 
         [Test]
-        [Explicit]
+        //[Explicit]
         public async Task ConnectionPool_2048_Partitions_64_Parallelism_4()
         {
             await ConnectionPool_vs_partitions_vs_parallelism(2048, 64, 4);
