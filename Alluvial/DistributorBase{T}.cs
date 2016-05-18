@@ -176,12 +176,19 @@ namespace Alluvial
                 return LeaseAcquisitionAttempt.Failed();
             }
 
+#if DEBUG
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
             Debug.WriteLine($"[Distribute] {ToString()}: Trying to acquire lease");
+#endif
 
             Lease<T> lease = null;
             try
             {
                 lease = await AcquireLease();
+#if DEBUG
+                Debug.WriteLine($"[Distribute] {ToString()}: Acquired lease @ {stopwatch.ElapsedMilliseconds}ms");
+#endif
             }
             catch (Exception exception)
             {
@@ -224,7 +231,10 @@ namespace Alluvial
             }
             else
             {
-                Debug.WriteLine($"[Distribute] {ToString()}: Did not acquire lease");
+#if DEBUG
+                Debug.WriteLine($"[Distribute] {ToString()}: Did not acquire lease @ {stopwatch.ElapsedMilliseconds}ms");
+#endif
+
 
                 if (loop)
                 {

@@ -81,6 +81,8 @@ namespace Alluvial.Tests
                     eventStream.CommitChanges(Guid.NewGuid());
                 }
             }
+
+            Console.WriteLine($"wrote {howMany} events");
         }
 
         public static void WriteEvents(
@@ -102,6 +104,8 @@ namespace Alluvial.Tests
                     eventStream.CommitChanges(Guid.NewGuid());
                 }
             }
+
+            Console.WriteLine($"wrote {howMany} events");
         }
     }
 }

@@ -125,7 +125,7 @@ namespace Alluvial.Tests.Distributors
             stalestLease.LeaseLastGranted = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(2.1));
             stalestLease.LeaseLastReleased = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(2.1));
 
-            var distributor = CreateDistributor().Trace();
+            var distributor = CreateDistributor(pool: Guid.NewGuid().ToString()).Trace();
 
             Lease<int> receivedLease = null;
 
