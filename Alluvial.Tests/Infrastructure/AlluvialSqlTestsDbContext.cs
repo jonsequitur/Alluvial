@@ -6,7 +6,7 @@ namespace Alluvial.Tests
     {
         static AlluvialSqlTestsDbContext()
         {
-            Database.SetInitializer(new AlluvialSqlTestsDbInitializer());
+            Database.SetInitializer(new DropCreateDatabaseIfModelChanges<AlluvialSqlTestsDbContext>());
         }
 
         public AlluvialSqlTestsDbContext() : base(@"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=AlluvialSqlTests")
@@ -24,9 +24,5 @@ namespace Alluvial.Tests
         }
 
         public DbSet<Event> Events { get; set; }
-
-        public class AlluvialSqlTestsDbInitializer : CreateDatabaseIfNotExists<AlluvialSqlTestsDbContext>
-        {
-        }
     }
 }
