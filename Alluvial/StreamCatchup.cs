@@ -16,15 +16,17 @@ namespace Alluvial
         /// </summary>
         /// <typeparam name="TData">The type of the data in the stream.</typeparam>
         /// <param name="catchup">The catchup.</param>
-        /// <param name="duration">The duration to wait.</param>
+        /// <param name="extendLeaseBy">The duration to wait.</param>
         public static IStreamCatchup<TData> Backoff<TData>(
             this IStreamCatchup<TData> catchup,
-            TimeSpan duration)
+            TimeSpan? extendLeaseBy = null)
         {
             if (catchup == null)
             {
                 throw new ArgumentNullException(nameof(catchup));
             }
+
+            extendLeaseBy = extendLeaseBy ?? TimeSpan.Zero;
 
             return catchup.Wrap(
                 runSingleBatch: async lease =>
@@ -35,7 +37,7 @@ namespace Alluvial
 
                         if (counter.Value == 0)
                         {
-                            await lease.Extend(duration);
+                            await lease.Extend(extendLeaseBy.Value);
                             await lease.Expiration();
                         }
                     }
@@ -48,16 +50,18 @@ namespace Alluvial
         /// <typeparam name="TData">The type of the data in the stream.</typeparam>
         /// <typeparam name="TPartition">The type of the partition.</typeparam>
         /// <param name="catchup">The catchup.</param>
-        /// <param name="duration">The duration to wait.</param>
+        /// <param name="extendLeaseBy">The duration to wait.</param>
         /// <returns></returns>
         public static IDistributedStreamCatchup<TData, TPartition> Backoff<TData, TPartition>(
             this IDistributedStreamCatchup<TData, TPartition> catchup,
-            TimeSpan duration)
+            TimeSpan? extendLeaseBy = null)
         {
             if (catchup == null)
             {
                 throw new ArgumentNullException(nameof(catchup));
             }
+
+            extendLeaseBy = extendLeaseBy ?? TimeSpan.Zero;
 
             catchup.OnReceive(async (lease, next) =>
             {
@@ -67,7 +71,7 @@ namespace Alluvial
 
                     if (counter.Value == 0)
                     {
-                        await lease.Extend(duration);
+                        await lease.Extend(extendLeaseBy.Value);
                         await lease.Expiration();
                     }
                 }

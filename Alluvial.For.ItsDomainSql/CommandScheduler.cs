@@ -48,7 +48,7 @@ namespace Alluvial.For.ItsDomainSql
                 {
                     using (var db = new CommandSchedulerDbContext())
                     {
-                        var q = from clock in db.Clocks.WithinPartition(c => c.Name, partition)
+                        var q = from clock in db.Clocks.AsNoTracking().WithinPartition(c => c.Name, partition)
                                 join cmd in db.ScheduledCommands.Due(asOf)
                                     on clock equals cmd.Clock
                                 orderby clock.UtcNow
@@ -87,6 +87,7 @@ namespace Alluvial.For.ItsDomainSql
                     {
                         var batchCount = q.BatchSize ?? 5;
                         var query = db.ScheduledCommands
+                                      .AsNoTracking()
                                       .Due()
                                       .Where(c => c.Clock.Name == clockName)
                                       .WithinPartition(e => e.AggregateId, partition)

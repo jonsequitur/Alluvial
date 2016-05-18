@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using FluentAssertions;
 using System.Linq;
 using System.Threading;
@@ -190,7 +191,8 @@ namespace Alluvial.Tests
         public async Task Catchup_Poll_keeps_projections_updated_as_new_events_are_written()
         {
             var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
-
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
             var catchup = StreamCatchup.Create(stream, batchSize: 50);
             catchup.Subscribe(new BalanceProjector().Trace(), projectionStore);
 
@@ -201,7 +203,7 @@ namespace Alluvial.Tests
                     await Wait.Until(() =>
                     {
                         var sum = projectionStore.Sum(b => b.Balance);
-                        Console.WriteLine("sum is " + sum);
+                        Console.WriteLine($"sum is {sum} @ {stopwatch.ElapsedMilliseconds}ms");
                         return sum >= 500;
                     });
                 }
@@ -209,7 +211,7 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task RunSingleBatch_throws_when_an_aggregator_throws_an_exception()
+        public void RunSingleBatch_throws_when_an_aggregator_throws_an_exception()
         {
             var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
             store.WriteEvents(streamId, 100);
@@ -518,13 +520,13 @@ namespace Alluvial.Tests
                                    .ToArray();
 
             var distributor = partitions.CreateInMemoryDistributor(
-                waitInterval: TimeSpan.FromSeconds(.5),
+                waitInterval: TimeSpan.FromSeconds(.1),
                 maxDegreesOfParallelism: 30,
                 defaultLeaseDuration: 5.Seconds())
                                         .Trace();
 
             var catchup = stream.CreateDistributedCatchup(distributor)
-                                .Backoff(5.Seconds());
+                                .Backoff(1.Seconds());
 
             catchup.Subscribe(async (p, b) =>
             {

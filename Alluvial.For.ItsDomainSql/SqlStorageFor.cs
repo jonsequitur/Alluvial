@@ -17,6 +17,10 @@ namespace Alluvial.For.ItsDomainSql
             {
                 using (var db = createDbContext())
                 {
+                    await db.Database.Connection.OpenAsync(
+                        backoff: TimeSpan.FromMilliseconds(100),
+                        numberOfRetries: 3);
+
                     var projection = await db.Set<PartitionCursor>()
                                              .SingleOrDefaultAsync(p => p.StreamId == streamId &&
                                                                         p.PartitionId == partitionId);
@@ -52,6 +56,10 @@ namespace Alluvial.For.ItsDomainSql
             {
                 using (var db = createDbContext())
                 {
+                    await db.Database.Connection.OpenAsync(
+                        backoff: TimeSpan.FromMilliseconds(100),
+                        numberOfRetries: 3);
+
                     var projection = await getSingle(db, projectionId);
 
                     if (projection == null)

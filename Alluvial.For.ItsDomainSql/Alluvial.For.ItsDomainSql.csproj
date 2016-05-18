@@ -82,6 +82,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\Alluvial.Distributors.Sql\%28Pocket%29\DbConnectionExtensions.cs">
+      <Link>%28Pocket%29\DbConnectionExtensions.cs</Link>
+    </Compile>
     <Compile Include="..\Alluvial\TaskExtensions.cs">
       <Link>TaskExtensions.cs</Link>
     </Compile>

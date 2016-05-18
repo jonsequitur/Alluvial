@@ -61,7 +61,7 @@ namespace Alluvial.For.ItsDomainSql.Tests
 
             var distributor = partitionsByAggregateId.CreateSqlBrokeredDistributor(
                 new SqlBrokeredDistributorDatabase(CommandSchedulerDbContext.NameOrConnectionString),
-                commandsDue.Id);
+                commandsDue.Id, waitInterval: TimeSpan.FromSeconds(.5));
 
             var catchup = commandsDue
                 .CreateDistributedCatchup(distributor);
@@ -108,7 +108,7 @@ namespace Alluvial.For.ItsDomainSql.Tests
                 Partition.ByRange("v", "zz")
             };
 
-            var distributor = partitions.CreateInMemoryDistributor();
+            var distributor = partitions.CreateInMemoryDistributor(waitInterval: TimeSpan.FromSeconds(.1));
 
             var catchup = CommandScheduler.ClocksWithCommandsDue()
                                           .Trace()

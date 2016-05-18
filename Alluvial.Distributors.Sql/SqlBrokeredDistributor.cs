@@ -88,7 +88,7 @@ namespace Alluvial.Distributors.Sql
                 cmd.Parameters.AddWithValue(@"@leaseDurationMilliseconds", defaultLeaseDuration.TotalMilliseconds);
                 cmd.Parameters.AddWithValue(@"@pool", Pool);
 
-                await connection.OpenAsync();
+                await connection.OpenAsync(backoff: WaitInterval);
 
                 using (var reader = await cmd.ExecuteReaderAsync())
                 {
