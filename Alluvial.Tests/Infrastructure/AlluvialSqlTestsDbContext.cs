@@ -8,7 +8,7 @@ namespace Alluvial.Tests
 
         static AlluvialSqlTestsDbContext()
         {
-            Database.SetInitializer(new AlluvialSqlTestsDbInitializer());
+            Database.SetInitializer(new DropCreateDatabaseIfModelChanges<AlluvialSqlTestsDbContext>());
         }
 
         public AlluvialSqlTestsDbContext() : base(NameOrConnectionString)
@@ -38,10 +38,6 @@ namespace Alluvial.Tests
         public DbSet<Event> Events { get; set; }
 
         public DbSet<ProjectionModel> Projections { get; set; }
-
-        public class AlluvialSqlTestsDbInitializer : DropCreateDatabaseIfModelChanges<AlluvialSqlTestsDbContext>
-        {
-        }
     }
 
     public class ProjectionModel : Projection<ProjectionModel, long>
