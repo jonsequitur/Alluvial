@@ -211,7 +211,7 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task RunSingleBatch_throws_when_an_aggregator_throws_an_exception()
+        public void RunSingleBatch_throws_when_an_aggregator_throws_an_exception()
         {
             var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
             store.WriteEvents(streamId, 100);
