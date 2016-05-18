@@ -663,6 +663,8 @@ namespace Alluvial
 
             public void OnReceive(DistributorPipeAsync<IStreamQueryPartition<TPartition>> onReceive) => inner.OnReceive(onReceive);
 
+            public void OnException(Action<Exception, Lease<IStreamQueryPartition<TPartition>>> onException) => inner.OnException(onException);
+
             public Task Start() => inner.Start();
 
             public Task<IEnumerable<IStreamQueryPartition<TPartition>>> Distribute(int count) => inner.Distribute(count);

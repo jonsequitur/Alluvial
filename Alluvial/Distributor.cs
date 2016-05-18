@@ -17,6 +17,7 @@ namespace Alluvial
         /// <typeparam name="T">The type of the distributed resource.</typeparam>
         /// <param name="start">A delegate that when called starts the distributor.</param>
         /// <param name="onReceive">A delegate to be called when a lease becomes available.</param>
+        /// <param name="onException">A delegate to be called when the distributor catches an exception while acquiring, distributing, or releasing a lease.</param>
         /// <param name="stop">A delegate that when called stops the distributor.</param>
         /// <param name="distribute">A delegate that when called distributes the specified number of leases.</param>
         /// <returns>An anonymous distributor instance.</returns>
@@ -24,8 +25,9 @@ namespace Alluvial
             Func<Task> start,
             Action<DistributorPipeAsync<T>> onReceive,
             Func<Task> stop,
-            Func<int, Task<IEnumerable<T>>> distribute) =>
-                new AnonymousDistributor<T>(start, onReceive, stop, distribute);
+            Func<int, Task<IEnumerable<T>>> distribute,
+            Action<Action<Exception, Lease<T>>> onException) =>
+                new AnonymousDistributor<T>(start, onReceive, stop, distribute, onException);
 
         /// <summary>
         /// Creates an in-memory distributor.
@@ -34,8 +36,8 @@ namespace Alluvial
         /// <param name="partitions">The partitions to be leased out.</param>
         /// <param name="maxDegreesOfParallelism">The maximum degrees of parallelism.</param>
         /// <param name="pool">The pool.</param>
-        /// <param name="waitInterval">The wait interval. If not specified, the default is 1 minute.</param>
-        /// <param name="defaultLeaseDuration">Default duration of the lease.</param>
+        /// <param name="waitInterval">The wait interval. If not specified, the default is 5 seconds.</param>
+        /// <param name="defaultLeaseDuration">Default duration of the lease. If not specified, the default is 1 minute.</param>
         /// <returns></returns>
         /// <exception cref="System.ArgumentNullException"></exception>
         public static IDistributor<IStreamQueryPartition<TPartition>> CreateInMemoryDistributor<TPartition>(
@@ -86,22 +88,27 @@ namespace Alluvial
         public static IDistributor<T> Trace<T>(
             this IDistributor<T> distributor,
             Action<Lease<T>> onLeaseAcquired = null,
-            Action<Lease<T>> onLeaseReleasing = null)
+            Action<Lease<T>> onLeaseReleasing = null,
+            Action<Exception, Lease<T>> onException = null)
         {
             if (distributor == null)
             {
                 throw new ArgumentNullException(nameof(distributor));
             }
 
-            if (onLeaseAcquired == null && onLeaseReleasing == null)
+            if (onLeaseAcquired == null &&
+                onLeaseReleasing == null &&
+                onException == null)
             {
                 onLeaseAcquired = lease => TraceOnLeaseAcquired(distributor, lease);
                 onLeaseReleasing = lease => TraceOnLeaseReleasing(distributor, lease);
+                onException = (exception, lease) => TraceOnException(distributor, exception, lease);
             }
             else
             {
                 onLeaseAcquired = onLeaseAcquired ?? (l => { });
                 onLeaseReleasing = onLeaseReleasing ?? (l => { });
+                onException = onException ?? ((exception, lease) => { });
             }
 
             var newDistributor = Create(
@@ -116,30 +123,8 @@ namespace Alluvial
                     return distributor.Stop();
                 },
                 distribute: distributor.Distribute,
-                onReceive: @async =>
-                {
-                    // when someone calls OnReceive on the AnonymousDistributor, pass the call along to the wrapped distributor...
-                    distributor.OnReceive(@async);
-
-                    // ... then add another call to the pipeline to check for exceptions
-                    distributor.OnReceive(async (lease, next) =>
-                    {
-                        try
-                        {
-                            await next(lease);
-
-                            if (lease.Exception != null)
-                            {
-                                WriteLine($"[Distribute] {distributor}: Exception: {lease.Exception}");
-                            }
-                        }
-                        catch (Exception exception)
-                        {
-                            WriteLine($"[Distribute] {distributor}: Exception: {exception}");
-                            throw;
-                        }
-                    });
-                });
+                onReceive: distributor.OnReceive,
+                onException: distributor.OnException);
 
             distributor.OnReceive(async (lease, next) =>
             {
@@ -148,9 +133,31 @@ namespace Alluvial
                 onLeaseReleasing(lease);
             });
 
+            distributor.OnException(onException);
+
             return newDistributor;
         }
 
+        private static void TraceOnException<T>(
+            IDistributor<T> distributor,
+            Exception exception,
+            Lease<T> lease)
+        {
+            if (lease != null)
+            {
+                WriteLine($"[Distribute] {distributor}: Exception: {lease.Exception}");
+            }
+            else if (exception != null)
+            {
+                WriteLine($"[Distribute] {distributor}: Exception: {exception}");
+            }
+        }
+
+        /// <summary>
+        /// Specifies a delegate to be called when a lease is available.
+        /// </summary>
+        /// <param name="receive">The delegate called when work is available to be done.</param>
+        /// <remarks>For the duration of the lease, the leased resource will not be available to any other instance.</remarks>
         public static void OnReceive<T>(
             this IDistributor<T> distributor,
             Func<Lease<T>, Task> receive)

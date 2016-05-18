@@ -99,6 +99,7 @@
     <Compile Include="BankDomain\AccountOpened.cs" />
     <Compile Include="BankDomain\BankAccountType.cs" />
     <Compile Include="BankDomain\Projections\AccountHistoryProjector.cs" />
+    <Compile Include="Distributors\DistributorBaseTests.cs" />
     <Compile Include="GuidPartioningTests.cs" />
     <Compile Include="Infrastructure\AlluvialSqlTestsDbContext.cs" />
     <Compile Include="Infrastructure\AsyncBarrier.cs" />

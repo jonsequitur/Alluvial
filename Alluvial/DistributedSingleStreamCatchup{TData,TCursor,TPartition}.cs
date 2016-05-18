@@ -19,6 +19,8 @@ namespace Alluvial
     {
         private static readonly string catchupTypeDescription = typeof (DistributedSingleStreamCatchup<TData, TCursor, TPartition>).ReadableName();
 
+        private readonly IDistributor<IStreamQueryPartition<TPartition>> distributor;
+
         protected readonly IPartitionedStream<TData, TCursor, TPartition> partitionedStream;
 
         protected readonly FetchAndSave<ICursor<TCursor>> fetchAndSavePartitionCursor;
@@ -35,7 +37,7 @@ namespace Alluvial
                 throw new ArgumentNullException(nameof(distributor));
             }
             this.partitionedStream = partitionedStream;
-            Distributor = distributor;
+            this.distributor = distributor;
             this.fetchAndSavePartitionCursor = fetchAndSavePartitionCursor ??
                                                new InMemoryProjectionStore<ICursor<TCursor>>(id => Cursor.New<TCursor>()).AsHandler();
 
@@ -59,14 +61,12 @@ namespace Alluvial
                         return cursor;
                     });
 
-        public IDistributor<IStreamQueryPartition<TPartition>> Distributor { get; }
-
         /// <summary>
         /// Consumes a single batch from the source stream and updates the subscribed aggregators.
         /// </summary>
         public override async Task RunSingleBatch(ILease lease)
         {
-            await Distributor.DistributeAll();
+            await distributor.DistributeAll();
         }
         
         /// <summary>
@@ -78,14 +78,18 @@ namespace Alluvial
         public override string ToString() =>
             $"{catchupTypeDescription}->{partitionedStream}->{string.Join(" + ", aggregatorSubscriptions.Select(s => s.ProjectionType.ReadableName()))}";
 
-        public void Dispose() => Distributor.Dispose();
+        public void Dispose() => distributor.Dispose();
 
-        public void OnReceive(DistributorPipeAsync<IStreamQueryPartition<TPartition>> onReceive) => Distributor.OnReceive(onReceive);
+        public void OnReceive(DistributorPipeAsync<IStreamQueryPartition<TPartition>> onReceive) => 
+            distributor.OnReceive(onReceive);
 
-        public Task Start() => Distributor.Start();
+        public void OnException(Action<Exception, Lease<IStreamQueryPartition<TPartition>>> onException) =>
+            distributor.OnException(onException);
 
-        public Task<IEnumerable<IStreamQueryPartition<TPartition>>> Distribute(int count) => Distributor.Distribute(count);
+        public Task Start() => distributor.Start();
 
-        public Task Stop() => Distributor.Stop();
+        public Task<IEnumerable<IStreamQueryPartition<TPartition>>> Distribute(int count) => distributor.Distribute(count);
+
+        public Task Stop() => distributor.Stop();
     }
 }

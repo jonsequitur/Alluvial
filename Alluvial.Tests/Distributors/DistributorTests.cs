@@ -162,14 +162,6 @@ namespace Alluvial.Tests.Distributors
             received.Should().BeGreaterOrEqualTo(20);
         }
 
-        [Ignore("Test not finished")]
-        [Test]
-        public async Task When_receiver_throws_then_the_exception_can_be_observed()
-        {
-            // FIX (When_receiver_throws_then_the_exception_can_be_observed) write test
-            Assert.Fail("Test not written yet.");
-        }
-
         [Test]
         public async Task A_wait_interval_can_be_specified_before_which_a_released_lease_will_be_granted_again()
         {
@@ -423,7 +415,6 @@ namespace Alluvial.Tests.Distributors
 
             receivedLeases.Count().Should().Be(10);
         }
-
 
         [Test]
         public async Task Distribute_will_not_distribute_more_leases_than_there_are_leasables()

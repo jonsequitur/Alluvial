@@ -20,7 +20,7 @@ namespace Alluvial.Tests.Distributors
                 leasables ?? DefaultLeasables,
                 pool ?? DateTimeOffset.UtcNow.Ticks.ToString(),
                 maxDegreesOfParallelism,
-                waitInterval,
+                waitInterval ?? TimeSpan.FromSeconds(.5),
                 DefaultLeaseDuration);
             if (onReceive != null)
             {
