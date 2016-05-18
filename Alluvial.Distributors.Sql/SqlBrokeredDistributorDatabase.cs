@@ -40,69 +40,69 @@ namespace Alluvial.Distributors.Sql
             builder.InitialCatalog = "master";
 
             using (var connection = new SqlConnection(builder.ConnectionString))
+            using (var cmd = connection.CreateCommand())
             {
-                await connection.OpenAsync();
-
-                using (var cmd = connection.CreateCommand())
-                {
-                    cmd.CommandText =
-                        $@"
+                cmd.CommandText =
+                    $@"
 IF db_id('{distributorDatabaseName}') IS NULL
     BEGIN
         CREATE DATABASE [{distributorDatabaseName
-                            }]
+                        }]
         SELECT 'created'
     END
 ELSE
     BEGIN
         SELECT 'already exists'
     END";
-                    cmd.CommandType = CommandType.Text;
+                cmd.CommandType = CommandType.Text;
 
-                    var result = await cmd.ExecuteScalarAsync() as string;
+                await connection.OpenAsync();
 
-                    if (result == "created")
-                    {
-                        await RunScript(connection,
-                                        @"Alluvial.Distributors.Sql.CreateDatabase.sql",
-                                        distributorDatabaseName);
+                var result = await cmd.ExecuteScalarAsync() as string;
 
-                        await InitializeSchema(connection, distributorDatabaseName);
-                    }
+                if (result == "created")
+                {
+                    await RunScript(connection,
+                                    @"Alluvial.Distributors.Sql.CreateDatabase.sql",
+                                    distributorDatabaseName);
+
+                    await InitializeSchema(connection, distributorDatabaseName);
                 }
+
+                connection.Close();
             }
         }
-        
+
         public async Task<IEnumerable<Leasable>> GetLeasables()
         {
             var leasables = new List<Leasable>();
 
             using (var connection = new SqlConnection(ConnectionString))
+            using (var cmd = connection.CreateCommand())
             {
+                cmd.CommandType = CommandType.Text;
+                cmd.CommandText = @"SELECT [ResourceName], [Pool], [LastGranted], [LastReleased], [Expires] FROM Alluvial.Leases";
+
                 await connection.OpenAsync();
 
-                using (var cmd = connection.CreateCommand())
+                using (var reader = await cmd.ExecuteReaderAsync())
                 {
-                    cmd.CommandType = CommandType.Text;
-                    cmd.CommandText = @"SELECT [ResourceName], [Pool], [LastGranted], [LastReleased], [Expires] FROM Alluvial.Leases";
-
-                    using (var reader = await cmd.ExecuteReaderAsync())
+                    while (await reader.ReadAsync())
                     {
-                        while (await reader.ReadAsync())
+                        var leasable = new Leasable
                         {
-                            var leasable = new Leasable
-                            {
-                                ResourceName = await reader.GetFieldValueAsync<string>(0),
-                                Pool = await reader.GetFieldValueAsync<string>(1),
-                                LeaseLastGranted = await reader.GetFieldValueAsync<DateTimeOffset>(2),
-                                LeaseLastReleased = await reader.GetFieldValueAsync<DateTimeOffset>(3),
-                                LeaseExpires = await reader.GetFieldValueAsync<DateTimeOffset>(4)
-                            };
+                            ResourceName = await reader.GetFieldValueAsync<string>(0),
+                            Pool = await reader.GetFieldValueAsync<string>(1),
+                            LeaseLastGranted = await reader.GetFieldValueAsync<DateTimeOffset>(2),
+                            LeaseLastReleased = await reader.GetFieldValueAsync<DateTimeOffset>(3),
+                            LeaseExpires = await reader.GetFieldValueAsync<DateTimeOffset>(4)
+                        };
 
-                            leasables.Add(leasable);
-                        }
+                        leasables.Add(leasable);
                     }
                 }
+
+                connection.Close();
             }
 
             return leasables;
@@ -117,6 +117,7 @@ ELSE
             using (var connection = new SqlConnection(ConnectionString))
             {
                 await InitializeSchema(connection, connection.Database);
+                connection.Close();
             }
         }
 
@@ -145,8 +146,8 @@ ELSE
         {
             using (var connection = new SqlConnection(ConnectionString))
             {
-                await connection.OpenAsync();
                 await RegisterLeasableResources(leasables, pool, connection);
+                connection.Close();
             }
         }
 
@@ -192,7 +193,18 @@ IF NOT EXISTS (SELECT * FROM [Alluvial].[Leases]
                     AddParameter(cmd, @"@lastReleased", resource.LeaseLastReleased);
                     AddParameter(cmd, @"@expires", DateTimeOffset.MinValue);
 
-                    await cmd.ExecuteScalarAsync();
+                    try
+                    {
+                        await connection.OpenAsync(backoff: TimeSpan.FromMilliseconds(100));
+                        await cmd.ExecuteScalarAsync();
+                    }
+                    catch (SqlException exception)
+                    {
+                        if (exception.Number != 2627) // primary key violation
+                        {
+                            throw;
+                        }
+                    }
                 }
             }
         }
@@ -219,11 +231,8 @@ IF NOT EXISTS (SELECT * FROM [Alluvial].[Leases]
                 .ReadToEnd()
                 .Replace(@"[{DatabaseName}]", $@"[{databaseName}]")
                 .Split(new[] { "GO" }, StringSplitOptions.RemoveEmptyEntries);
-
-            if (connection.State != ConnectionState.Open)
-            {
-                await connection.OpenAsync();
-            }
+            
+            await connection.OpenAsync(backoff: TimeSpan.FromMilliseconds(100));
 
             foreach (var script in scripts)
             {

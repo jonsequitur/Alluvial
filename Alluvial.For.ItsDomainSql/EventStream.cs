@@ -23,6 +23,7 @@ namespace Alluvial.For.ItsDomainSql
             return Stream.PartitionedByRange<StorableEvent, long, Guid>(
                 query: async (query, partition) =>
                        await storableEvents()
+                                 .AsNoTracking()
                                  .Where(e => e.Id > query.Cursor.Position)
                                  .WithinPartition(e => e.AggregateId, partition)
                                  .OrderBy(e => e.Id)
@@ -118,6 +119,7 @@ namespace Alluvial.For.ItsDomainSql
             IStreamQueryRangePartition<Guid> partition = null)
         {
             var query = events
+                .AsNoTracking()
                 .Where(e => e.Id > streamQuery.Cursor.Position);
 
             if (partition != null)
@@ -165,6 +167,7 @@ namespace Alluvial.For.ItsDomainSql
             long toCursor)
         {
             var query = storableEvents()
+                .AsNoTracking()
                 .Where(e => e.AggregateId == aggregateId)
                 .Where(e => e.Id >= fromCursor && e.Id <= toCursor);
 
