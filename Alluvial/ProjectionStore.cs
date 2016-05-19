@@ -23,6 +23,25 @@ namespace Alluvial
                 new AnonymousProjectionStore<TKey, TProjection>(get, put);
 
         /// <summary>
+        /// Creates a projection store.
+        /// </summary>
+        /// <typeparam name="TKey">The type of the key.</typeparam>
+        /// <typeparam name="TProjection">The type of the projection.</typeparam>
+        /// <param name="get">The operation specifying how to persist a projection to storage.</param>
+        /// <param name="put">The operation specifying how to retrieve a projection from storage.</param>
+        /// <returns></returns>
+        public static IProjectionStore<TKey, TProjection> Create<TKey, TProjection>(
+            Func<TKey, TProjection> get,
+            Action<TKey, TProjection> put) =>
+                new AnonymousProjectionStore<TKey, TProjection>(
+                    key => get(key).CompletedTask(),
+                    (key, projection) =>
+                    {
+                        put(key, projection);
+                        return Unit.Default.CompletedTask();
+                    });
+
+        /// <summary>
         /// Traces calls to a projection store instance.
         /// </summary>
         /// <typeparam name="TKey">The type of the key to the store.</typeparam>
