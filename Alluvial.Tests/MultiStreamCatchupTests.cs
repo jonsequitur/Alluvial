@@ -99,13 +99,11 @@ namespace Alluvial.Tests
         [Test]
         public async Task Catchup_starting_cursor_can_be_specified()
         {
-            var catchup = StreamCatchup.All(streamSource.StreamPerAggregate(), batchSize: 50);
-
             var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
             var updatedStreams = streamSource.StreamPerAggregate();
             var cursor = updatedStreams.NewCursor();
             cursor.AdvanceTo("50");
-            catchup = StreamCatchup.All(updatedStreams, cursor);
+            var catchup = StreamCatchup.All(updatedStreams, cursor);
 
             using (catchup.Subscribe(new BalanceProjector(), projectionStore))
             {
@@ -271,7 +269,7 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task RunSingleBatch_throws_when_an_aggregator_throws_an_exception()
+        public void RunSingleBatch_throws_when_an_aggregator_throws_an_exception()
         {
             var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
             var count = 0;
@@ -472,23 +470,15 @@ namespace Alluvial.Tests
 
             var getCount = 0;
             var projectionStore = ProjectionStore.Create<string, BalanceProjection>(
-                get: async key =>
+                get: key =>
                 {
                     if (key.Contains(streamId))
                     {
-                        Console.WriteLine("Get");
                         Interlocked.Increment(ref getCount);
                     }
                     return projection;
                 },
-                put: async (key, p) =>
-                {
-                    if (streamId == key)
-                    {
-                        Console.WriteLine("Put");
-                    }
-                    projection = p;
-                });
+                put: (key, p) => projection = p);
 
             var catchup = StreamCatchup.All(streamSource.StreamPerAggregate());
             using (catchup.Subscribe(new BalanceProjector(), projectionStore))
@@ -509,17 +499,17 @@ namespace Alluvial.Tests
             // arrange
             var fetchCount = 0;
 
-            var streams = Stream.Create<string, int>(async q =>
+            var streams = Stream.Create<string, int>(q =>
             {
                 Interlocked.Increment(ref fetchCount);
                 return Enumerable.Empty<string>();
             }) .Trace()
-                                .IntoMany(async (item, cursor, toCursor) => Enumerable.Empty<string>().AsSequentialStream());
+                                .IntoMany((item, cursor, toCursor) => Enumerable.Empty<string>().AsSequentialStream());
 
             var catchup = StreamCatchup.All(streams)
                                        .Backoff(5.Seconds());
 
-            catchup.Subscribe(async (p, b) =>
+            catchup.Subscribe((p, b) =>
             {
                 p.Value = p.Value ?? new List<string>();
                 p.Value.AddRange(b);
@@ -548,7 +538,7 @@ namespace Alluvial.Tests
                     Interlocked.Increment(ref fetchCount);
                     return Enumerable.Empty<string>();
                 })
-                                .IntoMany(async (a, b, c, d) => Enumerable.Empty<string>().AsSequentialStream())
+                                .IntoMany((a, b, c, d) => Enumerable.Empty<string>().AsSequentialStream())
                                 .Trace();
 
             var partitions = Values.AtoZ()

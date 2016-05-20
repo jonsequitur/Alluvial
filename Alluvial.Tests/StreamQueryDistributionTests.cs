@@ -141,7 +141,7 @@ namespace Alluvial.Tests
             }.CreateInMemoryDistributor();
 
             var catchup = partitionedStream
-                .IntoMany(async (word, b, c, p) => new[] { word }.AsStream())
+                .IntoMany((word, b, c, p) => new[] { word }.AsStream())
                 .CreateDistributedCatchup(
                     distributor,
                     batchSize: 10,

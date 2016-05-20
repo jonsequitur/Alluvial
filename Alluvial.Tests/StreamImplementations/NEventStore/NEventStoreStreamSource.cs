@@ -27,7 +27,7 @@ namespace Alluvial.Tests
         public IStream<IStream<IDomainEvent, int>, string> StreamPerAggregate()
         {
             return StreamUpdates()
-                .IntoMany(
+                .IntoManyAsync(
                     async (streamUpdate, fromCursor, toCursor) =>
                     {
                         var allEvents = NEventStoreStream.AllEvents(store);
@@ -40,11 +40,9 @@ namespace Alluvial.Tests
                                              .Cast<IDomainEvent>()
                                              .Where(e => e.AggregateId == streamUpdate.StreamId);
 
-                        IStream<IDomainEvent, int> stream = aggregate.AsStream(
+                        return aggregate.AsStream(
                             id: streamUpdate.StreamId,
                             cursorPosition: e => e.StreamRevision);
-
-                        return stream;
                     });
         }
 
@@ -53,16 +51,16 @@ namespace Alluvial.Tests
             return Stream.Create(
                 id: "NEventStoreStreamSource.StreamUpdates",
                 // get only changes since the last checkpoint
-                query: async q => store.Advanced
-                                       .GetFrom(q.Cursor.Position)
-                                       .GroupBy(c => c.StreamId)
-                                       .Select(c => new NEventStoreStreamUpdate
-                                       {
-                                           StreamId = c.Key,
-                                           CheckpointToken = c.Max(e => e.CheckpointToken),
-                                           StreamRevision = c.Max(e => e.StreamRevision)
-                                       })
-                                       .Take(q.BatchSize ?? 100000),
+                query: q => store.Advanced
+                                 .GetFrom(q.Cursor.Position)
+                                 .GroupBy(c => c.StreamId)
+                                 .Select(c => new NEventStoreStreamUpdate
+                                 {
+                                     StreamId = c.Key,
+                                     CheckpointToken = c.Max(e => e.CheckpointToken),
+                                     StreamRevision = c.Max(e => e.StreamRevision)
+                                 })
+                                 .Take(q.BatchSize ?? 100000),
                 advanceCursor: (query, batch) =>
                 {
                     var last = batch.LastOrDefault();

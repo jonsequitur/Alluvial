@@ -51,7 +51,7 @@ namespace Alluvial.For.ItsDomainSql
                                                       q.BatchSize,
                                                       update.AggregateId,
                                                       fromCursor,
-                                                      toCursor)).CompletedTask());
+                                                      toCursor)));
 
         /// <summary>
         /// Returns a partitioned stream of streams, each of which contains all of the events for a single aggregate.
@@ -73,7 +73,7 @@ namespace Alluvial.For.ItsDomainSql
                                                           q.BatchSize,
                                                           update.AggregateId,
                                                           fromCursor,
-                                                          toCursor)).CompletedTask());
+                                                          toCursor)));
 
         private static IStream<EventStreamChange, long> AllChanges(
             string streamId,
