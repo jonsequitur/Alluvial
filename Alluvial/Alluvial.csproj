@@ -90,7 +90,6 @@
     <Compile Include="IAggregatorSubscription.cs" />
     <Compile Include="AggregatorSubscription{TProjection,TData}.cs" />
     <Compile Include="AnonymousStream{TData,TCursor}.cs" />
-    <Compile Include="AnonymousStreamSource{TKey,TData}.cs" />
     <Compile Include="AnonymousDisposable.cs" />
     <Compile Include="Cursor.cs" />
     <Compile Include="PartitionBuilders\SqlGuidRangePartition.cs" />
@@ -109,7 +108,6 @@
     <Compile Include="StreamQueryPartition{T}.cs" />
     <Compile Include="StreamQueryRangePartition{T}.cs" />
     <Compile Include="StreamQueryValuePartition{T}.cs" />
-    <Compile Include="StreamSource.cs" />
     <Compile Include="StreamCatchup.cs" />
     <Compile Include="Stream.cs" />
     <Compile Include="Disposable.cs" />
@@ -117,7 +115,6 @@
     <Compile Include="IStream{T}.cs" />
     <Compile Include="IStreamCatchup{T}.cs" />
     <Compile Include="IStreamIterator{T}.cs" />
-    <Compile Include="IStreamSource{TKey,TData}.cs" />
     <Compile Include="IProjectionStore{TKey,TProjection}.cs" />
     <Compile Include="IStreamQuery.cs" />
     <Compile Include="IStreamBatch{T}.cs" />
