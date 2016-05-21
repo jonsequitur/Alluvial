@@ -5,8 +5,7 @@ using NEventStore;
 
 namespace Alluvial.Tests
 {
-    public class NEventStoreStreamSource :
-        IStreamSource<string, IDomainEvent, int>
+    public class NEventStoreStreamSource
     {
         private readonly IStoreEvents store;
 
@@ -14,19 +13,13 @@ namespace Alluvial.Tests
         {
             if (store == null)
             {
-                throw new ArgumentNullException("store");
+                throw new ArgumentNullException(nameof(store));
             }
             this.store = store;
         }
 
-        public IStream<IDomainEvent, int> Open(string streamId)
-        {
-            return NEventStoreStream.ByAggregate(store, streamId).DomainEvents();
-        }
-        
-        public IStream<IStream<IDomainEvent, int>, string> StreamPerAggregate()
-        {
-            return StreamUpdates()
+        public IStream<IStream<IDomainEvent, int>, string> StreamPerAggregate() =>
+            StreamUpdates()
                 .IntoManyAsync(
                     async (streamUpdate, fromCursor, toCursor) =>
                     {
@@ -44,7 +37,6 @@ namespace Alluvial.Tests
                             id: streamUpdate.StreamId,
                             cursorPosition: e => e.StreamRevision);
                     });
-        }
 
         private IStream<NEventStoreStreamUpdate, string> StreamUpdates()
         {
