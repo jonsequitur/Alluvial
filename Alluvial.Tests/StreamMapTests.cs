@@ -5,6 +5,7 @@ using FluentAssertions;
 using System.Linq;
 using System.Threading.Tasks;
 using Alluvial.Tests.BankDomain;
+using Alluvial.Tests.StreamImplementations.NEventStore;
 using NEventStore;
 using NUnit.Framework;
 

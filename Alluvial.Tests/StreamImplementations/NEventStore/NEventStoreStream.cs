@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Alluvial.Tests.BankDomain;
 using NEventStore;
 
-namespace Alluvial.Tests
+namespace Alluvial.Tests.StreamImplementations.NEventStore
 {
     public static class NEventStoreStream
     {

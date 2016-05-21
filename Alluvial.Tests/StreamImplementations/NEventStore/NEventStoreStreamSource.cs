@@ -3,7 +3,7 @@ using System.Linq;
 using Alluvial.Tests.BankDomain;
 using NEventStore;
 
-namespace Alluvial.Tests
+namespace Alluvial.Tests.StreamImplementations.NEventStore
 {
     public class NEventStoreStreamSource
     {
