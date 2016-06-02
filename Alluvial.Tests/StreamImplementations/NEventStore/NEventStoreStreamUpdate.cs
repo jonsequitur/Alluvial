@@ -1,4 +1,4 @@
-namespace Alluvial.Tests
+namespace Alluvial.Tests.StreamImplementations.NEventStore
 {
     public class NEventStoreStreamUpdate
     {

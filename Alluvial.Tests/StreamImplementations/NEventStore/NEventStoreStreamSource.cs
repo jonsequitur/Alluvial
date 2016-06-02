@@ -1,9 +1,10 @@
 using System;
 using System.Linq;
+using Alluvial.Fluent;
 using Alluvial.Tests.BankDomain;
 using NEventStore;
 
-namespace Alluvial.Tests
+namespace Alluvial.Tests.StreamImplementations.NEventStore
 {
     public class NEventStoreStreamSource
     {
@@ -21,21 +22,31 @@ namespace Alluvial.Tests
         public IStream<IStream<IDomainEvent, int>, string> StreamPerAggregate() =>
             StreamUpdates()
                 .IntoMany(
-                    async (streamUpdate, fromCursor, toCursor) =>
+                    (streamUpdate, fromCursor, toCursor) =>
                     {
-                        var allEvents = NEventStoreStream.AllEvents(store);
+                        return Stream.Of<IDomainEvent>(streamUpdate.StreamId)
+                                     .Cursor(_ => _.By<int>())
+                                     .Advance(
+                                         (q, b) =>
+                                         {
+                                             var last = b.LastOrDefault();
+                                             if (last != null)
+                                             {
+                                                 q.Cursor.AdvanceTo(last.StreamRevision);
+                                             }
+                                         })
+                                     .Create(async query =>
+                                     {
+                                         var events = NEventStoreStream.ByAggregate(
+                                             store,
+                                             streamUpdate.StreamId);
 
-                        var cursor = Cursor.New(fromCursor);
-                        var batch = await allEvents.CreateQuery(cursor, int.Parse(toCursor))
-                                                   .NextBatch();
+                                         var batch = await events.Fetch(query);
 
-                        var aggregate = batch.Select(e => e.Body)
-                                             .Cast<IDomainEvent>()
-                                             .Where(e => e.AggregateId == streamUpdate.StreamId);
-
-                        return aggregate.AsStream(
-                            id: streamUpdate.StreamId,
-                            cursorPosition: e => e.StreamRevision);
+                                         return batch
+                                             .Select(e => e.Body)
+                                             .Cast<IDomainEvent>();
+                                     });
                     });
 
         private IStream<NEventStoreStreamUpdate, string> StreamUpdates()

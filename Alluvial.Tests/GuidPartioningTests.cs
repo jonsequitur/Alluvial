@@ -4,7 +4,6 @@ using FluentAssertions;
 using Its.Log.Instrumentation;
 using System.Linq;
 using System.Numerics;
-using System.Threading.Tasks;
 using NUnit.Framework;
 
 namespace Alluvial.Tests
@@ -54,7 +53,7 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task SqlGuidPartitioner_can_round_trip_random_guids_correctly()
+        public void SqlGuidPartitioner_can_round_trip_random_guids_correctly()
         {
             var list = Enumerable.Range(1, 10000).Select(_ => Guid.NewGuid()).ToList();
 
@@ -73,7 +72,7 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task SqlGuidPartitioner_can_round_trip_interesting_guids_correctly()
+        public void SqlGuidPartitioner_can_round_trip_interesting_guids_correctly()
         {
             guidsSortedLikeSqlServerSortsThem
                 .ToList()
@@ -91,20 +90,20 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task SqlGuidPartitioner_can_round_trip_max_guid_correctly()
+        public void SqlGuidPartitioner_can_round_trip_max_guid_correctly()
         {
             var maxGuid = Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff");
             TestGuidRoundTrip(maxGuid);
         }
 
         [Test]
-        public async Task SqlGuidPartitioner_can_round_trip_empty_guid_correctly()
+        public void SqlGuidPartitioner_can_round_trip_empty_guid_correctly()
         {
             TestGuidRoundTrip(Guid.Empty);
         }
 
         [Test]
-        public async Task OrderBySqlServer_sort_order_matches_SQL_Server_sort_order()
+        public void OrderBySqlServer_sort_order_matches_SQL_Server_sort_order()
         {
             var sqlGuidsRandomlyReordered = guidsSortedLikeSqlServerSortsThem
                 .OrderBy(_ => Guid.NewGuid());
@@ -120,7 +119,7 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task OrderBySqlServer_sort_order_converted_to_integers_is_ascending()
+        public void OrderBySqlServer_sort_order_converted_to_integers_is_ascending()
         {
             var sqlGuidsRandomlyReordered = guidsSortedLikeSqlServerSortsThem
                 .OrderBy(_ => Guid.NewGuid());
@@ -132,7 +131,7 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task BigInteger_representation_should_preserve_SQL_sort_order()
+        public void BigInteger_representation_should_preserve_SQL_sort_order()
         {
             guidsSortedLikeSqlServerSortsThem.Select(g => g.ToBigInteger())
                                              .Should()
@@ -140,7 +139,7 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task OrderBySqlServer_sort_order_converted_to_integers_is_ascending_for_random_integers()
+        public void OrderBySqlServer_sort_order_converted_to_integers_is_ascending_for_random_integers()
         {
             var random = new Random();
 
@@ -155,7 +154,7 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task ShiftNegativeToUnsigned_and_ShiftUnsignedToNegative_are_complementary()
+        public void ShiftNegativeToUnsigned_and_ShiftUnsignedToNegative_are_complementary()
         {
             var bigInts = new[]
             {
@@ -178,14 +177,14 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task ShiftUnsignedToNegative_shifts_max_guid_to_negative_1()
+        public void ShiftUnsignedToNegative_shifts_max_guid_to_negative_1()
         {
             var maxGuid = Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff");
             maxGuid.ToBigInteger().ShiftUnsignedToNegative().Should().Be(-1);
         }
 
         [Test]
-        public async Task ShiftNegativeToUnsigned_treats_negative_1_as_the_max_unsigned_value()
+        public void ShiftNegativeToUnsigned_treats_negative_1_as_the_max_unsigned_value()
         {
             var bigInteger = new BigInteger(-1)
                 .ShiftNegativeToUnsigned();
@@ -196,7 +195,7 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task Max_unsigned_integer_guidifies_as_max_guid()
+        public void Max_unsigned_integer_guidifies_as_max_guid()
         {
             SqlGuidPartitionBuilder.MaxUnsigned128BitBigInt
                                    .ToGuid()
@@ -205,7 +204,7 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task ShiftNegativeToUnsigned_treats_negative_max_unsigned_as_the_max_signed_value_plus_1()
+        public void ShiftNegativeToUnsigned_treats_negative_max_unsigned_as_the_max_signed_value_plus_1()
         {
             (new BigInteger(0) - SqlGuidPartitionBuilder.MaxSigned128BitBigInt)
                 .ShiftNegativeToUnsigned()
@@ -214,7 +213,7 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task Guid_partitions_are_gapless()
+        public void Guid_partitions_are_gapless()
         {
             var numberOfPartitions = 1000;
 
@@ -240,7 +239,7 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task Guid_partitions_result_in_roughly_equal_distribution()
+        public void Guid_partitions_result_in_roughly_equal_distribution()
         {
             var guids = Enumerable.Range(1, 10000)
                                   .Select(_ => Guid.NewGuid())
