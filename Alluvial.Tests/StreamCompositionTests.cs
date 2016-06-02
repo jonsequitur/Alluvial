@@ -5,6 +5,7 @@ using FluentAssertions;
 using Its.Log.Instrumentation;
 using System.Linq;
 using System.Threading.Tasks;
+using Alluvial.Fluent;
 using Alluvial.Tests.BankDomain;
 using Alluvial.Tests.StreamImplementations.NEventStore;
 using NEventStore;
@@ -136,23 +137,26 @@ namespace Alluvial.Tests
                 AggregateId = aggregateId
             }, 50);
 
-            var streamPerAggregate = upstream.IntoManyAsync(
-                async (streamId, fromCursor, toCursor) =>
+            var streamPerAggregate = upstream.IntoMany(
+                (streamId, fromCursor, toCursor) =>
                 {
-                    var stream = NEventStoreStream.AllEvents(store);
+                    return Stream.Of<EventMessage>()
+                                 .Cursor(_ => _.By<string>())
+                                 .Create(async _ =>
+                                         await NEventStoreStream.AllEvents(store).Fetch(NEventStoreStream.AllEvents(store)
+                                                                                                         .CreateQuery(Cursor.New(fromCursor), int.Parse(toCursor))))
+                                 .Map(es => es.Select(e => e.Body)
+                                              .Cast<IDomainEvent>());
 
-                    var cursor = Cursor.New(fromCursor);
-                    var events = await stream.CreateQuery(cursor, int.Parse(toCursor)).NextBatch();
-
-                    return events.Select(e => e.Body)
-                                 .Cast<IDomainEvent>()
-                                 .GroupBy(e => e.AggregateId)
-                                 .Select(@group => @group.AsStream(cursorPosition: i => i.CheckpointToken));
+                    //                    return events.Select(e => e.Body)
+                    //                                 .Cast<IDomainEvent>()
+                    //                                 .GroupBy(e => e.AggregateId)
+                    //                                 .Select(@group => @group.AsStream(cursorPosition: i => i.CheckpointToken));
                 });
 
             var streams = await streamPerAggregate.CreateQuery(batchSize: 25).NextBatch();
 
-            foreach (var stream in streams.SelectMany(s => s))
+            foreach (var stream in streams.Select(s => s))
             {
                 var batch = await stream.CreateQuery().NextBatch();
                 batch.Count.Should().Be(25);

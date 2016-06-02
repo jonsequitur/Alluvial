@@ -275,7 +275,7 @@ namespace Alluvial
         /// <param name="upstream">The upstream stream.</param>
         /// <param name="queryDownstream">The downstream query.</param>
         /// <returns></returns>
-        public static IStream<TDownstream, TUpstreamCursor> IntoManyAsync<TUpstream, TDownstream, TUpstreamCursor>(
+        public static IStream<TDownstream, TUpstreamCursor> IntoMany<TUpstream, TDownstream, TUpstreamCursor>(
             this IStream<TUpstream, TUpstreamCursor> upstream,
             QueryDownstreamAsync<TUpstream, TDownstream, TUpstreamCursor> queryDownstream)
         {
@@ -321,7 +321,7 @@ namespace Alluvial
         /// <param name="partitionedStream">The partitioned stream.</param>
         /// <param name="queryDownstream">The query downstream.</param>
         /// <returns></returns>
-        public static IPartitionedStream<TDownstream, TUpstreamCursor, TPartition> IntoManyAsync<TUpstream, TDownstream, TUpstreamCursor, TPartition>(
+        public static IPartitionedStream<TDownstream, TUpstreamCursor, TPartition> IntoMany<TUpstream, TDownstream, TUpstreamCursor, TPartition>(
             this IPartitionedStream<TUpstream, TUpstreamCursor, TPartition> partitionedStream,
             QueryDownstreamAsync<TUpstream, TDownstream, TUpstreamCursor, TPartition> queryDownstream)
         {
@@ -375,11 +375,12 @@ namespace Alluvial
         public static IStream<TDownstream, TUpstreamCursor> IntoMany<TUpstream, TDownstream, TUpstreamCursor>(
             this IStream<TUpstream, TUpstreamCursor> upstream,
             QueryDownstream<TUpstream, TDownstream, TUpstreamCursor> queryDownstream) =>
-                upstream.IntoManyAsync(
-                    (upstreamItem, fromCursor, toCursor) =>
-                    queryDownstream(upstreamItem,
-                                    fromCursor,
-                                    toCursor).CompletedTask());
+                upstream.IntoMany(
+                    new QueryDownstreamAsync<TUpstream, TDownstream, TUpstreamCursor>(
+                        (upstreamItem, fromCursor, toCursor) =>
+                        queryDownstream(upstreamItem,
+                                        fromCursor,
+                                        toCursor).CompletedTask()));
 
         /// <summary>
         /// Splits a partitioned stream into many streams that can be independently caught up.
@@ -395,12 +396,13 @@ namespace Alluvial
             this IPartitionedStream<TUpstream, TUpstreamCursor, TPartition> partitionedStream,
             QueryDownstream<TUpstream, TDownstream, TUpstreamCursor, TPartition> queryDownstream) =>
                 partitionedStream
-                    .IntoManyAsync(
-                        (upstreamItem, fromCursor, toCursor, partition) =>
-                        queryDownstream(upstreamItem,
-                                        fromCursor,
-                                        toCursor,
-                                        partition).CompletedTask());
+                    .IntoMany(
+                        new QueryDownstreamAsync<TUpstream, TDownstream, TUpstreamCursor, TPartition>(
+                            (upstreamItem, fromCursor, toCursor, partition) =>
+                            queryDownstream(upstreamItem,
+                                            fromCursor,
+                                            toCursor,
+                                            partition).CompletedTask()));
 
         /// <summary>
         /// Aggregates a single batch of data from a stream using the specified aggregator and projection.

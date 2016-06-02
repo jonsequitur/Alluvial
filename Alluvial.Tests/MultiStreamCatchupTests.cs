@@ -411,12 +411,13 @@ namespace Alluvial.Tests
             var streamId = Guid.NewGuid().ToString();
             var queriedEvents = new ConcurrentBag<IDomainEvent>();
 
-            var balanceProjections = new InMemoryProjectionStore<BalanceProjection>();
+            var balanceProjections = new InMemoryProjectionStore<BalanceProjection>().Trace();
             await balanceProjections.Put(streamId, new BalanceProjection
             {
                 CursorPosition = 2
             });
             var catchup = StreamCatchup.All(streamSource.StreamPerAggregate()
+                                                        .Trace()
                                                         .Map(ss => ss.Select(s => s.Trace(onResults: (q, b) =>
                                                         {
                                                             foreach (var e in b)
@@ -429,11 +430,12 @@ namespace Alluvial.Tests
 
             using (catchup.Subscribe(new BalanceProjector(), balanceProjections))
             {
-                store.WriteEvents(streamId); // "101" - 1
-                store.WriteEvents(streamId); // "102" - 2
-                store.WriteEvents(streamId); // "103" - 3
+                store.WriteEvents(streamId, amount: 1); // "101" - 1
+                store.WriteEvents(streamId, amount: 2); // "102" - 2
+                store.WriteEvents(streamId, amount: 3); // "103" - 3
 
                 await catchup.RunSingleBatch();
+
                 queriedEvents.Count
                              .Should()
                              .Be(1,
@@ -442,7 +444,7 @@ namespace Alluvial.Tests
                              .ContainSingle(e => e.StreamRevision == 3,
                                             "only the most recent event should be queried");
 
-                var accountHistoryProjections = new InMemoryProjectionStore<AccountHistoryProjection>();
+                var accountHistoryProjections = new InMemoryProjectionStore<AccountHistoryProjection>().Trace();
                 await accountHistoryProjections.Put(streamId, new AccountHistoryProjection
                 {
                     CursorPosition = 2
@@ -450,11 +452,12 @@ namespace Alluvial.Tests
 
                 using (catchup.Subscribe(new AccountHistoryProjector(), accountHistoryProjections))
                 {
-                    store.WriteEvents(streamId);
+                    store.WriteEvents(streamId, amount: 4);
+
                     await catchup.RunSingleBatch();
 
                     queriedEvents.Select(e => e.StreamRevision)
-                                 .ShouldBeEquivalentTo(new[] { 3, 4 },
+                                 .ShouldBeEquivalentTo(new[] { 3, 3, 4 },
                                                        "event 3 needs to be repeated because the newly-subscribed aggregator hasn't seen it yet");
                 }
             }

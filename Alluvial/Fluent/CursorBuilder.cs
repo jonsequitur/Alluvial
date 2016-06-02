@@ -19,5 +19,11 @@ namespace Alluvial.Fluent
             {
                 NewCursor = @new
             };
+
+        public CursorBuilder<TCursor> StartsAt<TCursor>(TCursor position) =>
+            new CursorBuilder<TCursor>
+            {
+                NewCursor = () => Cursor.New(position)
+            };
     }
 }

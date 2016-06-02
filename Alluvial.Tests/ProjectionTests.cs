@@ -47,7 +47,7 @@ namespace Alluvial.Tests
             };
 
             var balanceProjection = await stream.Aggregate(AccountBalanceProjector(),
-                                                             projection);
+                                                           projection);
 
             balanceProjection.Balance
                              .Should()
