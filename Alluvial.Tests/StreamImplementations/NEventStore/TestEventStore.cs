@@ -12,14 +12,12 @@ namespace Alluvial.Tests.StreamImplementations.NEventStore
             Formatter<EventMessage>.RegisterForAllMembers();
         }
 
-        public static IStoreEvents Create()
-        {
-            return Wireup.Init()
-                         .UsingInMemoryPersistence()
-                         .InitializeStorageEngine()
-                         .UsingJsonSerialization()
-                         .Build();
-        }
+        public static IStoreEvents Create() =>
+            Wireup.Init()
+                  .UsingInMemoryPersistence()
+                  .InitializeStorageEngine()
+                  .UsingJsonSerialization()
+                  .Build();
 
         public static IStoreEvents Populate(this IStoreEvents store, string streamId = null)
         {

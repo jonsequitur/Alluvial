@@ -42,19 +42,6 @@ namespace Alluvial.Tests.StreamImplementations.NEventStore
         }
 
         public static void WriteEvents(
-            this IStoreEvents store,
-            Func<int, string> streamId,
-            decimal amount = 1,
-            int howMany = 1, 
-            string bucketId = null)
-        {
-            for (var i = 0; i < howMany; i++)
-            {
-                store.WriteEvents(streamId(i), amount, bucketId: bucketId);
-            }
-        }
-
-        public static void WriteEvents(
             this IStoreEvents store, 
             string streamId, 
             decimal amount = 1, 

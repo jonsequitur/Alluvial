@@ -24,7 +24,6 @@ namespace Alluvial.Tests.StreamImplementations.NEventStore
                 .IntoMany(
                     (streamUpdate, fromCursor, toCursor) =>
                     {
-#if true
                         return Stream.Of<IDomainEvent>(streamUpdate.StreamId)
                                      .Cursor(_ => _.By<int>())
                                      .Advance(
@@ -48,21 +47,6 @@ namespace Alluvial.Tests.StreamImplementations.NEventStore
                                              .Select(e => e.Body)
                                              .Cast<IDomainEvent>();
                                      });
-#else
-                        var allEvents = NEventStoreStream.AllEvents(store);
-                        var cursor = Cursor.New(fromCursor);
-                        var batch = allEvents.CreateQuery(cursor)
-                                             .NextBatch()
-                                             .Result;
-
-                        var aggregate = batch.Select(e => e.Body)
-                                             .Cast<IDomainEvent>()
-                                             .Where(e => e.AggregateId == streamUpdate.StreamId);
-
-                        return aggregate.AsStream(
-                            id: streamUpdate.StreamId,
-                            cursorPosition: e => e.StreamRevision);
-#endif
                     });
 
         private IStream<NEventStoreStreamUpdate, string> StreamUpdates()
