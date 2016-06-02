@@ -4,6 +4,7 @@ using FluentAssertions;
 using System.Linq;
 using System.Threading.Tasks;
 using Alluvial.Tests.BankDomain;
+using Alluvial.Tests.StreamImplementations.NEventStore;
 using Microsoft.CSharp.RuntimeBinder;
 using NEventStore;
 using NUnit.Framework;
@@ -46,7 +47,7 @@ namespace Alluvial.Tests
             };
 
             var balanceProjection = await stream.Aggregate(AccountBalanceProjector(),
-                                                             projection);
+                                                           projection);
 
             balanceProjection.Balance
                              .Should()

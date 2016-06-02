@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Alluvial.Tests.BankDomain;
+using Alluvial.Tests.StreamImplementations.NEventStore;
 using NEventStore;
 using NUnit.Framework;
 
@@ -99,13 +100,11 @@ namespace Alluvial.Tests
         [Test]
         public async Task Catchup_starting_cursor_can_be_specified()
         {
-            var catchup = StreamCatchup.All(streamSource.StreamPerAggregate(), batchSize: 50);
-
             var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
             var updatedStreams = streamSource.StreamPerAggregate();
             var cursor = updatedStreams.NewCursor();
             cursor.AdvanceTo("50");
-            catchup = StreamCatchup.All(updatedStreams, cursor);
+            var catchup = StreamCatchup.All(updatedStreams, cursor);
 
             using (catchup.Subscribe(new BalanceProjector(), projectionStore))
             {
@@ -271,7 +270,7 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task RunSingleBatch_throws_when_an_aggregator_throws_an_exception()
+        public void RunSingleBatch_throws_when_an_aggregator_throws_an_exception()
         {
             var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
             var count = 0;
@@ -412,12 +411,13 @@ namespace Alluvial.Tests
             var streamId = Guid.NewGuid().ToString();
             var queriedEvents = new ConcurrentBag<IDomainEvent>();
 
-            var balanceProjections = new InMemoryProjectionStore<BalanceProjection>();
+            var balanceProjections = new InMemoryProjectionStore<BalanceProjection>().Trace();
             await balanceProjections.Put(streamId, new BalanceProjection
             {
                 CursorPosition = 2
             });
             var catchup = StreamCatchup.All(streamSource.StreamPerAggregate()
+                                                        .Trace()
                                                         .Map(ss => ss.Select(s => s.Trace(onResults: (q, b) =>
                                                         {
                                                             foreach (var e in b)
@@ -430,11 +430,12 @@ namespace Alluvial.Tests
 
             using (catchup.Subscribe(new BalanceProjector(), balanceProjections))
             {
-                store.WriteEvents(streamId); // "101" - 1
-                store.WriteEvents(streamId); // "102" - 2
-                store.WriteEvents(streamId); // "103" - 3
+                store.WriteEvents(streamId, amount: 1); // "101" - 1
+                store.WriteEvents(streamId, amount: 2); // "102" - 2
+                store.WriteEvents(streamId, amount: 3); // "103" - 3
 
                 await catchup.RunSingleBatch();
+
                 queriedEvents.Count
                              .Should()
                              .Be(1,
@@ -443,7 +444,7 @@ namespace Alluvial.Tests
                              .ContainSingle(e => e.StreamRevision == 3,
                                             "only the most recent event should be queried");
 
-                var accountHistoryProjections = new InMemoryProjectionStore<AccountHistoryProjection>();
+                var accountHistoryProjections = new InMemoryProjectionStore<AccountHistoryProjection>().Trace();
                 await accountHistoryProjections.Put(streamId, new AccountHistoryProjection
                 {
                     CursorPosition = 2
@@ -451,11 +452,12 @@ namespace Alluvial.Tests
 
                 using (catchup.Subscribe(new AccountHistoryProjector(), accountHistoryProjections))
                 {
-                    store.WriteEvents(streamId);
+                    store.WriteEvents(streamId, amount: 4);
+
                     await catchup.RunSingleBatch();
 
                     queriedEvents.Select(e => e.StreamRevision)
-                                 .ShouldBeEquivalentTo(new[] { 3, 4 },
+                                 .ShouldBeEquivalentTo(new[] { 3, 3, 4 },
                                                        "event 3 needs to be repeated because the newly-subscribed aggregator hasn't seen it yet");
                 }
             }
@@ -472,23 +474,15 @@ namespace Alluvial.Tests
 
             var getCount = 0;
             var projectionStore = ProjectionStore.Create<string, BalanceProjection>(
-                get: async key =>
+                get: key =>
                 {
                     if (key.Contains(streamId))
                     {
-                        Console.WriteLine("Get");
                         Interlocked.Increment(ref getCount);
                     }
                     return projection;
                 },
-                put: async (key, p) =>
-                {
-                    if (streamId == key)
-                    {
-                        Console.WriteLine("Put");
-                    }
-                    projection = p;
-                });
+                put: (key, p) => projection = p);
 
             var catchup = StreamCatchup.All(streamSource.StreamPerAggregate());
             using (catchup.Subscribe(new BalanceProjector(), projectionStore))
@@ -509,17 +503,17 @@ namespace Alluvial.Tests
             // arrange
             var fetchCount = 0;
 
-            var streams = Stream.Create<string, int>(async q =>
+            var streams = Stream.Create<string, int>(q =>
             {
                 Interlocked.Increment(ref fetchCount);
                 return Enumerable.Empty<string>();
             }) .Trace()
-                                .IntoMany(async (item, cursor, toCursor) => Enumerable.Empty<string>().AsSequentialStream());
+                                .IntoMany((item, cursor, toCursor) => Enumerable.Empty<string>().AsSequentialStream());
 
             var catchup = StreamCatchup.All(streams)
                                        .Backoff(5.Seconds());
 
-            catchup.Subscribe(async (p, b) =>
+            catchup.Subscribe((p, b) =>
             {
                 p.Value = p.Value ?? new List<string>();
                 p.Value.AddRange(b);
@@ -548,7 +542,7 @@ namespace Alluvial.Tests
                     Interlocked.Increment(ref fetchCount);
                     return Enumerable.Empty<string>();
                 })
-                                .IntoMany(async (a, b, c, d) => Enumerable.Empty<string>().AsSequentialStream())
+                                .IntoMany((a, b, c, d) => Enumerable.Empty<string>().AsSequentialStream())
                                 .Trace();
 
             var partitions = Values.AtoZ()

@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using FluentAssertions;
 using Its.Log.Instrumentation;
 using System.Linq;
 using System.Threading.Tasks;
+using Alluvial.Fluent;
 using Alluvial.Tests.BankDomain;
+using Alluvial.Tests.StreamImplementations.NEventStore;
 using NEventStore;
 using NUnit.Framework;
 
@@ -47,7 +50,7 @@ namespace Alluvial.Tests
 
             // subscribe a catchup to the updates stream to build up an index
             indexCatchup.Subscribe(
-                Aggregator.Create<Projection<ConcurrentBag<AccountOpened>>, IDomainEvent>(async (p, events) =>
+                Aggregator.Create<Projection<ConcurrentBag<AccountOpened>>, IDomainEvent>((p, events) =>
                 {
                     foreach (var e in events.OfType<AccountOpened>()
                                             .Where(e => e.AccountType == BankAccountType.Savings))
@@ -61,9 +64,11 @@ namespace Alluvial.Tests
 
             // create a catchup over the index
             var savingsAccounts = Stream.Create<IDomainEvent, string>(
-                "Savings accounts",
-                async q => index.Value.SkipWhile(v => q.Cursor.HasReached(v.CheckpointToken))
-                                .Take(q.BatchSize ?? 1000));
+                id: "Savings accounts",
+                query: q => index.Value
+                                 .SkipWhile(v => q.Cursor.HasReached(v.CheckpointToken))
+                                 .Take(q.BatchSize ?? 1000)                );
+
             var savingsAccountsCatchup = StreamCatchup.Create(savingsAccounts);
 
             var numberOfSavingsAccounts = new Projection<int, int>();
@@ -72,7 +77,7 @@ namespace Alluvial.Tests
                 {
                     numberOfSavingsAccounts = await aggregate(numberOfSavingsAccounts);
                 },
-                aggregate: async (c, es) =>
+                aggregate: (c, es) =>
                 {
                     c.Value += es.Count;
                     return c;
@@ -106,7 +111,7 @@ namespace Alluvial.Tests
             {
                 await aggregate(projection);
             };
-            catchup.Subscribe(async (p, b) =>
+            catchup.Subscribe((p, b) =>
             {
                 p.Value += b.Sum();
                 return p;
@@ -124,7 +129,7 @@ namespace Alluvial.Tests
         public async Task One_stream_can_use_anothers_cursor_to_limit_how_far_ahead_it_looks()
         {
             var aggregateId = Guid.NewGuid().ToString();
-            Console.WriteLine(new { aggregateId });
+
             var upstream = NEventStoreStream.AggregateIds(store);
 
             store.WriteEvents(i => new AccountOpened
@@ -133,27 +138,26 @@ namespace Alluvial.Tests
             }, 50);
 
             var streamPerAggregate = upstream.IntoMany(
-                async (streamId, fromCursor, toCursor) =>
+                (streamId, fromCursor, toCursor) =>
                 {
-                    var stream = NEventStoreStream.AllEvents(store);
+                    return Stream.Of<EventMessage>()
+                                 .Cursor(_ => _.By<string>())
+                                 .Create(async _ =>
+                                         await NEventStoreStream.AllEvents(store).Fetch(NEventStoreStream.AllEvents(store)
+                                                                                                         .CreateQuery(Cursor.New(fromCursor), int.Parse(toCursor))))
+                                 .Map(es => es.Select(e => e.Body)
+                                              .Cast<IDomainEvent>());
 
-                    var cursor = Cursor.New(fromCursor);
-                    var events = await stream.CreateQuery(cursor, int.Parse(toCursor)).NextBatch();
-
-                    var s = events.Select(e => e.Body)
-                                  .Cast<IDomainEvent>()
-                                  .GroupBy(e => e.AggregateId)
-                                  .Select(group => @group.AsStream(cursorPosition: i => i.CheckpointToken));
-
-                    return s;
+                    //                    return events.Select(e => e.Body)
+                    //                                 .Cast<IDomainEvent>()
+                    //                                 .GroupBy(e => e.AggregateId)
+                    //                                 .Select(@group => @group.AsStream(cursorPosition: i => i.CheckpointToken));
                 });
 
             var streams = await streamPerAggregate.CreateQuery(batchSize: 25).NextBatch();
 
-            var count = 0;
-            foreach (var stream in streams.SelectMany(s => s))
+            foreach (var stream in streams.Select(s => s))
             {
-                count++;
                 var batch = await stream.CreateQuery().NextBatch();
                 batch.Count.Should().Be(25);
             }

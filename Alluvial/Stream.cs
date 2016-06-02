@@ -10,7 +10,7 @@ namespace Alluvial
     /// <summary>
     /// Methods for working with streams.
     /// </summary>
-    public static partial class Stream
+    public static class Stream
     {
         /// <summary>
         /// Creates a stream based on an enumerable sequence.
@@ -136,7 +136,7 @@ namespace Alluvial
         /// <param name="newCursor">A delegate that returns a new cursor.</param>
         public static IStream<TData, TCursor> Create<TData, TCursor>(
             Func<IStreamQuery<TCursor>, IEnumerable<TData>> query,
-            Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor,
+            Action<IStreamQuery<TCursor>, IStreamBatch<TData>> advanceCursor = null,
             string id = null,
             Func<ICursor<TCursor>> newCursor = null) =>
                 Create(query,
@@ -277,7 +277,7 @@ namespace Alluvial
         /// <returns></returns>
         public static IStream<TDownstream, TUpstreamCursor> IntoMany<TUpstream, TDownstream, TUpstreamCursor>(
             this IStream<TUpstream, TUpstreamCursor> upstream,
-            QueryDownstream<TUpstream, TDownstream, TUpstreamCursor> queryDownstream)
+            QueryDownstreamAsync<TUpstream, TDownstream, TUpstreamCursor> queryDownstream)
         {
             if (upstream == null)
             {
@@ -323,7 +323,7 @@ namespace Alluvial
         /// <returns></returns>
         public static IPartitionedStream<TDownstream, TUpstreamCursor, TPartition> IntoMany<TUpstream, TDownstream, TUpstreamCursor, TPartition>(
             this IPartitionedStream<TUpstream, TUpstreamCursor, TPartition> partitionedStream,
-            QueryDownstream<TUpstream, TDownstream, TUpstreamCursor, TPartition> queryDownstream)
+            QueryDownstreamAsync<TUpstream, TDownstream, TUpstreamCursor, TPartition> queryDownstream)
         {
             if (partitionedStream == null)
             {
@@ -362,6 +362,47 @@ namespace Alluvial
                     // we're passing the cursor through to the upstream query, so we don't want downstream queries to overwrite it
                 });
         }
+
+        /// <summary>
+        /// Splits a stream into many streams that can be independently caught up.
+        /// </summary>
+        /// <typeparam name="TUpstream">The type of the upstream stream.</typeparam>
+        /// <typeparam name="TDownstream">The type of the downstream streams.</typeparam>
+        /// <typeparam name="TUpstreamCursor">The type of the upstream cursor.</typeparam>
+        /// <param name="upstream">The upstream stream.</param>
+        /// <param name="queryDownstream">The downstream query.</param>
+        /// <returns></returns>
+        public static IStream<TDownstream, TUpstreamCursor> IntoMany<TUpstream, TDownstream, TUpstreamCursor>(
+            this IStream<TUpstream, TUpstreamCursor> upstream,
+            QueryDownstream<TUpstream, TDownstream, TUpstreamCursor> queryDownstream) =>
+                upstream.IntoMany(
+                    new QueryDownstreamAsync<TUpstream, TDownstream, TUpstreamCursor>(
+                        (upstreamItem, fromCursor, toCursor) =>
+                        queryDownstream(upstreamItem,
+                                        fromCursor,
+                                        toCursor).CompletedTask()));
+
+        /// <summary>
+        /// Splits a partitioned stream into many streams that can be independently caught up.
+        /// </summary>
+        /// <typeparam name="TUpstream">The type of the upstream, partitioned stream.</typeparam>
+        /// <typeparam name="TDownstream">The type of the downstream streams.</typeparam>
+        /// <typeparam name="TPartition">The type of the partition.</typeparam>
+        /// <typeparam name="TUpstreamCursor">The type of the partitionedStream cursor.</typeparam>
+        /// <param name="partitionedStream">The partitioned stream.</param>
+        /// <param name="queryDownstream">The query downstream.</param>
+        /// <returns></returns>
+        public static IPartitionedStream<TDownstream, TUpstreamCursor, TPartition> IntoMany<TUpstream, TDownstream, TUpstreamCursor, TPartition>(
+            this IPartitionedStream<TUpstream, TUpstreamCursor, TPartition> partitionedStream,
+            QueryDownstream<TUpstream, TDownstream, TUpstreamCursor, TPartition> queryDownstream) =>
+                partitionedStream
+                    .IntoMany(
+                        new QueryDownstreamAsync<TUpstream, TDownstream, TUpstreamCursor, TPartition>(
+                            (upstreamItem, fromCursor, toCursor, partition) =>
+                            queryDownstream(upstreamItem,
+                                            fromCursor,
+                                            toCursor,
+                                            partition).CompletedTask()));
 
         /// <summary>
         /// Aggregates a single batch of data from a stream using the specified aggregator and projection.

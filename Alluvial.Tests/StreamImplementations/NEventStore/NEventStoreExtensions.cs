@@ -3,7 +3,7 @@ using System.Linq;
 using Alluvial.Tests.BankDomain;
 using NEventStore;
 
-namespace Alluvial.Tests
+namespace Alluvial.Tests.StreamImplementations.NEventStore
 {
     public static class NEventStoreExtensions
     {
@@ -26,21 +26,18 @@ namespace Alluvial.Tests
             return (int) e.Headers["StreamRevision"];
         }
 
-        public static void SetStreamRevision(this EventMessage e, int streamRevision)
+        public static void SetStreamRevision(
+            this EventMessage e, 
+            int streamRevision,
+            string checkpoint)
         {
             e.Headers["StreamRevision"] = streamRevision;
-        }
-
-        public static void WriteEvents(
-            this IStoreEvents store,
-            Func<int, string> streamId,
-            decimal amount = 1,
-            int howMany = 1, 
-            string bucketId = null)
-        {
-            for (var i = 0; i < howMany; i++)
+           
+            var domainEvent = e.Body as IDomainEvent;
+            if (domainEvent != null)
             {
-                store.WriteEvents(streamId(i), amount, bucketId: bucketId);
+                domainEvent.StreamRevision = streamRevision;
+                domainEvent.CheckpointToken = checkpoint;
             }
         }
 
@@ -81,8 +78,6 @@ namespace Alluvial.Tests
                     eventStream.CommitChanges(Guid.NewGuid());
                 }
             }
-
-            Console.WriteLine($"wrote {howMany} events");
         }
 
         public static void WriteEvents(
@@ -104,8 +99,6 @@ namespace Alluvial.Tests
                     eventStream.CommitChanges(Guid.NewGuid());
                 }
             }
-
-            Console.WriteLine($"wrote {howMany} events");
         }
     }
 }

@@ -2,7 +2,7 @@ namespace Alluvial.Fluent
 {
     public class StreamBuilder<TData> : StreamBuilder
     {
-        public StreamBuilder(string streamId = null)
+        internal StreamBuilder(string streamId = null)
         {
             StreamId = streamId;
         }

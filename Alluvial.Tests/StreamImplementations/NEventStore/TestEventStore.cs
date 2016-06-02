@@ -3,7 +3,7 @@ using Alluvial.Tests.BankDomain;
 using Its.Log.Instrumentation;
 using NEventStore;
 
-namespace Alluvial.Tests
+namespace Alluvial.Tests.StreamImplementations.NEventStore
 {
     public static class TestEventStore
     {
@@ -12,14 +12,12 @@ namespace Alluvial.Tests
             Formatter<EventMessage>.RegisterForAllMembers();
         }
 
-        public static IStoreEvents Create()
-        {
-            return Wireup.Init()
-                         .UsingInMemoryPersistence()
-                         .InitializeStorageEngine()
-                         .UsingJsonSerialization()
-                         .Build();
-        }
+        public static IStoreEvents Create() =>
+            Wireup.Init()
+                  .UsingInMemoryPersistence()
+                  .InitializeStorageEngine()
+                  .UsingJsonSerialization()
+                  .Build();
 
         public static IStoreEvents Populate(this IStoreEvents store, string streamId = null)
         {
@@ -35,6 +33,9 @@ namespace Alluvial.Tests
                         Amount = .01m
                     }
                 });
+
+                stream.CommitChanges(Guid.NewGuid());
+
                 stream.Add(new EventMessage
                 {
                     Body = new FundsDeposited
@@ -43,6 +44,9 @@ namespace Alluvial.Tests
                         Amount = .1m
                     }
                 });
+
+                stream.CommitChanges(Guid.NewGuid());
+                
                 stream.Add(new EventMessage
                 {
                     Body = new FundsDeposited
@@ -51,6 +55,9 @@ namespace Alluvial.Tests
                         Amount = 1m
                     }
                 });
+
+                stream.CommitChanges(Guid.NewGuid());
+
                 stream.Add(new EventMessage
                 {
                     Body = new FundsDeposited
@@ -59,6 +66,7 @@ namespace Alluvial.Tests
                         Amount = 10m
                     }
                 });
+
                 stream.CommitChanges(Guid.NewGuid());
             }
 

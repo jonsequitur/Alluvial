@@ -3,6 +3,7 @@ using FluentAssertions;
 using System.Linq;
 using System.Threading.Tasks;
 using Alluvial.Tests.BankDomain;
+using Alluvial.Tests.StreamImplementations.NEventStore;
 using NEventStore;
 using NUnit.Framework;
 
@@ -168,15 +169,15 @@ namespace Alluvial.Tests
         {
             var streams = Enumerable.Range(1, 24)
                                     .AsStream()
-                                    .IntoMany(async (i, from, to) => Stream.Create<string, int>(
-                                        query: async q => Enumerable.Range(from, to).Select(ii => ii.ToString()),
+                                    .IntoMany((i, from, to) => Stream.Create<string, int>(
+                                        query: q => Enumerable.Range(from, to).Select(ii => ii.ToString()),
                                         advanceCursor: (q, b) => { throw new Exception("oops!"); }));
 
             var error = default(StreamCatchupError<Projection<string, int>>);
 
             var catchup = StreamCatchup.All(streams);
 
-            catchup.Subscribe<Projection<string, int>, string>(async (sum, batch) => new Projection<string, int>(),
+            catchup.Subscribe<Projection<string, int>, string>((sum, batch) => new Projection<string, int>(),
                                                                     (streamId, use) => use(null),
                                                                     onError: e =>
                                                                     {
