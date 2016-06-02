@@ -26,9 +26,19 @@ namespace Alluvial.Tests.StreamImplementations.NEventStore
             return (int) e.Headers["StreamRevision"];
         }
 
-        public static void SetStreamRevision(this EventMessage e, int streamRevision)
+        public static void SetStreamRevision(
+            this EventMessage e, 
+            int streamRevision,
+            string checkpoint)
         {
             e.Headers["StreamRevision"] = streamRevision;
+           
+            var domainEvent = e.Body as IDomainEvent;
+            if (domainEvent != null)
+            {
+                domainEvent.StreamRevision = streamRevision;
+                domainEvent.CheckpointToken = checkpoint;
+            }
         }
 
         public static void WriteEvents(
@@ -81,8 +91,6 @@ namespace Alluvial.Tests.StreamImplementations.NEventStore
                     eventStream.CommitChanges(Guid.NewGuid());
                 }
             }
-
-            Console.WriteLine($"wrote {howMany} events");
         }
 
         public static void WriteEvents(
@@ -104,8 +112,6 @@ namespace Alluvial.Tests.StreamImplementations.NEventStore
                     eventStream.CommitChanges(Guid.NewGuid());
                 }
             }
-
-            Console.WriteLine($"wrote {howMany} events");
         }
     }
 }

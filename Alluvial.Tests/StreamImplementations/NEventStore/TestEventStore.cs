@@ -35,6 +35,9 @@ namespace Alluvial.Tests.StreamImplementations.NEventStore
                         Amount = .01m
                     }
                 });
+
+                stream.CommitChanges(Guid.NewGuid());
+
                 stream.Add(new EventMessage
                 {
                     Body = new FundsDeposited
@@ -43,6 +46,9 @@ namespace Alluvial.Tests.StreamImplementations.NEventStore
                         Amount = .1m
                     }
                 });
+
+                stream.CommitChanges(Guid.NewGuid());
+                
                 stream.Add(new EventMessage
                 {
                     Body = new FundsDeposited
@@ -51,6 +57,9 @@ namespace Alluvial.Tests.StreamImplementations.NEventStore
                         Amount = 1m
                     }
                 });
+
+                stream.CommitChanges(Guid.NewGuid());
+
                 stream.Add(new EventMessage
                 {
                     Body = new FundsDeposited
@@ -59,6 +68,7 @@ namespace Alluvial.Tests.StreamImplementations.NEventStore
                         Amount = 10m
                     }
                 });
+
                 stream.CommitChanges(Guid.NewGuid());
             }
 

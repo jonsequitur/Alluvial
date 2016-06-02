@@ -9,22 +9,20 @@ namespace Alluvial.Tests.StreamImplementations.NEventStore
 {
     public static class NEventStoreStream
     {
-        public static IStream<EventMessage, int> ByAggregate(IStoreEvents store, string streamId, string bucketId = "default")
-        {
-            return new NEventStoreAggregateStream(store, streamId, bucketId);
-        }
+        public static IStream<EventMessage, int> ByAggregate(
+            IStoreEvents store,
+            string streamId,
+            string bucketId = "default") =>
+                new NEventStoreAggregateStream(store, streamId, bucketId);
 
-        public static IStream<EventMessage, string> AllEvents(IStoreEvents store)
-        {
-            return new NEventStoreAllEventsStream(store);
-        }
+        public static IStream<EventMessage, string> AllEvents(IStoreEvents store) =>
+            new NEventStoreAllEventsStream(store);
 
-        public static IStream<string, string> AggregateIds(IStoreEvents store)
-        {
-            return new NEventStoreAllEventsStream(store).Map(es => es.Select(e => ((IDomainEvent) e.Body).AggregateId).Distinct());
-        }
+        public static IStream<string, string> AggregateIds(IStoreEvents store) =>
+            new NEventStoreAllEventsStream(store).Map(es => es.Select(e => ((IDomainEvent) e.Body).AggregateId).Distinct());
 
-        private class NEventStoreAggregateStream : IStream<EventMessage, int>
+        private class NEventStoreAggregateStream : 
+            IStream<EventMessage, int>
         {
             private readonly IStoreEvents store;
             private readonly string streamId;
@@ -37,28 +35,22 @@ namespace Alluvial.Tests.StreamImplementations.NEventStore
             {
                 if (store == null)
                 {
-                    throw new ArgumentNullException("store");
+                    throw new ArgumentNullException(nameof(store));
                 }
                 if (streamId == null)
                 {
-                    throw new ArgumentNullException("streamId");
+                    throw new ArgumentNullException(nameof(streamId));
                 }
                 if (bucketId == null)
                 {
-                    throw new ArgumentNullException("bucketId");
+                    throw new ArgumentNullException(nameof(bucketId));
                 }
                 this.store = store;
                 this.streamId = streamId;
                 this.bucketId = bucketId;
             }
 
-            public string Id
-            {
-                get
-                {
-                    return streamId;
-                }
-            }
+            public string Id => streamId;
 
             /// <summary>
             /// Fetches a batch of data from the stream.
@@ -76,50 +68,37 @@ namespace Alluvial.Tests.StreamImplementations.NEventStore
                     maxRevisionToFetch = minRevisionToFetch + query.BatchSize ?? 100000;
                 }
 
-                var maxExistingRevision = store.Advanced
-                                               .GetFrom(bucketId,
-                                                        streamId,
-                                                        minRevisionToFetch,
-                                                        int.MaxValue)
-                                               .Select(c => c.StreamRevision)
-                                               .LastOrDefault();
+                var commits = store.Advanced
+                                   .GetFrom(bucketId,
+                                            streamId,
+                                            minRevisionToFetch + 1,
+                                            int.MaxValue);
 
-                if (maxExistingRevision <= minRevisionToFetch)
+                if (maxRevisionToFetch <= minRevisionToFetch)
                 {
                     return query.Cursor.EmptyBatch<EventMessage, int>();
                 }
 
                 var events = new List<EventMessage>();
 
-                checked
+                foreach (var commit in commits
+                    .Where(c => c.StreamRevision > minRevisionToFetch &&
+                                c.StreamRevision <= maxRevisionToFetch))
                 {
-                    for (var i = minRevisionToFetch + 1; i <= maxRevisionToFetch; i++)
+                    if (!commit.Events.Any())
                     {
-                        try
-                        {
-                            using (var stream = store.OpenStream(streamId: streamId,
-                                                                 minRevision: i,
-                                                                 maxRevision: i,
-                                                                 bucketId: bucketId))
-                            {
-                                if (stream.CommittedEvents.Count == 0)
-                                {
-                                    break;
-                                }
-
-                                events.AddRange(stream.CommittedEvents
-                                                      .Select(e =>
-                                                      {
-                                                          e.SetStreamRevision(stream.StreamRevision);
-                                                          return e;
-                                                      }));
-                            }
-                        }
-                        catch (StreamNotFoundException)
-                        {
-                            break;
-                        }
+                        break;
                     }
+
+                    var eventMessages = commit.Events.Select(e =>
+                    {
+                        e.SetStreamRevision(
+                            commit.StreamRevision,
+                            commit.CheckpointToken);
+                        return e;
+                    }).ToArray();
+
+                    events.AddRange(eventMessages);
                 }
 
                 var batch = StreamBatch.Create(events, query.Cursor);
@@ -132,10 +111,7 @@ namespace Alluvial.Tests.StreamImplementations.NEventStore
                 return batch;
             }
 
-            public ICursor<int> NewCursor()
-            {
-                return Cursor.New(-1);
-            }
+            ICursor<int> IStream<EventMessage, int>.NewCursor() => Cursor.New(-1);
         }
 
         private class NEventStoreAllEventsStream : IStream<EventMessage, string>
@@ -146,18 +122,12 @@ namespace Alluvial.Tests.StreamImplementations.NEventStore
             {
                 if (store == null)
                 {
-                    throw new ArgumentNullException("store");
+                    throw new ArgumentNullException(nameof(store));
                 }
                 this.store = store;
             }
 
-            public string Id
-            {
-                get
-                {
-                    return GetType().Name;
-                }
-            }
+            public string Id => GetType().Name;
 
             public async Task<IStreamBatch<EventMessage>> Fetch(IStreamQuery<string> query)
             {
@@ -199,10 +169,7 @@ namespace Alluvial.Tests.StreamImplementations.NEventStore
                 return batch;
             }
 
-            public ICursor<string> NewCursor()
-            {
-                return Cursor.New("");
-            }
+            public ICursor<string> NewCursor() => Cursor.New("");
         }
     }
 }
