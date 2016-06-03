@@ -59,7 +59,7 @@ namespace Alluvial.Tests.Distributors
                 await Task.Delay(1);
                 Interlocked.Increment(ref received);
                 mre.Set();
-            }, waitInterval: TimeSpan.FromMilliseconds(DefaultLeaseDuration.TotalMilliseconds*4));
+            }, waitInterval: DefaultLeaseDuration);
 
             await distributor.Start();
             await mre.WaitAsync().Timeout();
@@ -67,7 +67,7 @@ namespace Alluvial.Tests.Distributors
 
             var receivedAsOfStop = received;
 
-            await Task.Delay(((int) DefaultLeaseDuration.TotalMilliseconds*4));
+            await Task.Delay(((int) DefaultLeaseDuration.TotalMilliseconds*2));
 
             received.Should().Be(receivedAsOfStop);
         }
@@ -163,10 +163,10 @@ namespace Alluvial.Tests.Distributors
         }
 
         [Test]
-        public async Task A_wait_interval_can_be_specified_before_which_a_released_lease_will_be_granted_again()
+        public async Task A_wait_interval_can_be_specified_before_which_a_released_lease_will_not_be_granted_again()
         {
             var tally = new ConcurrentDictionary<string, int>();
-            var distributor = CreateDistributor(waitInterval: TimeSpan.FromMilliseconds(5000)).Trace();
+            var distributor = CreateDistributor(waitInterval: TimeSpan.FromMilliseconds(1000)).Trace();
             var countdown = new AsyncCountdownEvent(10);
 
             distributor.OnReceive(async lease =>
@@ -236,7 +236,7 @@ namespace Alluvial.Tests.Distributors
                     await lease.Extend(TimeSpan.FromDays(2));
 
                     // wait longer than the lease would normally last
-                    await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*5));
+                    await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*3));
                 }
             };
 
@@ -244,7 +244,7 @@ namespace Alluvial.Tests.Distributors
             distributor2.OnReceive(onReceive);
             await distributor1.Start();
             await distributor2.Start();
-            await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*2.5));
+            await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*1.5));
             await distributor1.Stop();
             await distributor2.Stop();
 
