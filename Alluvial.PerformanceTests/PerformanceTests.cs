@@ -19,80 +19,57 @@ namespace Alluvial.PerformanceTests
     public class PerformanceTests
     {
         [SetUp]
-        public void SetUp()
-        {
-            DatabaseSetup.Run();
-        }
+        public void SetUp() => DatabaseSetup.Run();
 
         [Test]
         [Explicit]
-        public async Task Write_events()
-        {
+        public async Task Write_events() =>
             await WritePerfTestEvents();
-        }
 
         [Test]
         [Explicit]
-        public async Task ConnectionPool_128_Partitions_128_Parallelism_128()
-        {
+        public async Task ConnectionPool_128_Partitions_128_Parallelism_128() =>
             await ConnectionPool_vs_partitions_vs_parallelism(128, 128, 128);
-        }
 
         [Test]
         [Explicit]
-        public async Task ConnectionPool_64_Partitions_64_Parallelism_64()
-        {
+        public async Task ConnectionPool_64_Partitions_64_Parallelism_64() =>
             await ConnectionPool_vs_partitions_vs_parallelism(64, 64, 64);
-        }
 
         [Test]
         [Explicit]
-        public async Task ConnectionPool_1_Partitions_64_Parallelism_1()
-        {
+        public async Task ConnectionPool_1_Partitions_64_Parallelism_1() =>
             await ConnectionPool_vs_partitions_vs_parallelism(1, 64, 1);
-        }
 
         [Test]
         [Explicit]
-        public async Task ConnectionPool_1_Partitions_64_Parallelism_4()
-        {
+        public async Task ConnectionPool_1_Partitions_64_Parallelism_4() =>
             await ConnectionPool_vs_partitions_vs_parallelism(1, 64, 4);
-        }
 
         [Test]
         [Explicit]
-        public async Task ConnectionPool_4_Partitions_64_Parallelism_4()
-        {
+        public async Task ConnectionPool_4_Partitions_64_Parallelism_4() =>
             await ConnectionPool_vs_partitions_vs_parallelism(4, 64, 4);
-        }
 
         [Test]
         [Explicit]
-        public async Task ConnectionPool_4_Partitions_64_Parallelism_8()
-        {
+        public async Task ConnectionPool_4_Partitions_64_Parallelism_8() =>
             await ConnectionPool_vs_partitions_vs_parallelism(4, 64, 8);
-        }
 
         [Test]
         [Explicit]
-        public async Task ConnectionPool_2_Partitions_64_Parallelism_8()
-        {
+        public async Task ConnectionPool_2_Partitions_64_Parallelism_8() =>
             await ConnectionPool_vs_partitions_vs_parallelism(2, 64, 8);
-        }
 
         [Test]
         [Explicit]
-        public async Task ConnectionPool_2048_Partitions_64_Parallelism_8()
-        {
+        public async Task ConnectionPool_2048_Partitions_64_Parallelism_8() =>
             await ConnectionPool_vs_partitions_vs_parallelism(2048, 64, 8);
-        }
 
         [Test]
         [Explicit]
-        public async Task ConnectionPool_2048_Partitions_64_Parallelism_4()
-        {
+        public async Task ConnectionPool_2048_Partitions_64_Parallelism_4() =>
             await ConnectionPool_vs_partitions_vs_parallelism(2048, 64, 4);
-        }
 
         public async Task ConnectionPool_vs_partitions_vs_parallelism(
             int maxPoolSize,
@@ -114,17 +91,17 @@ namespace Alluvial.PerformanceTests
                     var eventStore = new EventStoreDbContext();
                     return eventStore.Events.Where(e => e.StreamName == "perf-test");
                 })
-                                    .Trace();
+                .Trace();
 
             var sqlBrokeredDistributorDatabase = new SqlBrokeredDistributorDatabase(readModelConnectionString);
             await sqlBrokeredDistributorDatabase.InitializeSchema();
 
             var distributor = Partition.AllGuids().Among(numberOfPartitions)
-                                       .CreateSqlBrokeredDistributor(
-                                           sqlBrokeredDistributorDatabase,
-                                           pool,
-                                           maxDegreesOfParallelism)
-                                       .Trace();
+                .CreateSqlBrokeredDistributor(
+                    sqlBrokeredDistributorDatabase,
+                    pool,
+                    maxDegreesOfParallelism)
+                .Trace();
 
             var catchup = stream.CreateDistributedCatchup(distributor, batchSize: 50);
 
@@ -136,20 +113,20 @@ namespace Alluvial.PerformanceTests
             });
 
             catchup.Subscribe(aggregator,
-                              SqlStorageFor.Projection(
-                                  getSingle: async (db, projectionId) =>
-                                  {
-                                      return await db.Projections
-                                                     .SingleOrDefaultAsync(p => p.Id == projectionId &&
-                                                                                p.Pool == pool);
-                                  },
-                                  createNew: id => new ProjectionModel
-                                  {
-                                      Id = id,
-                                      Pool = pool
-                                  },
-                                  createDbContext: () => new AlluvialSqlTestsDbContext(readModelConnectionString)),
-                              onError: Console.WriteLine);
+                SqlStorageFor.Projection(
+                    getSingle: async (db, projectionId) =>
+                    {
+                        return await db.Projections
+                                         .SingleOrDefaultAsync(p => p.Id == projectionId &&
+                                                                    p.Pool == pool);
+                    },
+                    createNew: id => new ProjectionModel
+                    {
+                        Id = id,
+                        Pool = pool
+                    },
+                    createDbContext: () => new AlluvialSqlTestsDbContext(readModelConnectionString)),
+                onError: Console.WriteLine);
 
             using (catchup)
             {
@@ -167,7 +144,8 @@ namespace Alluvial.PerformanceTests
                         var projectionCount = await db.Database.SqlQuery<int>(
                             $@"SELECT count(*) 
                               FROM [AlluvialSqlTests].[dbo].[ProjectionModels]
-                              WHERE Pool = '{pool}'").SingleAsync();
+                              WHERE Pool = '{pool}'")
+                                                        .SingleAsync();
 
                         Console.WriteLine($"aggregates: {aggregateCount}    projections: {projectionCount}");
 
@@ -180,20 +158,20 @@ namespace Alluvial.PerformanceTests
         private static async Task WritePerfTestEvents()
         {
             var aggregateIds = Enumerable.Range(1, 100)
-                                         .Select(_ => Guid.NewGuid())
-                                         .ToArray();
+                .Select(_ => Guid.NewGuid())
+                .ToArray();
             var storableEvents = Enumerable.Range(1, 100)
-                                           .SelectMany(i => aggregateIds
-                                                                .Select(aggregateId => new StorableEvent
-                                                                {
-                                                                    AggregateId = aggregateId,
-                                                                    StreamName = "perf-test",
-                                                                    Type = "event",
-                                                                    SequenceNumber = i,
-                                                                    Body = "{ }",
-                                                                    Timestamp = DateTimeOffset.Now
-                                                                }))
-                                           .ToArray();
+                .SelectMany(i => aggregateIds
+                                     .Select(aggregateId => new StorableEvent
+                                     {
+                                         AggregateId = aggregateId,
+                                         StreamName = "perf-test",
+                                         Type = "event",
+                                         SequenceNumber = i,
+                                         Body = "{ }",
+                                         Timestamp = DateTimeOffset.Now
+                                     }))
+                .ToArray();
 
             using (var eventStore = new EventStoreDbContext())
             {
