@@ -12,6 +12,7 @@ using Microsoft.Its.Domain.Sql;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
 using NUnit.Framework;
 using Clock = Microsoft.Its.Domain.Clock;
+using static Alluvial.For.ItsDomainSql.Tests.TestDatabases;
 
 namespace Alluvial.For.ItsDomainSql.Tests
 {
@@ -22,12 +23,6 @@ namespace Alluvial.For.ItsDomainSql.Tests
         private string clockName;
         private IStreamQueryRangePartition<Guid>[] partitionsByAggregateId;
 
-        [TestFixtureSetUp]
-        public void Init()
-        {
-            DatabaseSetup.Run();
-        }
-
         [SetUp]
         public void SetUp()
         {
@@ -35,8 +30,10 @@ namespace Alluvial.For.ItsDomainSql.Tests
             disposables = new CompositeDisposable();
 
             var configuration = new Configuration()
-                .UseSqlEventStore()
-                .UseSqlStorageForScheduledCommands()
+                .UseSqlEventStore(
+                    c => c.UseConnectionString(EventStoreConnectionString))
+                .UseSqlStorageForScheduledCommands(
+                    c => c.UseConnectionString(CommandSchedulerConnectionString))
                 .UseDependency<GetClockName>(c => _ => clockName)
                 .TraceScheduledCommands();
 
@@ -60,8 +57,9 @@ namespace Alluvial.For.ItsDomainSql.Tests
             var commandsDue = CommandScheduler.CommandsDueOnClock(clockName);
 
             var distributor = partitionsByAggregateId.CreateSqlBrokeredDistributor(
-                new SqlBrokeredDistributorDatabase(CommandSchedulerDbContext.NameOrConnectionString),
-                commandsDue.Id, waitInterval: TimeSpan.FromSeconds(.5));
+                new SqlBrokeredDistributorDatabase(CommandSchedulerConnectionString),
+                commandsDue.Id, 
+                waitInterval: TimeSpan.FromSeconds(.5));
 
             var catchup = commandsDue
                 .CreateDistributedCatchup(distributor);
@@ -76,7 +74,7 @@ namespace Alluvial.For.ItsDomainSql.Tests
             // assert
             store.Sum(c => c.Value.Count).Should().Be(50);
 
-            using (var db = new CommandSchedulerDbContext())
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
                 var remainingCommandsDue = await db.ScheduledCommands
                                           .Where(c => c.Clock.Name == clockName)

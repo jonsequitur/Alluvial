@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Linq.Expressions;
@@ -17,6 +18,21 @@ namespace Alluvial.Tests
         public static IQueryable<T> AsAsyncQueryable<T>(this IEnumerable<T> source)
         {
             return new InMemoryAsyncQueryable<T>(source);
+        }
+
+        public class InMemoryDbSet<T> : DbSet<T> where T : class
+        {
+            private IQueryable<T> source;
+
+            protected InMemoryDbSet(IEnumerable<T> source)
+            {
+                if (source == null)
+                {
+                    throw new ArgumentNullException(nameof(source));
+                }
+
+                this.source = source.AsAsyncQueryable();
+            }
         }
 
         private class InMemoryAsyncQueryable<T> :

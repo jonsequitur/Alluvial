@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
+using System.Reactive.Disposables;
 using System.Threading.Tasks;
 using Alluvial.Distributors.Sql;
 using Alluvial.Tests;
@@ -18,6 +20,7 @@ namespace Alluvial.For.ItsDomainSql.Tests
     {
         private InMemoryEventStream eventStream;
         private SqlBrokeredDistributorDatabase distributorDatabase;
+        private CompositeDisposable disposables;
 
         [SetUp]
         public void SetUp()
@@ -26,6 +29,19 @@ namespace Alluvial.For.ItsDomainSql.Tests
             distributorDatabase = new SqlBrokeredDistributorDatabase(
                 @"Data Source=(localdb)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=False; Initial Catalog=AlluvialSqlDistributorTests");
             distributorDatabase.CreateDatabase().Wait();
+
+            disposables = new CompositeDisposable();
+
+            var configuration = new Configuration()
+                .UseDependency(_ => eventStream)
+                .UseInMemoryEventStore();
+            disposables.Add(ConfigurationContext.Establish(configuration));
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            disposables.Dispose();
         }
 
         [Test]
@@ -43,7 +59,7 @@ namespace Alluvial.For.ItsDomainSql.Tests
                 .OfType<AggregateB.EventType14>()
                 .Count();
 
-            var streams = EventStream.PerAggregate("per-aggregate", () => storableEvents);
+            var streams = EventStream.PerAggregate("per-aggregate", _ => storableEvents);
 
             var aggregator = Aggregator.Create<int, IEvent>((oldCount, batch) =>
             {
@@ -76,7 +92,7 @@ namespace Alluvial.For.ItsDomainSql.Tests
                 .Select(e => e.ToDomainEvent())
                 .OfType<AggregateB.EventType14>()
                 .Count();
-            var streams = EventStream.PerAggregatePartitioned("per-aggregate", () => storableEvents);
+            var streams = EventStream.PerAggregatePartitioned("per-aggregate", _ => storableEvents);
 
             var aggregator = Aggregator.Create<MatchingEvents, IEvent>((projection, batch) =>
             {
@@ -104,10 +120,11 @@ namespace Alluvial.For.ItsDomainSql.Tests
 
             await WriteEvents<AggregateA.EventType1>(aggregateIds.Concat(aggregateIds).ToArray());
 
-            var allChanges = EventStream.PerAggregate("All",
-                                                      () => eventStream
-                                                          .Select(e => e.ToStorableEvent())
-                                                          .AsAsyncQueryable());
+            var allChanges = EventStream.PerAggregate(
+                "All",
+                _ => eventStream
+                         .Select(e => e.ToStorableEvent())
+                         .AsAsyncQueryable());
 
             var catchup = StreamCatchup.All(allChanges);
 
@@ -136,10 +153,11 @@ namespace Alluvial.For.ItsDomainSql.Tests
             await WriteEvents<AggregateA.EventType1>(aggregateId1);
             await WriteEvents<AggregateA.EventType1>(aggregateId2);
 
-            var allChanges = EventStream.PerAggregate("All",
-                                                      () => eventStream
-                                                          .Select(e => e.ToStorableEvent())
-                                                          .AsAsyncQueryable());
+            var allChanges = EventStream.PerAggregate(
+                "All",
+                _ => eventStream
+                         .Select(e => e.ToStorableEvent())
+                         .AsAsyncQueryable());
 
             var catchup = StreamCatchup.All(allChanges);
 
@@ -194,6 +212,34 @@ namespace Alluvial.For.ItsDomainSql.Tests
             await distributor.Distribute(1);
 
             receivedResourceName.Should().Be(staleLeasable.Name);
+        }
+
+        [Test]
+        public async Task EventStream_Events_can_be_used_to_traverse_all_events()
+        {
+            var eventsReceived = new ConcurrentBag<IEvent>();
+
+            await WriteEvents<AggregateA.EventType1>(
+                Enumerable.Range(1, 111).Select(_ => Guid.NewGuid()).ToArray());
+
+            var distributor = Partition.AllGuids()
+                                       .Among(10)
+                                       .CreateInMemoryDistributor(maxDegreesOfParallelism: 1);
+
+            var catchup = EventStream.Events("all-events", _ => _)
+                                     .CreateDistributedCatchup(distributor);
+
+            catchup.Subscribe(batch =>
+            {
+                foreach (var @event in batch)
+                {
+                    eventsReceived.Add(@event);
+                }
+            });
+
+            await catchup.RunSingleBatch();
+
+            eventsReceived.Should().HaveCount(eventStream.Count());
         }
 
         private static StorableEvent[] CreateStorableEvents(
@@ -617,7 +663,7 @@ namespace Alluvial.For.ItsDomainSql.Tests
                     SequenceNumber = 16,
                     Id = 46,
                     Body = "{}"
-                },
+                }
             };
         }
 
@@ -639,35 +685,12 @@ namespace Alluvial.For.ItsDomainSql.Tests
 
                 existing.Add(@event);
 
-                var storedEvent = @event.ToStoredEvent() as InMemoryStoredEvent;
+                var storedEvent = @event.ToInMemoryStoredEvent();
 
                 storedEvent.Metadata.AbsoluteSequenceNumber = eventStream.Count() + 1;
 
                 await eventStream.Append(new[] { storedEvent });
             }
-        }
-    }
-
-    public static class EventExtensions
-    {
-        public static StorableEvent ToStorableEvent(this IStoredEvent @event)
-        {
-            var absoluteSequenceNumber = @event.IfTypeIs<IHaveExtensibleMetada>()
-                                               .And()
-                                               .IfHas<int>(e => e.Metadata.AbsoluteSequenceNumber)
-                                               .ElseDefault();
-
-            return new StorableEvent
-            {
-                SequenceNumber = @event.SequenceNumber,
-                AggregateId = Guid.Parse(@event.AggregateId),
-                Timestamp = @event.Timestamp,
-                Type = @event.Type,
-                Body = @event.Body,
-                ETag = @event.ETag,
-                StreamName = @event.StreamName,
-                Id = absoluteSequenceNumber
-            };
         }
     }
 }
