@@ -546,6 +546,35 @@ namespace Alluvial
                 new InMemoryProjectionStore<Projection<Unit, Unit>>());
         }
 
+        /// <summary>
+        /// Subscribes the specified aggregator to a catchup.
+        /// </summary>
+        /// <typeparam name="TData">The type of the stream's data.</typeparam>
+        /// <param name="catchup">The catchup.</param>
+        /// <param name="aggregate">A side-effecting aggregator function.</param>
+        /// <returns>A disposable that, when disposed, unsubscribes the aggregator.</returns>
+        public static IDisposable Subscribe<TData>(
+            this IStreamCatchup<TData> catchup,
+            Action<IStreamBatch<TData>> aggregate)
+        {
+            if (catchup == null)
+            {
+                throw new ArgumentNullException(nameof(catchup));
+            }
+            if (aggregate == null)
+            {
+                throw new ArgumentNullException(nameof(aggregate));
+            }
+
+            return catchup.Subscribe(
+                Aggregator.Create<Projection<Unit, Unit>, TData>((p, b) =>
+                {
+                    aggregate(b);
+                    return p;
+                }),
+                new InMemoryProjectionStore<Projection<Unit, Unit>>());
+        }
+
         private static FetchAndSave<TProjection> NoCursor<TProjection>(TProjection projection) =>
             (streamId, aggregate) => aggregate(projection);
 

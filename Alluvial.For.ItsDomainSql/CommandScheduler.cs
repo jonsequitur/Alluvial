@@ -1,6 +1,7 @@
 using System;
 using System.Data.Entity;
 using System.Linq;
+using Alluvial.Fluent;
 using Microsoft.Its.Domain;
 using Microsoft.Its.Domain.Sql;
 using Microsoft.Its.Domain.Sql.CommandScheduler;
@@ -42,23 +43,31 @@ namespace Alluvial.For.ItsDomainSql
         /// Gets a partitioned stream containing clocks that have commands due.
         /// </summary>
         /// <param name="asOf">The time as of which commands are evaluated to determine whether they are due.</param>
-        public static IPartitionedStream<SchedulerClock, DateTimeOffset, string> ClocksWithCommandsDue(DateTimeOffset? asOf = null) =>
-            Stream.PartitionedByRange<SchedulerClock, DateTimeOffset, string>(
-                query: async (query, partition) =>
-                {
-                    using (var db = new CommandSchedulerDbContext())
-                    {
-                        var q = from clock in db.Clocks.AsNoTracking().WithinPartition(c => c.Name, partition)
-                                join cmd in db.ScheduledCommands.Due(asOf)
-                                    on clock equals cmd.Clock
-                                orderby clock.UtcNow
-                                select clock;
+        public static IPartitionedStream<SchedulerClock, DateTimeOffset, string> ClocksWithCommandsDue(DateTimeOffset? asOf = null)
+        {
+            var configuration = Configuration.Current;
 
-                        return await q.Take(query.BatchSize ?? 1)
-                                      .ToArrayAsync();
-                    }
-                },
-                advanceCursor: (q, b) => q.Cursor.AdvanceTo(DomainClock.Now()));
+            return Stream.Of<SchedulerClock>()
+                         .Cursor(_ => _.By<DateTimeOffset>())
+                         .Advance((q, b) => q.Cursor.AdvanceTo(DomainClock.Now()))
+                         .Partition(_ => _.ByRange<string>())
+                         .Create(async (query, partition) =>
+                         {
+                             using (var db = configuration.CommandSchedulerDbContext())
+                             {
+                                 var q = from clock in db.Clocks
+                                                         .AsNoTracking()
+                                                         .WithinPartition(c => c.Name, partition)
+                                         join cmd in db.ScheduledCommands.Due(asOf)
+                                             on clock equals cmd.Clock
+                                         orderby clock.UtcNow
+                                         select clock;
+
+                                 return await q.Take(query.BatchSize ?? 1)
+                                               .ToArrayAsync();
+                             }
+                         });
+        }
 
         /// <summary>
         /// Creates a partitioned stream of scheduled commands due on a specified scheduler clock.
@@ -76,39 +85,39 @@ namespace Alluvial.For.ItsDomainSql
             }
 
             createDbContext = createDbContext ??
-                              (() =>
-                               new CommandSchedulerDbContext());
+                              (() => Configuration.Current.CommandSchedulerDbContext());
 
-            return Stream.PartitionedByRange<ScheduledCommand, DateTimeOffset, Guid>(
-                id: $"CommandsDueOnClock({clockName})",
-                query: async (q, partition) =>
-                {
-                    using (var db = createDbContext())
-                    {
-                        var batchCount = q.BatchSize ?? 5;
-                        var query = db.ScheduledCommands
-                                      .AsNoTracking()
-                                      .Due()
-                                      .Where(c => c.Clock.Name == clockName)
-                                      .WithinPartition(e => e.AggregateId, partition)
-                                      .Take(() => batchCount);
-                        return await query.ToArrayAsync();
-                    }
-                },
-                advanceCursor: (q, b) => q.Cursor.AdvanceTo(DomainClock.Now()));
+            return Stream.Of<ScheduledCommand>()
+                         .Named($"CommandsDueOnClock({clockName})")
+                         .Cursor(_ => _.By<DateTimeOffset>())
+                         .Advance((q, b) => q.Cursor.AdvanceTo(DomainClock.Now()))
+                         .Partition(_ => _.ByRange<Guid>())
+                         .Create(async (q, partition) =>
+                         {
+                             using (var db = createDbContext())
+                             {
+                                 var batchCount = q.BatchSize ?? 5;
+                                 var query = db.ScheduledCommands
+                                               .AsNoTracking()
+                                               .Due()
+                                               .Where(c => c.Clock.Name == clockName)
+                                               .WithinPartition(e => e.AggregateId, partition)
+                                               .Take(() => batchCount);
+                                 return await query.ToArrayAsync();
+                             }
+                         });
         }
 
         /// <summary>
         /// Creates a stream aggregator that delivers scheduled commands.
         /// </summary>
-        /// <returns></returns>
         public static IStreamAggregator<CommandsApplied, ScheduledCommand> DeliverScheduledCommands() =>
             Aggregator.Create<CommandsApplied, ScheduledCommand>(
                 async (applied, batch) =>
                 {
                     var configuration = Configuration.Current;
 
-                    using (var commandSchedulerDb = new CommandSchedulerDbContext())
+                    using (var commandSchedulerDb =  Configuration.Current.CommandSchedulerDbContext())
                     {
                         foreach (var cmd in batch)
                         {

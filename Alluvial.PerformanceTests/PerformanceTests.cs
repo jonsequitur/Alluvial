@@ -6,7 +6,6 @@ using FluentAssertions;
 using System.Linq;
 using System.Threading.Tasks;
 using Alluvial.For.ItsDomainSql;
-using Alluvial.For.ItsDomainSql.Tests;
 using Alluvial.Tests;
 using Microsoft.Its.Domain;
 using Microsoft.Its.Domain.Serialization;
@@ -18,9 +17,6 @@ namespace Alluvial.PerformanceTests
     [TestFixture]
     public class PerformanceTests
     {
-        [SetUp]
-        public void SetUp() => DatabaseSetup.Run();
-
         [Test]
         [Explicit]
         public async Task Write_events() =>
@@ -86,11 +82,7 @@ namespace Alluvial.PerformanceTests
 
             var stream = EventStream.PerAggregatePartitioned(
                 "count-per-aggregate",
-                () =>
-                {
-                    var eventStore = new EventStoreDbContext();
-                    return eventStore.Events.Where(e => e.StreamName == "perf-test");
-                })
+                _ => _.Where(e => e.StreamName == "perf-test"))
                 .Trace();
 
             var sqlBrokeredDistributorDatabase = new SqlBrokeredDistributorDatabase(readModelConnectionString);
@@ -133,7 +125,7 @@ namespace Alluvial.PerformanceTests
                 await catchup.Start();
                 await Wait.Until(async () =>
                 {
-                    using (var eventStore = new EventStoreDbContext())
+                    using (var eventStore = Configuration.Current.EventStoreDbContext())
                     using (var db = new AlluvialSqlTestsDbContext())
                     {
                         var aggregateCount = await eventStore.Database.SqlQuery<int>(
@@ -173,7 +165,7 @@ namespace Alluvial.PerformanceTests
                                      }))
                 .ToArray();
 
-            using (var eventStore = new EventStoreDbContext())
+            using (var eventStore = Configuration.Current.EventStoreDbContext())
             {
                 foreach (var storableEvent in storableEvents)
                 {

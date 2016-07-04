@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Entity;
+using Alluvial.Fluent;
 using System.Linq;
 using System.Threading.Tasks;
-using Alluvial.Fluent;
 using Microsoft.Its.Domain;
 using Microsoft.Its.Domain.Sql;
 using Pocket;
@@ -19,7 +19,7 @@ namespace Alluvial.For.ItsDomainSql
         /// <param name="storableEvents">A delegate returning a query of events to include in the stream.</param>
         public static IPartitionedStream<IEvent, long, Guid> Events(
             string streamId,
-            Func<IQueryable<StorableEvent>> storableEvents) =>
+            Func<IQueryable<StorableEvent>, IQueryable<StorableEvent>> storableEvents) =>
                 Stream.Of<StorableEvent>()
                       .Cursor(_ => _.By<long>())
                       .Advance((q, b) => b.LastOrDefault()
@@ -27,19 +27,27 @@ namespace Alluvial.For.ItsDomainSql
                                           .ThenDo(u => q.Cursor.AdvanceTo(u.Id)))
                       .Partition(_ => _.ByRange<Guid>())
                       .Create(async (query, partition) =>
-                              await storableEvents()
-                                        .AsNoTracking()
-                                        .Where(e => e.Id > query.Cursor.Position)
-                                        .WithinPartition(e => e.AggregateId, partition)
-                                        .OrderBy(e => e.Id)
-                                        .Take(query.BatchSize ?? 100)
-                                        .ToArrayAsync())
+                      {
+                          using (var db = Configuration.Current.EventStoreDbContext())
+                          {
+                              var queryable = storableEvents(db.Events);
+
+                              var events = await queryable
+                                                     .AsNoTracking()
+                                                     .Where(e => e.Id > query.Cursor.Position)
+                                                     .WithinPartition(e => e.AggregateId, partition)
+                                                     .OrderBy(e => e.Id)
+                                                     .Take(query.BatchSize ?? 100)
+                                                     .ToArrayAsync();
+                              return events;
+                          }
+                      })
                       .Map(es => es.Select(e => e.ToDomainEvent()));
 
         public static IStream<IStream<IEvent, long>, long> PerAggregate(
             string streamId,
-            Func<IQueryable<StorableEvent>> storableEvents) =>
-                AllChanges(streamId, storableEvents)
+            Func<IQueryable<StorableEvent>, IQueryable<StorableEvent>> filter) =>
+                AllChanges(streamId, filter)
                     .IntoMany(
                         // for each EventStreamChange, return a stream of IEvent
                         (update, fromCursor, toCursor) =>
@@ -47,7 +55,7 @@ namespace Alluvial.For.ItsDomainSql
                               .Named(update.AggregateId.ToString())
                               .Cursor(_ => _.By<long>())
                               .Advance((query, batch) => AdvanceCursor(batch, query, toCursor))
-                              .Create(q => QueryAsync(storableEvents,
+                              .Create(q => QueryAsync(filter,
                                                       q.BatchSize,
                                                       update.AggregateId,
                                                       fromCursor,
@@ -57,11 +65,11 @@ namespace Alluvial.For.ItsDomainSql
         /// Returns a partitioned stream of streams, each of which contains all of the events for a single aggregate.
         /// </summary>
         /// <param name="streamId">The stream identifier.</param>
-        /// <param name="storableEvents">A delegate returning a query of events to include in the stream.</param>
+        /// <param name="filter">A delegate returning a query of events to include in the stream.</param>
         public static IPartitionedStream<IStream<IEvent, long>, long, Guid> PerAggregatePartitioned(
             string streamId,
-            Func<IQueryable<StorableEvent>> storableEvents) =>
-                AllChangesPartitioned(streamId, storableEvents)
+            Func<IQueryable<StorableEvent>, IQueryable<StorableEvent>> filter) =>
+                AllChangesPartitioned(streamId, filter)
                     .IntoMany((update, fromCursor, toCursor, partition) =>
                               Stream
                                   .Of<IEvent>()
@@ -69,7 +77,7 @@ namespace Alluvial.For.ItsDomainSql
                                       update.AggregateId.ToString())
                                   .Cursor(_ => _.By<long>())
                                   .Advance((query, batch) => AdvanceCursor(batch, query, toCursor))
-                                  .Create(q => QueryAsync(storableEvents,
+                                  .Create(q => QueryAsync(filter,
                                                           q.BatchSize,
                                                           update.AggregateId,
                                                           fromCursor,
@@ -77,7 +85,7 @@ namespace Alluvial.For.ItsDomainSql
 
         private static IStream<EventStreamChange, long> AllChanges(
             string streamId,
-            Func<IQueryable<StorableEvent>> storableEvents) =>
+            Func<IQueryable<StorableEvent>, IQueryable<StorableEvent>> filter) =>
                 Stream
                     .Of<EventStreamChange>()
                     .Named(streamId)
@@ -86,11 +94,11 @@ namespace Alluvial.For.ItsDomainSql
                                         .IfNotNull()
                                         .ThenDo(u => q.Cursor.AdvanceTo(u.AbsoluteSequenceNumber)))
                     .Create(async streamQuery =>
-                            await EventStreamChanges(storableEvents(), streamQuery));
+                            await EventStreamChanges(filter, streamQuery));
 
         private static IPartitionedStream<EventStreamChange, long, Guid> AllChangesPartitioned(
             string streamId,
-            Func<IQueryable<StorableEvent>> getStorableEvents) =>
+            Func<IQueryable<StorableEvent>, IQueryable<StorableEvent>> filter) =>
                 Stream
                     .Of<EventStreamChange>()
                     .Named(streamId)
@@ -101,46 +109,49 @@ namespace Alluvial.For.ItsDomainSql
                               .ThenDo(u => q.Cursor.AdvanceTo(u.AbsoluteSequenceNumber)))
                     .Partition(_ => _.ByRange<Guid>())
                     .Create(async (streamQuery, partition) =>
-                            await EventStreamChanges(getStorableEvents(),
+                            await EventStreamChanges(filter,
                                                      streamQuery,
                                                      partition));
 
         private static async Task<IEnumerable<EventStreamChange>> EventStreamChanges(
-            IQueryable<StorableEvent> events,
+            Func<IQueryable<StorableEvent>, IQueryable<StorableEvent>> filter,
             IStreamQuery<long> streamQuery,
             IStreamQueryRangePartition<Guid> partition = null)
         {
-            var query = events
-                .AsNoTracking()
-                .Where(e => e.Id > streamQuery.Cursor.Position);
-
-            if (partition != null)
+            using (var db = Configuration.Current.EventStoreDbContext())
             {
-                query = query.WithinPartition(e => e.AggregateId, partition);
-            }
+                var query = filter(db.Events)
+                    .AsNoTracking()
+                    .Where(e => e.Id > streamQuery.Cursor.Position);
 
-            var fetchedFromEventStore = await query
-                                                  .OrderBy(e => e.Id)
-                                                  .Select(e => new
-                                                  {
-                                                      e.AggregateId,
-                                                      e.StreamName,
-                                                      e.Id
-                                                  })
-                                                  .Take(streamQuery.BatchSize ?? 10)
-                                                  .GroupBy(e => e.AggregateId)
-                                                  .ToArrayAsync();
-
-            var eventStreamChanges = fetchedFromEventStore
-                .Select(e => new EventStreamChange(e.Key)
+                if (partition != null)
                 {
-                    AggregateType = e.FirstOrDefault()?.StreamName,
-                    AbsoluteSequenceNumber = e.OrderByDescending(ee => ee.Id).FirstOrDefault()?.Id ?? 0
-                })
-                .OrderBy(e => e.AbsoluteSequenceNumber)
-                .ToArray();
+                    query = query.WithinPartition(e => e.AggregateId, partition);
+                }
 
-            return eventStreamChanges;
+                var fetchedFromEventStore = await query
+                                                      .OrderBy(e => e.Id)
+                                                      .Select(e => new
+                                                      {
+                                                          e.AggregateId,
+                                                          e.StreamName,
+                                                          e.Id
+                                                      })
+                                                      .Take(streamQuery.BatchSize ?? 10)
+                                                      .GroupBy(e => e.AggregateId)
+                                                      .ToArrayAsync();
+
+                var eventStreamChanges = fetchedFromEventStore
+                    .Select(e => new EventStreamChange(e.Key)
+                    {
+                        AggregateType = e.FirstOrDefault()?.StreamName,
+                        AbsoluteSequenceNumber = e.OrderByDescending(ee => ee.Id).FirstOrDefault()?.Id ?? 0
+                    })
+                    .OrderBy(e => e.AbsoluteSequenceNumber)
+                    .ToArray();
+
+                return eventStreamChanges;
+            }
         }
 
         private static void AdvanceCursor(
@@ -152,23 +163,26 @@ namespace Alluvial.For.ItsDomainSql
                      .ThenDo(e => query.Cursor.AdvanceTo(toCursor));
 
         private static async Task<IEnumerable<IEvent>> QueryAsync(
-            Func<IQueryable<StorableEvent>> storableEvents,
+            Func<IQueryable<StorableEvent>, IQueryable<StorableEvent>> filter,
             int? batchSize,
             Guid aggregateId,
             long fromCursor,
             long toCursor)
         {
-            var query = storableEvents()
-                .AsNoTracking()
-                .Where(e => e.AggregateId == aggregateId)
-                .Where(e => e.Id >= fromCursor && e.Id <= toCursor);
+            using (var db = Configuration.Current.EventStoreDbContext())
+            {
+                var query = filter(db.Events)
+                    .AsNoTracking()
+                    .Where(e => e.AggregateId == aggregateId)
+                    .Where(e => e.Id >= fromCursor && e.Id <= toCursor);
 
-            query = query.OrderBy(e => e.Id)
-                         .Take(batchSize ?? 1000);
+                query = query.OrderBy(e => e.Id)
+                             .Take(batchSize ?? 1000);
 
-            var events = await query.ToArrayAsync();
+                var events = await query.ToArrayAsync();
 
-            return events.Select(e => e.ToDomainEvent());
+                return events.Select(e => e.ToDomainEvent());
+            }
         }
     }
 }
