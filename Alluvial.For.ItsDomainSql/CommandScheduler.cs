@@ -1,6 +1,7 @@
 using System;
 using System.Data.Entity;
 using System.Linq;
+using System.Threading.Tasks;
 using Alluvial.Fluent;
 using Microsoft.Its.Domain;
 using Microsoft.Its.Domain.Sql;
@@ -12,33 +13,6 @@ namespace Alluvial.For.ItsDomainSql
 {
     public static class CommandScheduler
     {
-        /// <summary>
-        /// Creates a stream aggregator that advances scheduler clocks to the current domain time, triggering any commands that are scheduled on the clock and due.
-        /// </summary>
-        public static IStreamAggregator<CommandsApplied, SchedulerClock> AdvanceClocks() => Aggregator.Create<CommandsApplied, SchedulerClock>(async (applied, batch) =>
-        {
-            var trigger = Configuration.Current.SchedulerClockTrigger();
-
-            foreach (var clock in batch)
-            {
-                var result = await trigger.AdvanceClock(
-                    clock.Name, 
-                    DomainClock.Now());
-
-                foreach (var x in result.SuccessfulCommands)
-                {
-                    applied.Value.Add(x);
-                }
-
-                foreach (var x in result.FailedCommands)
-                {
-                    applied.Value.Add(x);
-                }
-            }
-
-            return applied;
-        });
-
         /// <summary>
         /// Gets a partitioned stream containing clocks that have commands due.
         /// </summary>
@@ -132,5 +106,29 @@ namespace Alluvial.For.ItsDomainSql
 
                     return applied;
                 });
+
+        public static IDistributor<IStreamQueryPartition<Guid>> KeepClockUpdated(
+            this IDistributor<IStreamQueryPartition<Guid>> distributor, 
+            string clockName = "default")
+        {
+            distributor.OnReceive(async (lease, next) =>
+            {
+                await next(lease);
+                await UpdateClock(clockName);
+            });
+
+            return distributor;
+        }
+
+        private static async Task UpdateClock(string clockName)
+        {
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
+            {
+                db.Clocks
+                    .Single(c => c.Name == clockName)
+                    .UtcNow = DomainClock.Now();
+                await db.SaveChangesAsync();
+            }
+        }
     }
 }

@@ -85,50 +85,43 @@ namespace Alluvial.For.ItsDomainSql.Tests
         }
 
         [Test]
-        public async Task All_clocks_can_be_advanced_in_parallel_using_a_distributor()
+        public async Task When_the_distributor_runs_then_the_clock_can_be_kept_updated()
         {
             // arrange
-            var commandsScheduled = await ScheduleSomeCommands(
-                50,
-                Clock.Now().Subtract(1.Hours()),
-                clockName: () => Guid.NewGuid().ToString());
+            var commandsDue = CommandScheduler.CommandsDueOnClock(clockName);
 
-            var partitions = new[]
+            DateTimeOffset timePriorToDeliveringCommands;
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
             {
-                Partition.ByRange("", "3"),
-                Partition.ByRange("3", "7"),
-                Partition.ByRange("7", "b"),
-                Partition.ByRange("b", "f"),
-                Partition.ByRange("f", "j"),
-                Partition.ByRange("j", "n"),
-                Partition.ByRange("n", "r"),
-                Partition.ByRange("r", "v"),
-                Partition.ByRange("v", "zz")
-            };
+                timePriorToDeliveringCommands = db.Clocks
+                    .Single(c => c.Name == "default")
+                    .UtcNow;
+            }
 
-            var distributor = partitions.CreateInMemoryDistributor(waitInterval: TimeSpan.FromSeconds(.1));
+            var distributor = partitionsByAggregateId
+                .CreateSqlBrokeredDistributor(
+                    new SqlBrokeredDistributorDatabase(CommandSchedulerConnectionString),
+                    commandsDue.Id,
+                    waitInterval: TimeSpan.FromSeconds(.5))
+                .KeepClockUpdated();
 
-            var catchup = CommandScheduler.ClocksWithCommandsDue()
-                                          .Trace()
-                                          .CreateDistributedCatchup(distributor);
+            var catchup = commandsDue
+                .CreateDistributedCatchup(distributor);
 
-            var store = new InMemoryProjectionStore<CommandsApplied>();
-            var aggregator = CommandScheduler.AdvanceClocks();
-            catchup.Subscribe(aggregator, store);
+            catchup.Subscribe(CommandScheduler.DeliverScheduledCommands().Trace());
 
             // act
-            await catchup.RunUntilCaughtUp();
+            await catchup.RunSingleBatch().Timeout();
 
             // assert
-            store.Count().Should().Be(partitions.Length);
-
-            var commandsDelivered = store
-                .SelectMany(_ => _.Value)
-                .ToArray();
-
-            commandsDelivered.Length
-                             .Should()
-                             .Be(commandsScheduled.Count());
+            using (var db = Configuration.Current.CommandSchedulerDbContext())
+            {
+                db.Clocks
+                    .Single(c => c.Name == "default")
+                    .UtcNow
+                    .Should()
+                    .BeAfter(timePriorToDeliveringCommands);
+            }
         }
 
         private static async Task<IEnumerable<IScheduledCommand<AggregateA>>> ScheduleSomeCommands(
