@@ -80,18 +80,14 @@ namespace Alluvial
         {
             if (typeof (TPartition) == typeof (Guid))
             {
-                return (IStreamQueryRangePartition<TPartition>) new SqlGuidRangePartition
-                {
-                    LowerBoundExclusive = (dynamic) lowerBoundExclusive,
-                    UpperBoundInclusive = (dynamic) upperBoundInclusive
-                };
+                return (IStreamQueryRangePartition<TPartition>) new SqlGuidRangePartition(
+                    (dynamic) lowerBoundExclusive, 
+                    (dynamic) upperBoundInclusive);
             }
 
-            return new StreamQueryRangePartition<TPartition>
-            {
-                LowerBoundExclusive = lowerBoundExclusive,
-                UpperBoundInclusive = upperBoundInclusive
-            };
+            return new StreamQueryRangePartition<TPartition>(
+                lowerBoundExclusive,
+                upperBoundInclusive);
         }
 
         /// <summary>

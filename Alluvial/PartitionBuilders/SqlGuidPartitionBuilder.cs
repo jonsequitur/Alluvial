@@ -179,11 +179,9 @@ namespace Alluvial.PartitionBuilders
                     upper = upperBigIntInclusive;
                 }
 
-                yield return new SqlGuidRangePartition
-                {
-                    LowerBoundExclusive = lower.ToGuid(),
-                    UpperBoundInclusive = upper.ToGuid()
-                };
+                yield return new SqlGuidRangePartition(
+                    lower.ToGuid(),
+                    upper.ToGuid());
             }
         }
     }

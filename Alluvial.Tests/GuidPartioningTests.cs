@@ -8,6 +8,7 @@ using NUnit.Framework;
 
 namespace Alluvial.Tests
 {
+    [TestFixture]
     public class GuidPartioningTests
     {
         private readonly Guid[] guidsSortedLikeSqlServerSortsThem =
@@ -236,6 +237,17 @@ namespace Alluvial.Tests
                               .Should()
                               .Be(secondPartition.LowerBoundExclusive.ToBigInteger());
             }
+        }
+
+        [Test]
+        public void Guid_partitions_evaluate_Contains_correctly()
+        {
+            var partition = Partition.AllGuids().Among(1).Single();
+
+            partition
+                .Contains(Guid.NewGuid())
+                .Should()
+                .BeTrue();
         }
 
         [Test]
