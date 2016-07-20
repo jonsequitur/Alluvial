@@ -15,20 +15,16 @@ namespace Alluvial.PartitionBuilders
 
             foreach (var i in Enumerable.Range(0, numberOfPartitions))
             {
-                var lower = lowerBoundExclusive + (i*(space/numberOfPartitions));
+                var lower = lowerBoundExclusive + i*(space/numberOfPartitions);
 
-                var upper = lowerBoundExclusive + ((i + 1)*(space/numberOfPartitions));
+                var upper = lowerBoundExclusive + (i + 1)*(space/numberOfPartitions);
 
                 if (i == numberOfPartitions - 1)
                 {
                     upper = upperBoundInclusive;
                 }
 
-                yield return new StreamQueryRangePartition<int>
-                {
-                    LowerBoundExclusive = lower,
-                    UpperBoundInclusive = upper
-                };
+                yield return new StreamQueryRangePartition<int>(lower, upper);
             }
         }
     }

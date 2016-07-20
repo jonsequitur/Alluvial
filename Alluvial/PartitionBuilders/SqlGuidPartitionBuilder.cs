@@ -31,7 +31,7 @@ namespace Alluvial.PartitionBuilders
             13,
             12,
             11,
-            10,
+            10
         };
 
         // the max signed int that will fit into a guid
@@ -43,7 +43,7 @@ namespace Alluvial.PartitionBuilders
         static SqlGuidPartitionBuilder()
         {
             MaxSigned128BitBigInt = BigInteger.Parse("170141183460469231731687303715884105727");
-            MaxUnsigned128BitBigInt = (MaxSigned128BitBigInt*2);
+            MaxUnsigned128BitBigInt = MaxSigned128BitBigInt*2;
         }
 
         public static IEnumerable<Guid> OrderBySqlServer(this IEnumerable<Guid> source) =>
@@ -74,7 +74,7 @@ namespace Alluvial.PartitionBuilders
                     bytes[byteOrder[12]],
                     bytes[byteOrder[13]],
                     bytes[byteOrder[14]],
-                    bytes[byteOrder[15]],
+                    bytes[byteOrder[15]]
                 });
 
             value = ShiftNegativeToUnsigned(value);
@@ -91,7 +91,7 @@ namespace Alluvial.PartitionBuilders
 
             if (bytes.Length > 16)
             {
-                throw new ArgumentException(string.Format("{0} takes more than 128 bits to represent and cannot be stored in a guid", value));
+                throw new ArgumentException($"{value} takes more than 128 bits to represent and cannot be stored in a guid");
             }
 
             if (value == 0)
@@ -140,7 +140,7 @@ namespace Alluvial.PartitionBuilders
         {
             if (value < 0)
             {
-                value = (MaxSigned128BitBigInt*2) + value + 1;
+                value = MaxSigned128BitBigInt*2 + value + 1;
             }
 
             return value;
@@ -153,7 +153,7 @@ namespace Alluvial.PartitionBuilders
         {
             if (value > MaxSigned128BitBigInt)
             {
-                value = (value) - 1 - (MaxSigned128BitBigInt*2);
+                value = value - 1 - MaxSigned128BitBigInt*2;
             }
 
             return value;
@@ -170,20 +170,18 @@ namespace Alluvial.PartitionBuilders
 
             foreach (var i in Enumerable.Range(0, numberOfPartitions))
             {
-                var lower = lowerBigIntExclusive + (i*(space/numberOfPartitions));
+                var lower = lowerBigIntExclusive + i*(space/numberOfPartitions);
 
-                var upper = lowerBigIntExclusive + ((i + 1)*(space/numberOfPartitions));
+                var upper = lowerBigIntExclusive + (i + 1)*(space/numberOfPartitions);
 
                 if (i == numberOfPartitions - 1)
                 {
                     upper = upperBigIntInclusive;
                 }
 
-                yield return new SqlGuidRangePartition
-                {
-                    LowerBoundExclusive = lower.ToGuid(),
-                    UpperBoundInclusive = upper.ToGuid()
-                };
+                yield return new SqlGuidRangePartition(
+                    lower.ToGuid(),
+                    upper.ToGuid());
             }
         }
     }

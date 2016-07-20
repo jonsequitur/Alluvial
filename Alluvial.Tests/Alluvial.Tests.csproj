@@ -122,6 +122,7 @@
     <Compile Include="Infrastructure\Values.cs" />
     <Compile Include="Infrastructure\AsyncQueryable.cs" />
     <Compile Include="LeaseTests.cs" />
+    <Compile Include="PartioningTests.cs" />
     <Compile Include="PipelineTests.cs" />
     <Compile Include="Distributors\SqlBrokeredDistributorTests.cs" />
     <Compile Include="QueryableTests.cs" />
