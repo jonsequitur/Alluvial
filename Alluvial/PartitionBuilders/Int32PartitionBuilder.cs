@@ -7,8 +7,8 @@ namespace Alluvial.PartitionBuilders
     internal static class Int32PartitionBuilder
     {
         public static IEnumerable<IStreamQueryRangePartition<int>> ByRange(
-            Int32 lowerBoundExclusive,
-            Int32 upperBoundInclusive,
+            int lowerBoundExclusive,
+            int upperBoundInclusive,
             int numberOfPartitions)
         {
             var space = upperBoundInclusive - lowerBoundExclusive;

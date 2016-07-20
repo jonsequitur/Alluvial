@@ -12,14 +12,10 @@ namespace Alluvial.PartitionBuilders
         {
         }
 
-        protected override bool IsWithinUpperBound(Guid value)
-        {
-            return new SqlGuid(value).CompareTo(new SqlGuid(UpperBoundInclusive)) <= 0;
-        }
+        protected override bool IsWithinUpperBound(Guid value) =>
+            new SqlGuid(value).CompareTo(new SqlGuid(UpperBoundInclusive)) <= 0;
 
-        protected override bool IsWithinLowerBound(Guid value)
-        {
-            return new SqlGuid(value).CompareTo(new SqlGuid(LowerBoundExclusive)) > 0;
-        }
+        protected override bool IsWithinLowerBound(Guid value) =>
+            new SqlGuid(value).CompareTo(new SqlGuid(LowerBoundExclusive)) > 0;
     }
 }
