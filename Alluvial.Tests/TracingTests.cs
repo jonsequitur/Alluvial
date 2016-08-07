@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using FluentAssertions;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Alluvial.Tests.BankDomain;
 using Alluvial.Tests.Distributors;
@@ -44,7 +45,7 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .ContainSingle("[Aggregate] Projection<Int32,Int32>: 1 @ cursor 0 / batch of 2 starts @ 0");
+                         .ContainSingle(m => m == "[Aggregate] Projection<Int32,Int32>: 1 @ cursor 0 / batch of 2 starts @ 0");
         }
 
         [Test]
@@ -63,7 +64,7 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .ContainSingle("[Aggregate] Projection<Int32,Int32>: 1 @ cursor 0 / batch of 2 starts @ 0");
+                         .ContainSingle(m => m == "[Aggregate] Projection<Int32,Int32>: 1 @ cursor 0 / batch of 2 starts @ 0");
         }
 
         [Test]
@@ -82,7 +83,7 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .ContainSingle("[Aggregate] Projection<Int32,Int32>: 1 @ cursor 0 / batch of 2 starts @ 0");
+                         .ContainSingle(m => m == "[Aggregate] Projection<Int32,Int32>: 1 @ cursor 0 / batch of 2 starts @ 0");
         }
 
         [Test]
@@ -143,7 +144,7 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .ContainSingle("[Store.Put] Projection<IDomainEvent,Int32>: null @ cursor 0 for stream the-stream-id");
+                         .ContainSingle(m => m == "[Store.Put] Projection<IDomainEvent,Int32>: null @ cursor 0 for stream the-stream-id");
         }
 
         [Test]
@@ -156,7 +157,7 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .ContainSingle("[Store.Get] Projection<IDomainEvent,Int32>: null @ cursor 0 for stream the-stream-id");
+                         .ContainSingle(m => m == "[Store.Get] Projection<IDomainEvent,Int32>: null @ cursor 0 for stream the-stream-id");
         }
 
         [Test]
@@ -170,7 +171,7 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .ContainSingle("[Store.Get] no projection for stream the-stream-id");
+                         .ContainSingle(m => m == "[Store.Get] no projection for stream the-stream-id");
         }
 
         [Test]
@@ -184,7 +185,7 @@ namespace Alluvial.Tests
 
                 traceListener.Messages
                              .Should()
-                             .ContainSingle(m => m == "[Distribute] default: Start");
+                             .ContainSingle(m => m == $"[Distribute] By_default_Distributor_Trace_writes_start_events_to_trace_output: Start");
             }
         }
 
@@ -199,7 +200,7 @@ namespace Alluvial.Tests
 
                 traceListener.Messages
                              .Should()
-                             .ContainSingle(m => m == "[Distribute] default: Stop");
+                             .ContainSingle(m => m == "[Distribute] By_default_Distributor_Trace_writes_stop_events_to_trace_output: Stop");
             }
         }
 
@@ -214,11 +215,11 @@ namespace Alluvial.Tests
 
                 traceListener.Messages
                              .Should()
-                             .ContainSingle(m => m.Contains("[Distribute] default: OnReceive lease:1"));
+                             .ContainSingle(m => m.Contains("[Distribute] By_default_Distributor_Trace_writes_onReceive_events_to_trace_output: OnReceive lease:1"));
 
                 traceListener.Messages
                              .Should()
-                             .ContainSingle(m => m.Contains("[Distribute] default: OnReceive (done) lease:1"));
+                             .ContainSingle(m => m.Contains("[Distribute] By_default_Distributor_Trace_writes_onReceive_events_to_trace_output: OnReceive (done) lease:1"));
             }
         }
 
@@ -276,7 +277,7 @@ namespace Alluvial.Tests
         public async Task Distributor_Trace_writes_pool_name_on_all_trace_events()
         {
             var poolName = "this-is-the-pool";
-            var distributor = CreateDistributor(pool: poolName, waitInterval: TimeSpan.FromSeconds(.5)).Trace();
+            var distributor = CreateDistributor(pool: poolName).Trace();
 
             await distributor.Distribute(1);
 
@@ -394,15 +395,15 @@ namespace Alluvial.Tests
 
         private static IDistributor<int> CreateDistributor(
             Func<Lease<int>, Task> onReceive = null,
-            string pool = "default",
-            TimeSpan? waitInterval = null)
+            [CallerMemberName] string pool = null,
+            TimeSpan? defaultLeaseDuration = null)
         {
             var distributor = new InMemoryDistributor<int>(new[]
             {
                 new Leasable<int>(1, "1")
             },
-                                                           pool: pool,
-                                                           waitInterval: waitInterval);
+                pool: pool, 
+                defaultLeaseDuration: defaultLeaseDuration);
 
             distributor.OnReceive(onReceive ?? (async _ => { }));
 

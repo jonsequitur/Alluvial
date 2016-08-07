@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using FluentAssertions;
 using Its.Log.Instrumentation;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -17,8 +18,7 @@ namespace Alluvial.Tests.Distributors
             Func<Lease<int>, Task> onReceive = null,
             Leasable<int>[] leasables = null,
             int maxDegreesOfParallelism = 5,
-            TimeSpan? waitInterval = null,
-            string pool = null);
+            [CallerMemberName] string pool = null);
 
         protected abstract TimeSpan DefaultLeaseDuration { get; }
 
@@ -59,7 +59,7 @@ namespace Alluvial.Tests.Distributors
                 await Task.Delay(1);
                 Interlocked.Increment(ref received);
                 mre.Set();
-            }, waitInterval: DefaultLeaseDuration);
+            });
 
             await distributor.Start();
             await mre.WaitAsync().Timeout();
@@ -67,7 +67,7 @@ namespace Alluvial.Tests.Distributors
 
             var receivedAsOfStop = received;
 
-            await Task.Delay(((int) DefaultLeaseDuration.TotalMilliseconds*2));
+            await Task.Delay((int) DefaultLeaseDuration.TotalMilliseconds*2);
 
             received.Should().Be(receivedAsOfStop);
         }
@@ -79,7 +79,7 @@ namespace Alluvial.Tests.Distributors
             var currentlyGranted = new HashSet<string>();
             var everGranted = new HashSet<string>();
             var leasedConcurrently = "";
-            var distributor = CreateDistributor(waitInterval: TimeSpan.FromSeconds(5)).Trace();
+            var distributor = CreateDistributor().Trace();
             var countDown = new AsyncCountdownEvent(10);
 
             distributor.OnReceive(async lease =>
@@ -140,7 +140,7 @@ namespace Alluvial.Tests.Distributors
         public async Task When_receiver_throws_then_work_distribution_continues()
         {
             var received = 0;
-            var distributor = CreateDistributor(waitInterval: TimeSpan.FromMilliseconds(100)).Trace();
+            var distributor = CreateDistributor().Trace();
             var countdown = new AsyncCountdownEvent(20);
 
             distributor.OnReceive(async lease =>
@@ -160,30 +160,6 @@ namespace Alluvial.Tests.Distributors
             await distributor.Stop();
 
             received.Should().BeGreaterOrEqualTo(20);
-        }
-
-        [Test]
-        public async Task A_wait_interval_can_be_specified_before_which_a_released_lease_will_not_be_granted_again()
-        {
-            var tally = new ConcurrentDictionary<string, int>();
-            var distributor = CreateDistributor(waitInterval: TimeSpan.FromMilliseconds(1000)).Trace();
-            var countdown = new AsyncCountdownEvent(10);
-
-            distributor.OnReceive(async lease =>
-            {
-                tally.AddOrUpdate(lease.ResourceName,
-                                  addValueFactory: s => 1,
-                                  updateValueFactory: (s, v) => v + 1);
-                countdown.Signal();
-            });
-
-            await distributor.Start();
-            await countdown.WaitAsync().Timeout();
-            await distributor.Stop();
-
-            tally.Count.Should().Be(10);
-            tally.Should().ContainKeys("1", "2", "3", "4", "5", "6", "7", "8", "9", "10");
-            tally.Should().ContainValues(1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
         }
 
         [Test]
@@ -232,21 +208,28 @@ namespace Alluvial.Tests.Distributors
 
                 if (lease.ResourceName == "5")
                 {
+                    Console.WriteLine($"GOT LEASE 5 @ {DateTime.Now}");
+
                     // extend the lease
                     await lease.Extend(TimeSpan.FromDays(2));
 
                     // wait longer than the lease would normally last
-                    await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*3));
+                    await Task.Delay(5.Seconds());
+
+                    Console.WriteLine($"DONE LEASE 5@ {DateTime.Now}");
                 }
             };
 
             distributor1.OnReceive(onReceive);
             distributor2.OnReceive(onReceive);
-            await distributor1.Start();
-            await distributor2.Start();
-            await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*1.5));
-            await distributor1.Stop();
-            await distributor2.Stop();
+            await Task.WhenAll(
+                distributor1.Start(),
+                distributor2.Start());
+
+            await Task.Delay(2.Seconds());
+
+            await Task.WhenAll(distributor1.Stop(),
+                distributor2.Stop());
 
             Console.WriteLine(tally.ToLogString());
 
@@ -400,7 +383,6 @@ namespace Alluvial.Tests.Distributors
 
             var distributor = CreateDistributor(
                 async lease => receivedLeases.Add(lease),
-                waitInterval: TimeSpan.FromSeconds(.1),
                 maxDegreesOfParallelism: 10);
 
             distributor.OnReceive(async lease =>

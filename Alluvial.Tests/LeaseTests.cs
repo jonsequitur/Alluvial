@@ -84,6 +84,7 @@ namespace Alluvial.Tests
             lease.CancellationToken.IsCancellationRequested.Should().BeFalse();
         }
 
+        [Ignore] // FIX: (A_lease_can_be_extended_more_than_once_and_extensions_are_cumulative) this will be rewritten such that the last call supersedes the previous ones
         [Test]
         public async Task A_lease_can_be_extended_more_than_once_and_extensions_are_cumulative()
         {

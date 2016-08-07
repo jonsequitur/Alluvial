@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using NUnit.Framework;
 
@@ -13,14 +14,12 @@ namespace Alluvial.Tests.Distributors
             Func<Lease<int>, Task> onReceive = null,
             Leasable<int>[] leasables = null,
             int maxDegreesOfParallelism = 5,
-            TimeSpan? waitInterval = null,
-            string pool = null)
+            [CallerMemberName] string pool = null)
         {
             distributor = new InMemoryDistributor<int>(
                 leasables ?? DefaultLeasables,
                 pool ?? DateTimeOffset.UtcNow.Ticks.ToString(),
                 maxDegreesOfParallelism,
-                waitInterval ?? TimeSpan.FromSeconds(.5),
                 DefaultLeaseDuration);
             if (onReceive != null)
             {

@@ -16,7 +16,10 @@ namespace Alluvial
     {
         private readonly int maxDegreesOfParallelism;
         private bool stopped;
-        private readonly TimeSpan waitInterval;
+
+        private readonly TimeSpan waitBeforeStop;
+        private readonly TimeSpan waitAfterFailureToAcquireLease;
+
         private readonly Leasable<T>[] leasables;
         private int leasesHeld;
         private DistributorPipeAsync<T> pipeline;
@@ -28,7 +31,6 @@ namespace Alluvial
         /// </summary>
         /// <param name="leasables">The leasable resources to be distributed by the distributor.</param>
         /// <param name="maxDegreesOfParallelism">The maximum number of leases to be distributed at one time by this distributor instance.</param>
-        /// <param name="waitInterval">The interval to wait after a lease is released before which leased resource should not become available again. If not specified, the default is 5 seconds.</param>
         /// <param name="pool">The name of the pool of leasable resources from which leases are acquired.</param>
         /// <exception cref="System.ArgumentNullException"></exception>
         /// <exception cref="System.ArgumentException">
@@ -39,8 +41,7 @@ namespace Alluvial
         protected DistributorBase(
             Leasable<T>[] leasables,
             string pool,
-            int maxDegreesOfParallelism = 5,
-            TimeSpan? waitInterval = null)
+            int maxDegreesOfParallelism = 5)
         {
             if (leasables == null)
             {
@@ -60,21 +61,19 @@ namespace Alluvial
             }
 
             Pool = pool;
+
             this.leasables = leasables;
             this.maxDegreesOfParallelism = Math.Min(maxDegreesOfParallelism, leasables.Length);
-            this.waitInterval = waitInterval ?? TimeSpan.FromSeconds(5);
+
+            waitAfterFailureToAcquireLease = TimeSpan.FromMilliseconds(5000/maxDegreesOfParallelism);
+            waitBeforeStop = TimeSpan.FromSeconds(1);
         }
 
         /// <summary>
         /// Gets or sets the name of the pool from which the distributor distributes leases.
         /// </summary>
         protected string Pool { get; set; }
-
-        /// <summary>
-        /// Gets the interval to wait after a lease is released before which leased resource should not become available again.
-        /// </summary>
-        protected TimeSpan WaitInterval => waitInterval;
-
+        
         /// <summary>
         /// Gets the leasables that the distributor can distribute.
         /// </summary>
@@ -139,7 +138,7 @@ namespace Alluvial
                 }
                 else
                 {
-                    await Task.Delay((int) (waitInterval.TotalMilliseconds/leasables.Length));
+                    await Task.Delay(waitAfterFailureToAcquireLease);
                 }
             }
 
@@ -186,9 +185,6 @@ namespace Alluvial
             try
             {
                 lease = await AcquireLease();
-#if DEBUG
-                Debug.WriteLine($"[Distribute] {ToString()}: Acquired lease @ {stopwatch.ElapsedMilliseconds}ms");
-#endif
             }
             catch (Exception exception)
             {
@@ -197,12 +193,16 @@ namespace Alluvial
 
             if (lease != null)
             {
+#if DEBUG
+                Debug.WriteLine($"[Distribute] {ToString()}: Acquired lease {lease.ResourceName} @ {stopwatch.ElapsedMilliseconds}ms");
+#endif
+
                 Interlocked.Increment(ref leasesHeld);
 
                 try
                 {
                     var receive = pipeline(lease,
-                                           _ => Unit.Default.CompletedTask());
+                        _ => Unit.Default.CompletedTask());
 
                     var r = await Task.WhenAny(receive, lease.Expiration());
 
@@ -235,10 +235,9 @@ namespace Alluvial
                 Debug.WriteLine($"[Distribute] {ToString()}: Did not acquire lease @ {stopwatch.ElapsedMilliseconds}ms");
 #endif
 
-
                 if (loop)
                 {
-                    await Task.Delay(waitInterval);
+                    await Task.Delay(waitAfterFailureToAcquireLease);
                 }
                 else
                 {
@@ -282,8 +281,8 @@ namespace Alluvial
 
             while (leasesHeld > 0)
             {
-                Debug.WriteLine($"[Distribute] {ToString()}: Stop: waiting for {leasesHeld} to complete");
-                await Task.Delay(waitInterval);
+                Debug.WriteLine($"[Distribute] {ToString()}: Stop: waiting for {leasesHeld} leases to complete");
+                await Task.Delay(waitBeforeStop);
             }
         }
 

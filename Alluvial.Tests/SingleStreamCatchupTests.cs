@@ -465,8 +465,6 @@ namespace Alluvial.Tests
 
             await Task.Delay(300);
 
-            Console.WriteLine(new { pollCount });
-
             pollCount.Should().Be(pollCountAtDispose);
         }
 
@@ -521,13 +519,12 @@ namespace Alluvial.Tests
                                    .ToArray();
 
             var distributor = partitions.CreateInMemoryDistributor(
-                waitInterval: TimeSpan.FromSeconds(.1),
                 maxDegreesOfParallelism: 30,
-                defaultLeaseDuration: 5.Seconds())
+                defaultLeaseDuration: 1.Seconds())
                                         .Trace();
 
             var catchup = stream.CreateDistributedCatchup(distributor)
-                                .Backoff(1.Seconds());
+                                .Backoff(3.Seconds());
 
             catchup.Subscribe(async (p, b) =>
             {
