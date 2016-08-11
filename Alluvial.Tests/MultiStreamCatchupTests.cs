@@ -252,7 +252,7 @@ namespace Alluvial.Tests
                 {
                     Console.WriteLine($"there are {streamIds.Length} stream ids");
 
-                    foreach (var streamId in streamIds.Take(20))
+                    foreach (var streamId in streamIds)
                     {
                         await Task.Delay(2);
                         store.WriteEvents(streamId);
