@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using FluentAssertions;
 using Its.Log.Instrumentation;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -18,7 +17,7 @@ namespace Alluvial.Tests.Distributors
             Func<Lease<int>, Task> onReceive = null,
             Leasable<int>[] leasables = null,
             int maxDegreesOfParallelism = 5,
-            [CallerMemberName] string pool = null);
+            string pool = null);
 
         protected abstract TimeSpan DefaultLeaseDuration { get; }
 
@@ -177,7 +176,7 @@ namespace Alluvial.Tests.Distributors
                 if (!blocked)
                 {
                     blocked = true;
-                    await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*3));
+                    await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*4));
                 }
 
                 Interlocked.Increment(ref receiveCount);
@@ -330,25 +329,42 @@ namespace Alluvial.Tests.Distributors
         public async Task The_received_lease_LastGranted_property_returns_the_time_of_the_previous_grant()
         {
             Lease<int> lease = null;
-            var lastGranted = DefaultLeasables.Select(l => l.LeaseLastGranted).Distinct().Single();
+            var lastGranted = DateTimeOffset.Parse("8/10/2016");
 
-            var distributor = CreateDistributor(async l => { lease = l; });
+            var distributor = CreateDistributor(
+                async l => lease = l,
+                new[]
+                {
+                    new Leasable<int>(1, "the only lease in the pool")
+                    {
+                        LeaseLastGranted = lastGranted
+                    }
+                });
 
             await distributor.Distribute(1);
 
             lease.LastGranted
-                 .ToUniversalTime()
-                 .Should()
-                 .BeCloseTo(lastGranted,
-                            precision: (int) ClockDriftTolerance.TotalMilliseconds);
+                .ToUniversalTime()
+                .Should()
+                .BeCloseTo(lastGranted,
+                    precision: (int) ClockDriftTolerance.TotalMilliseconds);
         }
 
         [Test]
         public async Task The_received_lease_LastReleased_property_returns_the_time_of_the_previous_release()
         {
             Lease<int> lease = null;
-            var lastReleased = DefaultLeasables.Select(l => l.LeaseLastReleased).Distinct().Single();
-            var distributor = CreateDistributor(async l => { lease = l; });
+            var lastReleased = DateTimeOffset.Parse("8/10/2016");
+
+            var distributor = CreateDistributor(
+                async l => lease = l,
+                new[]
+                {
+                    new Leasable<int>(1, "the only lease in the pool")
+                    {
+                        LeaseLastReleased = lastReleased
+                    }
+                });
 
             await distributor.Distribute(1);
 
@@ -356,7 +372,7 @@ namespace Alluvial.Tests.Distributors
                  .ToUniversalTime()
                  .Should()
                  .BeCloseTo(lastReleased,
-                            precision: (int) ClockDriftTolerance.TotalMilliseconds);
+                     precision: (int) ClockDriftTolerance.TotalMilliseconds);
         }
 
         [Test]

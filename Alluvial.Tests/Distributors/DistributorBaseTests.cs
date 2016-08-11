@@ -1,7 +1,6 @@
 using System;
 using FluentAssertions;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -83,9 +82,9 @@ namespace Alluvial.Tests.Distributors
             Leasable<T>[] leasables,
             Func<Task> beforeAcquire = null,
             Func<Lease<T>, Task> beforeRelease = null,
-            [CallerMemberName] string pool = null,
+            string pool = null,
             int maxDegreesOfParallelism = 5) :
-                base(leasables, pool, maxDegreesOfParallelism)
+                base(leasables, pool ?? Guid.NewGuid().ToString(), maxDegreesOfParallelism)
         {
             this.beforeAcquire = beforeAcquire ?? (async () => { });
             this.beforeRelease = beforeRelease ?? (async lease => { });

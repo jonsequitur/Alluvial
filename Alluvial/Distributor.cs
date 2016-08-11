@@ -153,8 +153,14 @@ namespace Alluvial
         /// <summary>
         /// Specifies a delegate to be called when a lease is available.
         /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="distributor">The distributor.</param>
         /// <param name="receive">The delegate called when work is available to be done.</param>
-        /// <remarks>For the duration of the lease, the leased resource will not be available to any other instance.</remarks>
+        /// <exception cref="System.ArgumentNullException">
+        /// </exception>
+        /// <remarks>
+        /// For the duration of the lease, the leased resource will not be available to any other instance.
+        /// </remarks>
         public static void OnReceive<T>(
             this IDistributor<T> distributor,
             Func<Lease<T>, Task> receive)

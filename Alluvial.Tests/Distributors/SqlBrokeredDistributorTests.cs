@@ -1,8 +1,6 @@
 using System;
 using Alluvial.Distributors.Sql;
 using FluentAssertions;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using NUnit.Framework;
 
@@ -23,11 +21,13 @@ namespace Alluvial.Tests.Distributors
             Func<Lease<int>, Task> onReceive = null,
             Leasable<int>[] leasables = null,
             int maxDegreesOfParallelism = 1,
-            [CallerMemberName] string pool = null)
+            string pool = null)
         {
             leasables = leasables ?? DefaultLeasables;
 
-            pool = pool ?? DateTimeOffset.UtcNow.Ticks.ToString();
+            pool = pool ?? Guid.NewGuid().ToString();
+
+            Console.WriteLine(new { pool });
 
             if (pool.Length > 75)
             {
