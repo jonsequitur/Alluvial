@@ -171,7 +171,6 @@ namespace Alluvial
         {
             if (stopped)
             {
-                Debug.WriteLine($"[Distribute] {ToString()}: Aborting");
                 return LeaseAcquisitionAttempt.Failed();
             }
 
