@@ -21,7 +21,7 @@ namespace Alluvial
         private readonly TimeSpan waitAfterFailureToAcquireLease;
 
         private readonly Leasable<T>[] leasables;
-        private int leasesHeld;
+        private int countOfLeasesInUse;
         private DistributorPipeAsync<T> pipeline;
 
         private event Action<Exception, Lease<T>> CaughtException;
@@ -197,7 +197,7 @@ namespace Alluvial
                 Debug.WriteLine($"[Distribute] {ToString()}: Acquired lease {lease.ResourceName} @ {stopwatch.ElapsedMilliseconds}ms");
 #endif
 
-                Interlocked.Increment(ref leasesHeld);
+                Interlocked.Increment(ref countOfLeasesInUse);
 
                 try
                 {
@@ -227,7 +227,7 @@ namespace Alluvial
                     CaughtException?.Invoke(exception, lease);
                 }
 
-                Interlocked.Decrement(ref leasesHeld);
+                Interlocked.Decrement(ref countOfLeasesInUse);
             }
             else
             {
@@ -279,9 +279,9 @@ namespace Alluvial
         {
             stopped = true;
 
-            while (leasesHeld > 0)
+            while (countOfLeasesInUse > 0)
             {
-                Debug.WriteLine($"[Distribute] {ToString()}: Stop: waiting for {leasesHeld} leases to complete");
+                Debug.WriteLine($"[Distribute] {ToString()}: Stop: waiting for {countOfLeasesInUse} leases to complete");
                 await Task.Delay(waitBeforeStop);
             }
         }

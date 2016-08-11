@@ -393,7 +393,7 @@ namespace Alluvial.Tests.Distributors
         }
 
         [Test]
-        public async Task Distributor_rate_can_be_slowed()
+        public async Task Distributor_rate_can_be_slowed_by_extending_leases()
         {
             var receivedLeases = new ConcurrentBag<Lease<int>>();
 
