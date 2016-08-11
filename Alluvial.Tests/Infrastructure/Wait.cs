@@ -40,8 +40,8 @@ namespace Alluvial.Tests
         {
             timeout = timeout ??
                       (Debugger.IsAttached
-                           ? (TimeSpan.FromMinutes(5))
-                           : (TimeSpan.FromSeconds(20)));
+                           ? TimeSpan.FromMinutes(5)
+                           : TimeSpan.FromSeconds(10));
 
             pollInterval = pollInterval ?? TimeSpan.FromMilliseconds(100);
 
