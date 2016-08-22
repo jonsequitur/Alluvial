@@ -17,7 +17,9 @@ namespace Alluvial.Tests.Distributors
             Func<Lease<int>, Task> onReceive = null,
             Leasable<int>[] leasables = null,
             int maxDegreesOfParallelism = 5,
-            string pool = null);
+            string pool = null,
+            TimeSpan? defaultLeaseDuration = null,
+            bool autoRelease = true);
 
         protected abstract TimeSpan DefaultLeaseDuration { get; }
 
@@ -139,7 +141,7 @@ namespace Alluvial.Tests.Distributors
         public async Task When_receiver_throws_then_work_distribution_continues()
         {
             var received = 0;
-            var distributor = CreateDistributor().Trace();
+            var distributor = CreateDistributor(defaultLeaseDuration: 1.Seconds()).Trace();
             var countdown = new AsyncCountdownEvent(20);
 
             distributor.OnReceive(async lease =>
@@ -399,12 +401,12 @@ namespace Alluvial.Tests.Distributors
 
             var distributor = CreateDistributor(
                 async lease => receivedLeases.Add(lease),
-                maxDegreesOfParallelism: 10);
+                maxDegreesOfParallelism: 10,
+                autoRelease: false);
 
             distributor.OnReceive(async lease =>
             {
                 await lease.Extend(2.Seconds());
-                await Task.Delay(2.Seconds());
             });
 
             await distributor.Start();

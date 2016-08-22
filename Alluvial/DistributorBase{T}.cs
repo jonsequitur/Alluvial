@@ -217,13 +217,16 @@ namespace Alluvial
                     lease.Exception = exception;
                 }
 
-                try
+                if (AutoReleaseLeases)
                 {
-                    await ReleaseLease(lease);
-                }
-                catch (Exception exception)
-                {
-                    CaughtException?.Invoke(exception, lease);
+                    try
+                    {
+                        await ReleaseLease(lease);
+                    }
+                    catch (Exception exception)
+                    {
+                        CaughtException?.Invoke(exception, lease);
+                    }
                 }
 
                 Interlocked.Decrement(ref countOfLeasesInUse);
@@ -259,6 +262,8 @@ namespace Alluvial
 
             return LeaseAcquisitionAttempt.Failed();
         }
+
+        internal bool AutoReleaseLeases { get; set; } = true;
 
         /// <summary>
         /// Releases the specified lease.

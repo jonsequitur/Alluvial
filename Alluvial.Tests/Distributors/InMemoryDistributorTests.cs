@@ -13,13 +13,19 @@ namespace Alluvial.Tests.Distributors
             Func<Lease<int>, Task> onReceive = null,
             Leasable<int>[] leasables = null,
             int maxDegreesOfParallelism = 5,
-            string pool = null)
+            string pool = null,
+            TimeSpan? defaultLeaseDuration = null,
+            bool autoRelease = true)
         {
             distributor = new InMemoryDistributor<int>(
                 leasables ?? DefaultLeasables,
                 pool ?? DateTimeOffset.UtcNow.Ticks.ToString(),
                 maxDegreesOfParallelism,
-                DefaultLeaseDuration);
+                 defaultLeaseDuration ?? DefaultLeaseDuration)
+            {
+                AutoReleaseLeases = autoRelease
+            };
+
             if (onReceive != null)
             {
                 distributor.OnReceive(onReceive);
