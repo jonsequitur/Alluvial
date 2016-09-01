@@ -269,7 +269,11 @@ namespace Alluvial
                 do
                 {
                     countBefore = counter.Value;
-                    await catchup.RunSingleBatch(lease ?? Lease.CreateDefault());
+
+                    await catchup.RunSingleBatch(
+                        lease ?? 
+                        Lease.CreateDefault());
+
                 } while (countBefore != counter.Value);
             }
         }

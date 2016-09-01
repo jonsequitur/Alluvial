@@ -10,6 +10,12 @@ namespace Alluvial.Tests.BankDomain
             var eventsArray = events.ToArray();
             balanceProjection.Balance += eventsArray.OfType<FundsDeposited>().Sum(f => f.Amount);
             balanceProjection.Balance -= eventsArray.OfType<FundsWithdrawn>().Sum(f => f.Amount);
+
+            balanceProjection.Value = events
+                .Select(e => e.AggregateId)
+                .Distinct()
+                .SingleOrDefault();
+
             return balanceProjection;
         }
     }

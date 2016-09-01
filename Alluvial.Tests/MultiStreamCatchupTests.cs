@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Alluvial.Tests.BankDomain;
 using Alluvial.Tests.StreamImplementations.NEventStore;
+using Its.Log.Instrumentation;
 using NEventStore;
 using NUnit.Framework;
 
@@ -166,6 +167,11 @@ namespace Alluvial.Tests
 
                 await catchup.RunUntilCaughtUp();
             }
+
+            Console.WriteLine(projectionStore
+                .Select(p => p.Value)
+                .ToLogString());
+
             projectionStore.Sum(b => b.Balance)
                            .Should()
                            .Be(100);
@@ -241,7 +247,7 @@ namespace Alluvial.Tests
         public async Task Catchup_Poll_keeps_projections_updated_as_new_events_are_written_to_existing_streams()
         {
             var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
-
+            var done = false;
             var catchup = StreamCatchup.All(streamSource.StreamPerAggregate(), batchSize: 5);
 
             using (catchup.Subscribe(new BalanceProjector().Trace(), projectionStore.Trace()))
@@ -255,8 +261,10 @@ namespace Alluvial.Tests
                     foreach (var streamId in streamIds)
                     {
                         await Task.Delay(2);
-                        store.WriteEvents(streamId);
-                        Console.WriteLine("wrote 1 event");
+                        if (!done)
+                        {
+                            store.WriteEvents(streamId);
+                        }
                     }
                 });
 
@@ -264,7 +272,8 @@ namespace Alluvial.Tests
                 {
                     var sum = projectionStore.Sum(b => b.Balance);
                     Console.WriteLine("sum is " + sum);
-                    return sum >= 120;
+                    done = sum >= 120;
+                    return done;
                 }, pollInterval: 20.Milliseconds());
             }
         }

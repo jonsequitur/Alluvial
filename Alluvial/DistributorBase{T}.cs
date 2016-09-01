@@ -131,6 +131,7 @@ namespace Alluvial
             while (acquired.Count < count &&
                    !stopped)
             {
+
                 var acquisition = await TryRunOne(loop: false);
                 if (acquisition.Acquired)
                 {

@@ -30,6 +30,7 @@ namespace Alluvial.Tests.Distributors
             {
                 distributor.OnReceive(onReceive);
             }
+
             return distributor;
         }
 

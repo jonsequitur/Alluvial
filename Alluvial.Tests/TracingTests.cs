@@ -144,7 +144,7 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .ContainSingle(m => m == "[Store.Put] Projection<IDomainEvent,Int32>: null @ cursor 0 for stream the-stream-id");
+                         .ContainSingle(m => m == "[Store.Put] Projection<String,Int32>: null @ cursor 0 for stream the-stream-id");
         }
 
         [Test]
@@ -157,7 +157,7 @@ namespace Alluvial.Tests
 
             traceListener.Messages
                          .Should()
-                         .ContainSingle(m => m == "[Store.Get] Projection<IDomainEvent,Int32>: null @ cursor 0 for stream the-stream-id");
+                         .ContainSingle(m => m == "[Store.Get] Projection<String,Int32>: null @ cursor 0 for stream the-stream-id");
         }
 
         [Test]
