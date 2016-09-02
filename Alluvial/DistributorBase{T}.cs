@@ -65,6 +65,7 @@ namespace Alluvial
             this.leasables = leasables;
             this.maxDegreesOfParallelism = Math.Min(maxDegreesOfParallelism, leasables.Length);
 
+            // ReSharper disable once PossibleLossOfFraction
             waitAfterFailureToAcquireLease = TimeSpan.FromMilliseconds(5000/maxDegreesOfParallelism);
             waitBeforeStop = TimeSpan.FromSeconds(1);
         }
@@ -294,7 +295,7 @@ namespace Alluvial
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
-        public void Dispose() => Task.Run(() => Stop()).Wait();
+        public void Dispose() => Task.Run(Stop).Wait();
 
         /// <summary>
         /// Returns a <see cref="System.String" /> that represents this instance.
