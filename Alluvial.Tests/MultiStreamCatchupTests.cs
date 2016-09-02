@@ -34,7 +34,7 @@ namespace Alluvial.Tests
 
             foreach (var streamId in streamIds)
             {
-                store.WriteEvents(streamId, 1m);
+                store.WriteEvent(streamId);
             }
 
             streamSource = new NEventStoreStreamSource(store);
@@ -200,7 +200,7 @@ namespace Alluvial.Tests
 
                 var streamId = streamIds.First();
 
-                store.WriteEvents(streamId, 100m);
+                store.WriteEvent(streamId, amount: 100m);
 
                 await catchup.RunUntilCaughtUp();
 
@@ -228,7 +228,7 @@ namespace Alluvial.Tests
                 {
                     foreach (var streamId in Enumerable.Range(1, 20).Select(_ => Guid.NewGuid().ToString()))
                     {
-                        store.WriteEvents(streamId);
+                        store.WriteEvent(streamId);
                         await Task.Delay(1);
                     }
                     Console.WriteLine("wrote 200 more events");
@@ -263,7 +263,7 @@ namespace Alluvial.Tests
                         await Task.Delay(2);
                         if (!done)
                         {
-                            store.WriteEvents(streamId);
+                            store.WriteEvent(streamId);
                         }
                     }
                 });
@@ -397,17 +397,17 @@ namespace Alluvial.Tests
 
             using (catchup.Subscribe(new BalanceProjector()))
             {
-                store.WriteEvents(streamId);
+                store.WriteEvent(streamId);
                 await catchup.RunSingleBatch();
                 queriedEvents.Select(e => e.StreamRevision)
                              .ShouldBeEquivalentTo(new[] { 1 });
 
-                store.WriteEvents(streamId);
+                store.WriteEvent(streamId);
                 await catchup.RunSingleBatch();
                 queriedEvents.Select(e => e.StreamRevision)
                              .ShouldBeEquivalentTo(new[] { 1, 2 });
 
-                store.WriteEvents(streamId);
+                store.WriteEvent(streamId);
                 await catchup.RunSingleBatch();
                 queriedEvents.Select(e => e.StreamRevision)
                              .ShouldBeEquivalentTo(new[] { 1, 2, 3 });
@@ -439,9 +439,9 @@ namespace Alluvial.Tests
 
             using (catchup.Subscribe(new BalanceProjector(), balanceProjections))
             {
-                store.WriteEvents(streamId, amount: 1); // "101" - 1
-                store.WriteEvents(streamId, amount: 2); // "102" - 2
-                store.WriteEvents(streamId, amount: 3); // "103" - 3
+                store.WriteEvent(streamId, amount: 1); // "101" - 1
+                store.WriteEvent(streamId, amount: 2); // "102" - 2
+                store.WriteEvent(streamId, amount: 3); // "103" - 3
 
                 await catchup.RunSingleBatch();
 
@@ -461,7 +461,7 @@ namespace Alluvial.Tests
 
                 using (catchup.Subscribe(new AccountHistoryProjector(), accountHistoryProjections))
                 {
-                    store.WriteEvents(streamId, amount: 4);
+                    store.WriteEvent(streamId, amount: 4);
 
                     await catchup.RunSingleBatch();
 
@@ -496,9 +496,9 @@ namespace Alluvial.Tests
             var catchup = StreamCatchup.All(streamSource.StreamPerAggregate());
             using (catchup.Subscribe(new BalanceProjector(), projectionStore))
             {
-                store.WriteEvents(streamId);
-                store.WriteEvents(streamId);
-                store.WriteEvents(streamId);
+                store.WriteEvent(streamId);
+                store.WriteEvent(streamId);
+                store.WriteEvent(streamId);
 
                 await catchup.RunSingleBatch();
             }

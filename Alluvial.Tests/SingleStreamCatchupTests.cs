@@ -29,7 +29,7 @@ namespace Alluvial.Tests
 
             streamId = Guid.NewGuid().ToString();
 
-            store.WriteEvents(streamId);
+            store.WriteEvent(streamId);
 
             stream = NEventStoreStream.ByAggregate(store, streamId).DomainEvents();
         }
@@ -281,17 +281,17 @@ namespace Alluvial.Tests
             }), batchSize: 1);
             catchup.Subscribe(new BalanceProjector());
 
-            store.WriteEvents(streamId);
+            store.WriteEvent(streamId);
             await catchup.RunSingleBatch();
             queriedEvents.Select(e => e.StreamRevision)
                          .ShouldBeEquivalentTo(new[] { 1 });
 
-            store.WriteEvents(streamId);
+            store.WriteEvent(streamId);
             await catchup.RunSingleBatch();
             queriedEvents.Select(e => e.StreamRevision)
                          .ShouldBeEquivalentTo(new[] { 1, 2 });
 
-            store.WriteEvents(streamId);
+            store.WriteEvent(streamId);
             await catchup.RunSingleBatch();
             queriedEvents.Select(e => e.StreamRevision)
                          .ShouldBeEquivalentTo(new[] { 1, 2, 3 });
@@ -334,7 +334,7 @@ namespace Alluvial.Tests
             });
             catchup.Subscribe(new AccountHistoryProjector(), accountHistoryProjections);
 
-            store.WriteEvents(streamId);
+            store.WriteEvent(streamId);
 
             await catchup.RunSingleBatch();
 
@@ -408,7 +408,7 @@ namespace Alluvial.Tests
 
             catchup.Subscribe(new BalanceProjector(), fetchAndSave);
 
-            store.WriteEvents(streamId, amount: 100m, howMany: 5);
+            store.WriteEvents(streamId, howMany: 5, amount: 100m);
 
             await catchup.RunSingleBatch();
 

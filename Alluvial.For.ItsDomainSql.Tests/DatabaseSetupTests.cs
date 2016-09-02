@@ -9,6 +9,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Alluvial.Distributors.Sql;
+using Its.Log.Instrumentation;
 using Microsoft.Its.Domain.Sql;
 using Microsoft.Its.Domain.Sql.Migrations;
 using NUnit.Framework;
@@ -21,7 +22,15 @@ namespace Alluvial.For.ItsDomainSql.Tests
         [SetUp]
         public void SetUp()
         {
-            Database.Delete(SchemaTestDbContext.ConnectionString);
+            try
+            {
+                Database.Delete(SchemaTestDbContext.ConnectionString);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToLogString());
+                throw;
+            }
         }
 
         [Test]
