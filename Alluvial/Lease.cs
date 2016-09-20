@@ -88,6 +88,9 @@ namespace Alluvial
         /// </summary>
         public Exception Exception { get; internal set; }
 
+        /// <summary>
+        /// Releases the lease, making it available for acquisition by other workers.
+        /// </summary>
         public async Task Release()
         {
             if (release != null)

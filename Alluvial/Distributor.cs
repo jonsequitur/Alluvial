@@ -11,6 +11,11 @@ namespace Alluvial
     /// </summary>
     public static class Distributor
     {
+        /// <summary>
+        /// Configures the distributor to release leases as soon as the work on the lease is completed.
+        /// </summary>
+        /// <typeparam name="T">The type of the distributed resource.</typeparam>
+        /// <param name="distributor">The distributor.</param>
         public static IDistributor<T> AutoReleaseLeases<T>(
             this IDistributor<T> distributor)
         {
