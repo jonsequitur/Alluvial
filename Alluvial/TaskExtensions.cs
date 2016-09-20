@@ -14,26 +14,7 @@ namespace Alluvial
             return tasksArray.Select(t => t.Result);
         }
 
-        public static Task<T> CompletedTask<T>(this T result) => 
+        public static Task<T> CompletedTask<T>(this T result) =>
             Task.FromResult(result);
-
-        public static async Task TimeoutAfter(
-            this Task task,
-            Task timeout)
-        {
-            if (task.IsCompleted)
-            {
-                return;
-            }
-
-            if (task == await Task.WhenAny(task, timeout))
-            {
-                await task;
-            }
-            else
-            {
-                throw new TimeoutException();
-            }
-        }
     }
 }

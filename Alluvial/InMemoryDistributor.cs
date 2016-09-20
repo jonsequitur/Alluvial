@@ -56,7 +56,12 @@ namespace Alluvial
                 return null;
             }
 
-            var lease = new Lease<T>(resource, defaultLeaseDuration, OwnerToken.Next());
+            Lease<T> lease = null;
+            lease = new Lease<T>(
+                resource,
+                defaultLeaseDuration,
+                OwnerToken.Next(),
+                release: () => ReleaseLease(lease));
 
             if (workInProgress.TryAdd(resource, lease))
             {

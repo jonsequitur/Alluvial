@@ -9,9 +9,9 @@ namespace Alluvial
     public interface ILease
     {
         /// <summary>
-        /// Cancels the lease.
+        /// Releases the lease.
         /// </summary>
-        void Cancel();
+        Task Release();
 
         /// <summary>
         /// Gets a task that completes when the lease is released or expired.

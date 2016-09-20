@@ -262,11 +262,12 @@ namespace Alluvial.Tests
         {
             Exception caughtException = null;
             var distributor = new TestDistributor<int>(
-                Enumerable.Range(1, 10)
-                          .Select(i => new Leasable<int>(i, i.ToString()))
-                          .ToArray(),
-                beforeRelease: async lease => { throw new Exception("dang!"); })
-                .Trace(onException: (ex, lease) => caughtException = ex);
+                    Enumerable.Range(1, 10)
+                              .Select(i => new Leasable<int>(i, i.ToString()))
+                              .ToArray(),
+                    beforeRelease: async lease => { throw new Exception("dang!"); })
+                .Trace(onException: (ex, lease) => caughtException = ex)
+                .AutoReleaseLeases();
 
             await distributor.Distribute(1);
 
@@ -277,7 +278,7 @@ namespace Alluvial.Tests
         public async Task Distributor_Trace_writes_pool_name_on_all_trace_events()
         {
             var poolName = "this-is-the-pool";
-            var distributor = CreateDistributor(pool: poolName).Trace();
+            var distributor = CreateDistributor(pool: poolName).Trace().AutoReleaseLeases();
 
             await distributor.Distribute(1);
 

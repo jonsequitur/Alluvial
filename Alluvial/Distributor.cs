@@ -11,6 +11,18 @@ namespace Alluvial
     /// </summary>
     public static class Distributor
     {
+        public static IDistributor<T> AutoReleaseLeases<T>(
+            this IDistributor<T> distributor)
+        {
+            distributor.OnReceive(async (lease, next) =>
+            {
+                await next(lease);
+                await lease.Release();
+            });
+
+            return distributor;
+        }
+
         /// <summary>
         /// Creates an anonymous distributor.
         /// </summary>

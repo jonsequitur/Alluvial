@@ -12,6 +12,7 @@ namespace Alluvial
     {
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly Func<TimeSpan, Task<TimeSpan>> extend;
+        private readonly Func<Task> release;
         private TimeSpan duration;
 
         /// <summary>
@@ -19,10 +20,14 @@ namespace Alluvial
         /// </summary>
         /// <param name="duration">The duration of the lease.</param>
         /// <param name="extend">A delegate that will be called if the lease is extended.</param>
-        public Lease(TimeSpan duration, Func<TimeSpan, Task<TimeSpan>> extend = null)
+        public Lease(
+            TimeSpan duration, 
+            Func<TimeSpan, Task<TimeSpan>> extend = null,
+            Func<Task> release = null)
         {
             this.duration = duration;
             this.extend = extend;
+            this.release = release;
             cancellationTokenSource.CancelAfter(Duration);
         }
 
@@ -35,11 +40,6 @@ namespace Alluvial
         /// Gets a cancellation token that can be used to cancel the task associated with the lease.
         /// </summary>
         public CancellationToken CancellationToken => cancellationTokenSource.Token;
-
-        /// <summary>
-        /// Cancels the lease.
-        /// </summary>
-        public void Cancel() => cancellationTokenSource.Cancel();
 
         /// <summary>
         /// Gets a task that completes when the lease is released or expired.
@@ -87,6 +87,16 @@ namespace Alluvial
         /// Gets an exception caught during handling of the lease, if any.
         /// </summary>
         public Exception Exception { get; internal set; }
+
+        public async Task Release()
+        {
+            if (release != null)
+            {
+                await release();
+            }
+
+            cancellationTokenSource.Cancel();
+        }
 
         internal static ILease CreateDefault()
         {

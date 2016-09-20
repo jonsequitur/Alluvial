@@ -108,7 +108,8 @@ namespace Alluvial.Distributors.Sql
                         lease = new Lease<T>(resource,
                                              defaultLeaseDuration,
                                              (int) token,
-                                             extend: by => ExtendLease(lease, @by));
+                                             extend: by => ExtendLease(lease, @by),
+                                             release: () => ReleaseLease(lease));
                     }
 
                     reader.Dispose();

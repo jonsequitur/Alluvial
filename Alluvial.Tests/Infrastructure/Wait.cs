@@ -65,11 +65,9 @@ namespace Alluvial.Tests
         }
 
         public static async Task Until(
-            Func<bool> until,
-            TimeSpan? pollInterval = null,
-            TimeSpan? timeout = null)
-        {
+                Func<bool> until,
+                TimeSpan? pollInterval = null,
+                TimeSpan? timeout = null) =>
             await Until(() => until().CompletedTask(), pollInterval, timeout);
-        }
     }
 }

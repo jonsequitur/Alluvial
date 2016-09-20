@@ -18,8 +18,7 @@ namespace Alluvial.Tests.Distributors
             Leasable<int>[] leasables = null,
             int maxDegreesOfParallelism = 5,
             string pool = null,
-            TimeSpan? defaultLeaseDuration = null,
-            bool autoRelease = true);
+            TimeSpan? defaultLeaseDuration = null);
 
         protected abstract TimeSpan DefaultLeaseDuration { get; }
 
@@ -141,7 +140,7 @@ namespace Alluvial.Tests.Distributors
         public async Task When_receiver_throws_then_work_distribution_continues()
         {
             var received = 0;
-            var distributor = CreateDistributor(defaultLeaseDuration: 1.Seconds()).Trace();
+            var distributor = CreateDistributor(defaultLeaseDuration: 1.Seconds()).Trace().AutoReleaseLeases();
             var countdown = new AsyncCountdownEvent(20);
 
             distributor.OnReceive(async lease =>
@@ -401,8 +400,7 @@ namespace Alluvial.Tests.Distributors
 
             var distributor = CreateDistributor(
                 async lease => receivedLeases.Add(lease),
-                maxDegreesOfParallelism: 10,
-                autoRelease: false);
+                maxDegreesOfParallelism: 10);
 
             distributor.OnReceive(async lease =>
             {

@@ -22,8 +22,7 @@ namespace Alluvial.Tests.Distributors
             Leasable<int>[] leasables = null,
             int maxDegreesOfParallelism = 1,
             string pool = null,
-            TimeSpan? defaultLeaseDuration = null,
-            bool autoRelease = true)
+            TimeSpan? defaultLeaseDuration = null)
         {
             leasables = leasables ?? DefaultLeasables;
 
@@ -41,10 +40,7 @@ namespace Alluvial.Tests.Distributors
                 Database,
                 pool,
                 maxDegreesOfParallelism,
-                defaultLeaseDuration ?? DefaultLeaseDuration)
-            {
-                AutoReleaseLeases = autoRelease
-            };
+                defaultLeaseDuration ?? DefaultLeaseDuration);
 
             if (onReceive != null)
             {

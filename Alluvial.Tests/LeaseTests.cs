@@ -50,7 +50,7 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task Lease_expiration_is_triggered_by_canceling_the_cancelation_token()
+        public async Task Lease_expiration_is_triggered_by_releasing_the_lease()
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -61,7 +61,7 @@ namespace Alluvial.Tests
 
             var task1 = Task.Run(async () => await lease.Expiration());
 
-            var task2 = Task.Run(() => lease.Cancel());
+            var task2 = Task.Run(() => lease.Release().Wait());
 
             await Task.WhenAll(task1, task2);
 

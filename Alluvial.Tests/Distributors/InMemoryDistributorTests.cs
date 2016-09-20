@@ -14,17 +14,13 @@ namespace Alluvial.Tests.Distributors
             Leasable<int>[] leasables = null,
             int maxDegreesOfParallelism = 5,
             string pool = null,
-            TimeSpan? defaultLeaseDuration = null,
-            bool autoRelease = true)
+            TimeSpan? defaultLeaseDuration = null)
         {
             distributor = new InMemoryDistributor<int>(
                 leasables ?? DefaultLeasables,
                 pool ?? DateTimeOffset.UtcNow.Ticks.ToString(),
                 maxDegreesOfParallelism,
-                 defaultLeaseDuration ?? DefaultLeaseDuration)
-            {
-                AutoReleaseLeases = autoRelease
-            };
+                 defaultLeaseDuration ?? DefaultLeaseDuration);
 
             if (onReceive != null)
             {
