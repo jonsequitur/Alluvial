@@ -9,11 +9,6 @@ namespace Alluvial
     public interface ILease
     {
         /// <summary>
-        /// Releases the lease.
-        /// </summary>
-        Task Release();
-
-        /// <summary>
         /// Gets a task that completes when the lease is released or expired.
         /// </summary>
         Task Expiration();
@@ -25,5 +20,10 @@ namespace Alluvial
         /// <returns></returns>
         /// <exception cref="System.InvalidOperationException">The lease cannot be extended.</exception>
         Task Extend(TimeSpan by);
+
+        /// <summary>
+        /// Releases the lease, making it available for acquisition by other workers.
+        /// </summary>
+        Task Release();
     }
 }
