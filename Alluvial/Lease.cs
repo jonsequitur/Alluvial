@@ -20,6 +20,7 @@ namespace Alluvial
         /// </summary>
         /// <param name="duration">The duration of the lease.</param>
         /// <param name="extend">A delegate that will be called if the lease is extended.</param>
+        /// <param name="release">A delegate that is called to release the lease.</param>
         public Lease(
             TimeSpan duration, 
             Func<TimeSpan, Task<TimeSpan>> extend = null,
@@ -101,9 +102,6 @@ namespace Alluvial
             cancellationTokenSource.Cancel();
         }
 
-        internal static ILease CreateDefault()
-        {
-            return new Lease(TimeSpan.FromMinutes(5));
-        }
+        internal static ILease CreateDefault() => new Lease(TimeSpan.FromMinutes(5));
     }
 }
