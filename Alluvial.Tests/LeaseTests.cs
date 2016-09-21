@@ -107,6 +107,19 @@ namespace Alluvial.Tests
         }
 
         [Test]
+        public async Task A_lease_cannot_be_created_with_a_negative_duration()
+        {
+            Action create = () =>
+                    new Lease(TimeSpan.FromSeconds(-1));
+
+            create.ShouldThrow<ArgumentException>()
+                  .And
+                  .Message
+                  .Should()
+                  .Be("Lease duration cannot be negative.");
+        }
+
+        [Test]
         public async Task Leases_cannot_be_extended_by_a_negative_timespan()
         {
             var lease = new Lease<string>(leasable,

@@ -26,6 +26,11 @@ namespace Alluvial
             Func<TimeSpan, Task<TimeSpan>> extend = null,
             Func<Task> release = null)
         {
+            if (duration.Ticks < 0)
+            {
+                throw new ArgumentException("Lease duration cannot be negative.");
+            }
+
             this.duration = duration;
             this.extend = extend;
             this.release = release;
