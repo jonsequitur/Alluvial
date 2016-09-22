@@ -16,7 +16,7 @@ namespace Alluvial
         /// </summary>
         /// <typeparam name="T">The type of the distributed resource.</typeparam>
         /// <param name="distributor">The distributor.</param>
-        public static IDistributor<T> AutoReleaseLeases<T>(
+        public static IDistributor<T> ReleaseLeasesWhenWorkIsDone<T>(
             this IDistributor<T> distributor)
         {
             distributor.OnReceive(async (lease, next) =>

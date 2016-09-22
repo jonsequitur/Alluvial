@@ -69,7 +69,7 @@ namespace Alluvial.Tests
             var distributor = Enumerable.Range(1, 10)
                                         .Select(i => Partition.ByValue(i.ToString()))
                                         .CreateInMemoryDistributor()
-                                        .AutoReleaseLeases();
+                                        .ReleaseLeasesWhenWorkIsDone();
 
             var catchup = domainEvents.CreateDistributedCatchup(
                 distributor,

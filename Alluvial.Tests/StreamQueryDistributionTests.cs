@@ -68,7 +68,7 @@ namespace Alluvial.Tests
 
             var catchup = partitionedStream.Trace()
                                            .CreateDistributedCatchup(
-                                               partitions.CreateInMemoryDistributor().AutoReleaseLeases(),
+                                               partitions.CreateInMemoryDistributor().ReleaseLeasesWhenWorkIsDone(),
                                                batchSize: 15);
 
             catchup.Subscribe(aggregator, store.Trace());
@@ -103,7 +103,7 @@ namespace Alluvial.Tests
 
             var catchup = partitionedStream
                 .CreateDistributedCatchup(
-                    partitions.CreateInMemoryDistributor().AutoReleaseLeases(),
+                    partitions.CreateInMemoryDistributor().ReleaseLeasesWhenWorkIsDone(),
                     batchSize: 73,
                     fetchAndSavePartitionCursor: cursorStore.Trace().AsHandler());
 

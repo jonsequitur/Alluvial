@@ -34,7 +34,7 @@ namespace Alluvial
                     using (var counter = catchup.Count())
                     {
                         await catchup.RunSingleBatch(lease);
-
+                        
                         if (counter.Value == 0)
                         {
                             await lease.Extend(extendLeaseBy.Value);

@@ -140,7 +140,7 @@ namespace Alluvial.Tests.Distributors
         public async Task When_receiver_throws_then_work_distribution_continues()
         {
             var received = 0;
-            var distributor = CreateDistributor(defaultLeaseDuration: 1.Seconds()).Trace().AutoReleaseLeases();
+            var distributor = CreateDistributor(defaultLeaseDuration: 1.Seconds()).Trace().ReleaseLeasesWhenWorkIsDone();
             var countdown = new AsyncCountdownEvent(20);
 
             distributor.OnReceive(async lease =>

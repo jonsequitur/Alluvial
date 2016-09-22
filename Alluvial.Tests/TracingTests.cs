@@ -267,7 +267,7 @@ namespace Alluvial.Tests
                               .ToArray(),
                     beforeRelease: async lease => { throw new Exception("dang!"); })
                 .Trace(onException: (ex, lease) => caughtException = ex)
-                .AutoReleaseLeases();
+                .ReleaseLeasesWhenWorkIsDone();
 
             await distributor.Distribute(1);
 
@@ -278,7 +278,7 @@ namespace Alluvial.Tests
         public async Task Distributor_Trace_writes_pool_name_on_all_trace_events()
         {
             var poolName = "this-is-the-pool";
-            var distributor = CreateDistributor(pool: poolName).Trace().AutoReleaseLeases();
+            var distributor = CreateDistributor(pool: poolName).Trace().ReleaseLeasesWhenWorkIsDone();
 
             await distributor.Distribute(1);
 

@@ -102,7 +102,7 @@ namespace Alluvial.For.ItsDomainSql.Tests
             var distributor = Partition.AllGuids()
                                        .Among(10)
                                        .CreateInMemoryDistributor()
-                                       .AutoReleaseLeases();
+                                       .ReleaseLeasesWhenWorkIsDone();
 
             var catchup = streams.CreateDistributedCatchup(distributor);
 
