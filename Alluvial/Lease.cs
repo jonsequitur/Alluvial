@@ -12,6 +12,7 @@ namespace Alluvial
     {
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly Func<TimeSpan, Task<TimeSpan>> extend;
+        private readonly Func<Task> release;
         private TimeSpan duration;
 
         /// <summary>
@@ -19,10 +20,20 @@ namespace Alluvial
         /// </summary>
         /// <param name="duration">The duration of the lease.</param>
         /// <param name="extend">A delegate that will be called if the lease is extended.</param>
-        public Lease(TimeSpan duration, Func<TimeSpan, Task<TimeSpan>> extend = null)
+        /// <param name="release">A delegate that is called to release the lease.</param>
+        public Lease(
+            TimeSpan duration, 
+            Func<TimeSpan, Task<TimeSpan>> extend = null,
+            Func<Task> release = null)
         {
+            if (duration.Ticks < 0)
+            {
+                throw new ArgumentException("Lease duration cannot be negative.");
+            }
+
             this.duration = duration;
             this.extend = extend;
+            this.release = release;
             cancellationTokenSource.CancelAfter(Duration);
         }
 
@@ -35,11 +46,6 @@ namespace Alluvial
         /// Gets a cancellation token that can be used to cancel the task associated with the lease.
         /// </summary>
         public CancellationToken CancellationToken => cancellationTokenSource.Token;
-
-        /// <summary>
-        /// Cancels the lease.
-        /// </summary>
-        public void Cancel() => cancellationTokenSource.Cancel();
 
         /// <summary>
         /// Gets a task that completes when the lease is released or expired.
@@ -88,9 +94,19 @@ namespace Alluvial
         /// </summary>
         public Exception Exception { get; internal set; }
 
-        internal static ILease CreateDefault()
+        /// <summary>
+        /// Releases the lease, making it available for acquisition by other workers.
+        /// </summary>
+        public async Task Release()
         {
-            return new Lease(TimeSpan.FromMinutes(5));
+            if (release != null)
+            {
+                await release();
+            }
+
+            cancellationTokenSource.Cancel();
         }
+
+        internal static ILease CreateDefault() => new Lease(TimeSpan.FromMinutes(5));
     }
 }

@@ -40,8 +40,8 @@ namespace Alluvial.Tests
         {
             timeout = timeout ??
                       (Debugger.IsAttached
-                           ? (TimeSpan.FromMinutes(5))
-                           : (TimeSpan.FromSeconds(20)));
+                           ? TimeSpan.FromMinutes(5)
+                           : TimeSpan.FromSeconds(10));
 
             pollInterval = pollInterval ?? TimeSpan.FromMilliseconds(100);
 
@@ -65,11 +65,9 @@ namespace Alluvial.Tests
         }
 
         public static async Task Until(
-            Func<bool> until,
-            TimeSpan? pollInterval = null,
-            TimeSpan? timeout = null)
-        {
+                Func<bool> until,
+                TimeSpan? pollInterval = null,
+                TimeSpan? timeout = null) =>
             await Until(() => until().CompletedTask(), pollInterval, timeout);
-        }
     }
 }

@@ -18,13 +18,15 @@ namespace Alluvial
         /// <param name="leasable">The leasable resource.</param>
         /// <param name="duration">The duration of the lease.</param>
         /// <param name="ownerToken">The owner token.</param>
-        /// <param name="extend">The extend.</param>
+        /// <param name="extend">A delegate which can be called to extend the lease.</param>
         /// <exception cref="System.ArgumentNullException">leasable</exception>
         public Lease(
             Leasable<T> leasable,
             TimeSpan duration,
             int ownerToken,
-            Func<TimeSpan, Task<TimeSpan>> extend = null) : base(duration, extend)
+            Func<TimeSpan, Task<TimeSpan>> extend = null,
+            Func<Task> release = null) :
+            base(duration, extend, release)
         {
             if (leasable == null)
             {

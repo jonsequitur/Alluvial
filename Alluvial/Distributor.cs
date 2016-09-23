@@ -12,6 +12,23 @@ namespace Alluvial
     public static class Distributor
     {
         /// <summary>
+        /// Configures the distributor to release leases as soon as the work on the lease is completed.
+        /// </summary>
+        /// <typeparam name="T">The type of the distributed resource.</typeparam>
+        /// <param name="distributor">The distributor.</param>
+        public static IDistributor<T> ReleaseLeasesWhenWorkIsDone<T>(
+            this IDistributor<T> distributor)
+        {
+            distributor.OnReceive(async (lease, next) =>
+            {
+                await next(lease);
+                await lease.Release();
+            });
+
+            return distributor;
+        }
+
+        /// <summary>
         /// Creates an anonymous distributor.
         /// </summary>
         /// <typeparam name="T">The type of the distributed resource.</typeparam>
@@ -36,7 +53,6 @@ namespace Alluvial
         /// <param name="partitions">The partitions to be leased out.</param>
         /// <param name="maxDegreesOfParallelism">The maximum degrees of parallelism.</param>
         /// <param name="pool">The pool.</param>
-        /// <param name="waitInterval">The wait interval. If not specified, the default is 5 seconds.</param>
         /// <param name="defaultLeaseDuration">Default duration of the lease. If not specified, the default is 1 minute.</param>
         /// <returns></returns>
         /// <exception cref="System.ArgumentNullException"></exception>
@@ -44,7 +60,6 @@ namespace Alluvial
             this IEnumerable<IStreamQueryPartition<TPartition>> partitions,
             int maxDegreesOfParallelism = 5,
             string pool = "default",
-            TimeSpan? waitInterval = null,
             TimeSpan? defaultLeaseDuration = null)
         {
             if (partitions == null)
@@ -58,7 +73,6 @@ namespace Alluvial
                 leasables,
                 pool,
                 maxDegreesOfParallelism,
-                waitInterval,
                 defaultLeaseDuration);
         }
 
@@ -156,8 +170,14 @@ namespace Alluvial
         /// <summary>
         /// Specifies a delegate to be called when a lease is available.
         /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="distributor">The distributor.</param>
         /// <param name="receive">The delegate called when work is available to be done.</param>
-        /// <remarks>For the duration of the lease, the leased resource will not be available to any other instance.</remarks>
+        /// <exception cref="System.ArgumentNullException">
+        /// </exception>
+        /// <remarks>
+        /// For the duration of the lease, the leased resource will not be available to any other instance.
+        /// </remarks>
         public static void OnReceive<T>(
             this IDistributor<T> distributor,
             Func<Lease<T>, Task> receive)

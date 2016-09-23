@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
@@ -15,15 +14,10 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyCopyright("Copyright © 2016 Jon Sequeira")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
-[assembly: ComVisible(false)]
 [assembly: CLSCompliant(true)]
 
-// The following GUID is for the ID of the typelib if this project is exposed to COM
-
-[assembly: Guid("ae1d48e9-ffcd-4e5e-b052-70e5446dfa23")]
-
-[assembly: AssemblyVersion("0.2.0")]
-[assembly: AssemblyInformationalVersion("0.2.5")]
+[assembly: AssemblyVersion("0.3.0")]
+[assembly: AssemblyInformationalVersion("0.3.0")]
 
 [assembly: InternalsVisibleTo("Alluvial.Tests")]
 

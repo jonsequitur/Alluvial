@@ -1,7 +1,6 @@
 using System;
 using Alluvial.Distributors.Sql;
 using FluentAssertions;
-using System.Linq;
 using System.Threading.Tasks;
 using NUnit.Framework;
 
@@ -22,20 +21,26 @@ namespace Alluvial.Tests.Distributors
             Func<Lease<int>, Task> onReceive = null,
             Leasable<int>[] leasables = null,
             int maxDegreesOfParallelism = 1,
-            TimeSpan? waitInterval = null,
-            string pool = null)
+            string pool = null,
+            TimeSpan? defaultLeaseDuration = null)
         {
             leasables = leasables ?? DefaultLeasables;
 
-            pool = pool ?? DateTimeOffset.UtcNow.Ticks.ToString();
+            pool = pool ?? Guid.NewGuid().ToString();
+
+            Console.WriteLine(new { pool });
+
+            if (pool.Length > 75)
+            {
+                pool = pool.Substring(0, 75);
+            }
 
             distributor = new SqlBrokeredDistributor<int>(
                 leasables,
                 Database,
                 pool,
                 maxDegreesOfParallelism,
-                waitInterval ?? TimeSpan.FromSeconds(1),
-                DefaultLeaseDuration);
+                defaultLeaseDuration ?? DefaultLeaseDuration);
 
             if (onReceive != null)
             {

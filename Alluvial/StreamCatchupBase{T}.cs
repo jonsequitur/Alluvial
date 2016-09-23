@@ -58,7 +58,7 @@ namespace Alluvial
             ICursor<TUpstreamCursor> initialCursor = null)
         {
             var tcs = new TaskCompletionSource<AggregationBatch<TUpstreamCursor>>();
-
+            
             if (synchronize)
             {
                 var exchange = Interlocked.CompareExchange<object>(ref batchTaskCompletionSource, tcs, null);

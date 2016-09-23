@@ -15,7 +15,6 @@ namespace Alluvial.Distributors.Sql
         /// <param name="partitions">The partitions to be leased out.</param>
         /// <param name="database">The database where the leases are stored.</param>
         /// <param name="pool">The pool.</param>
-        ///   /// <param name="waitInterval">The interval to wait after a lease is released before which leased resource should not become available again. If not specified, the default is .5 seconds.</param>
         /// <param name="defaultLeaseDuration">The default duration of a lease. If not specified, the default duration is five minutes.</param>
         /// <param name="maxDegreesOfParallelism">The maximum number of leases to be distributed at one time by this distributor instance.</param>
         /// <exception cref="System.ArgumentNullException">
@@ -25,7 +24,6 @@ namespace Alluvial.Distributors.Sql
             SqlBrokeredDistributorDatabase database,
             string pool,
             int maxDegreesOfParallelism = 5,
-            TimeSpan? waitInterval = null,
             TimeSpan? defaultLeaseDuration = null)
         {
             if (partitions == null)
@@ -48,7 +46,6 @@ namespace Alluvial.Distributors.Sql
                 database,
                 pool,
                 maxDegreesOfParallelism,
-                waitInterval,
                 defaultLeaseDuration);
 
             return distributor;

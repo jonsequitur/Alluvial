@@ -28,7 +28,7 @@ namespace Alluvial.Tests
 
             foreach (var streamId in streamIds)
             {
-                store.WriteEvents(streamId);
+                store.WriteEvent(streamId);
             }
 
             streamSource = new NEventStoreStreamSource(store);

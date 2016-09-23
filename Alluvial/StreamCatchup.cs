@@ -34,7 +34,7 @@ namespace Alluvial
                     using (var counter = catchup.Count())
                     {
                         await catchup.RunSingleBatch(lease);
-
+                        
                         if (counter.Value == 0)
                         {
                             await lease.Extend(extendLeaseBy.Value);
@@ -269,7 +269,11 @@ namespace Alluvial
                 do
                 {
                     countBefore = counter.Value;
-                    await catchup.RunSingleBatch(lease ?? Lease.CreateDefault());
+
+                    await catchup.RunSingleBatch(
+                        lease ?? 
+                        Lease.CreateDefault());
+
                 } while (countBefore != counter.Value);
             }
         }

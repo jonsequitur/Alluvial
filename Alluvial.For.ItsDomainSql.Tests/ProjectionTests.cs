@@ -11,7 +11,6 @@ using Microsoft.Its.Domain;
 using Microsoft.Its.Domain.Sql;
 using Microsoft.Its.Domain.Testing;
 using NUnit.Framework;
-using Pocket;
 
 namespace Alluvial.For.ItsDomainSql.Tests
 {
@@ -102,14 +101,16 @@ namespace Alluvial.For.ItsDomainSql.Tests
 
             var distributor = Partition.AllGuids()
                                        .Among(10)
-                                       .CreateInMemoryDistributor();
+                                       .CreateInMemoryDistributor()
+                                       .ReleaseLeasesWhenWorkIsDone();
 
             var catchup = streams.CreateDistributedCatchup(distributor);
 
             var store = new InMemoryProjectionStore<MatchingEvents>();
             catchup.Subscribe(aggregator, store.Trace());
 
-            await catchup.RunUntilCaughtUp();
+            await catchup.RunUntilCaughtUp().Timeout();
+
             store.Sum(x => x.Value.Count).Should().Be(expectedCount);
         }
 
@@ -136,7 +137,7 @@ namespace Alluvial.For.ItsDomainSql.Tests
             var store = new InMemoryProjectionStore<Projection<int, long>>();
             catchup.Subscribe(aggregator, store);
 
-            await catchup.RunUntilCaughtUp().TimeoutAfter(DefaultTimeout());
+            await catchup.RunUntilCaughtUp().Timeout();
 
             store.Select(p => p.CursorPosition).Should().OnlyContain(i => i > 100);
         }
@@ -176,7 +177,7 @@ namespace Alluvial.For.ItsDomainSql.Tests
                               store.AsHandler(),
                               onError: error => { error.Continue(); });
 
-            await catchup.RunUntilCaughtUp().TimeoutAfter(DefaultTimeout());
+            await catchup.RunUntilCaughtUp().Timeout();
 
             store.Select(p => p.CursorPosition).Single().Should().Be(6);
         }
@@ -237,7 +238,7 @@ namespace Alluvial.For.ItsDomainSql.Tests
                 }
             });
 
-            await catchup.RunSingleBatch();
+            await catchup.RunSingleBatch().Timeout();
 
             eventsReceived.Should().HaveCount(eventStream.Count());
         }
@@ -665,11 +666,6 @@ namespace Alluvial.For.ItsDomainSql.Tests
                     Body = "{}"
                 }
             };
-        }
-
-        private TimeSpan DefaultTimeout()
-        {
-            return TimeSpan.FromSeconds(5*(Debugger.IsAttached ? 100 : 1));
         }
 
         private async Task WriteEvents<TEvent>(params Guid[] aggregateIds) where TEvent : IEvent, new()

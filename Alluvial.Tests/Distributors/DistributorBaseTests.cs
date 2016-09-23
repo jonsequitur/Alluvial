@@ -26,7 +26,7 @@ namespace Alluvial.Tests.Distributors
             var acquireCount = 0;
             var receiveCount = 0;
 
-            var distributor = new TestDistributor<int>(
+            using (var distributor = new TestDistributor<int>(
                 leasables,
                 beforeAcquire: async () =>
                 {
@@ -34,13 +34,14 @@ namespace Alluvial.Tests.Distributors
                     {
                         throw new Exception("dang!");
                     }
-                }).Trace();
+                }).Trace())
+            {
+                distributor.OnReceive(async (lease, next) => { Interlocked.Increment(ref receiveCount); });
 
-            distributor.OnReceive(async (lease, next) => { Interlocked.Increment(ref receiveCount); });
+                await distributor.Start();
 
-            await distributor.Start();
-
-            await Task.Delay(100);
+                await Task.Delay(100);
+            }
 
             receiveCount.Should().BeGreaterThan(5);
         }
@@ -51,7 +52,7 @@ namespace Alluvial.Tests.Distributors
             var releaseCount = 0;
             var receiveCount = 0;
 
-            var distributor = new TestDistributor<int>(
+            using (var distributor = new TestDistributor<int>(
                 leasables,
                 beforeRelease: async lease =>
                 {
@@ -59,13 +60,14 @@ namespace Alluvial.Tests.Distributors
                     {
                         throw new Exception("dang!");
                     }
-                }).Trace();
+                }).Trace())
+            {
+                distributor.OnReceive(async (lease, next) => { Interlocked.Increment(ref receiveCount); });
 
-            distributor.OnReceive(async (lease, next) => { Interlocked.Increment(ref receiveCount); });
+                await distributor.Start();
 
-            await distributor.Start();
-
-            await Task.Delay(100);
+                await Task.Delay(100);
+            }
 
             receiveCount.Should().BeGreaterThan(5);
         }
@@ -80,10 +82,9 @@ namespace Alluvial.Tests.Distributors
             Leasable<T>[] leasables,
             Func<Task> beforeAcquire = null,
             Func<Lease<T>, Task> beforeRelease = null,
-            string pool = "default",
-            int maxDegreesOfParallelism = 5,
-            TimeSpan? waitInterval = null) :
-                base(leasables, pool, maxDegreesOfParallelism, waitInterval)
+            string pool = null,
+            int maxDegreesOfParallelism = 5) :
+                base(leasables, pool ?? Guid.NewGuid().ToString(), maxDegreesOfParallelism)
         {
             this.beforeAcquire = beforeAcquire ?? (async () => { });
             this.beforeRelease = beforeRelease ?? (async lease => { });

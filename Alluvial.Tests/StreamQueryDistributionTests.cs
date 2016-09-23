@@ -68,12 +68,12 @@ namespace Alluvial.Tests
 
             var catchup = partitionedStream.Trace()
                                            .CreateDistributedCatchup(
-                                               partitions.CreateInMemoryDistributor(waitInterval: TimeSpan.FromSeconds(.1)),
+                                               partitions.CreateInMemoryDistributor().ReleaseLeasesWhenWorkIsDone(),
                                                batchSize: 15);
 
             catchup.Subscribe(aggregator, store.Trace());
 
-            await catchup.RunUntilCaughtUp();
+            await catchup.RunUntilCaughtUp().Timeout();
 
             partitions.ToList()
                       .ForEach(partition =>
@@ -103,13 +103,13 @@ namespace Alluvial.Tests
 
             var catchup = partitionedStream
                 .CreateDistributedCatchup(
-                    partitions.CreateInMemoryDistributor(waitInterval: TimeSpan.FromSeconds(.1)),
+                    partitions.CreateInMemoryDistributor().ReleaseLeasesWhenWorkIsDone(),
                     batchSize: 73,
                     fetchAndSavePartitionCursor: cursorStore.Trace().AsHandler());
 
             catchup.Subscribe(aggregator);
 
-            await catchup.RunUntilCaughtUp();
+            await catchup.RunUntilCaughtUp().Timeout();
 
             cursorStore.Count().Should().Be(26);
             Enumerable.Range(1, 26).ToList().ForEach(i => { cursorStore.Should().Contain(c => c.Position == i*100); });
@@ -149,7 +149,7 @@ namespace Alluvial.Tests
 
             catchup.Subscribe(aggregator);
 
-            await catchup.RunSingleBatch();
+            await catchup.RunSingleBatch().Timeout();
 
             cursorStore.Count().Should().Be(3);
         }
