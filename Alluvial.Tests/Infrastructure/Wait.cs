@@ -6,24 +6,26 @@ namespace Alluvial.Tests
 {
     public static class Wait
     {
-        public static async Task Timeout(this Task task)
+        public static async Task Timeout(this Task task, TimeSpan? timeout = null)
         {
-            TimeSpan timeout;
-            if (Debugger.IsAttached)
+            if (timeout == null)
             {
-                timeout = TimeSpan.FromMinutes(5);
+                if (Debugger.IsAttached)
+                {
+                    timeout = TimeSpan.FromMinutes(5);
+                }
+                else
+                {
+                    timeout = TimeSpan.FromSeconds(20);
+                }
+                
             }
-            else
-            {
-                timeout = TimeSpan.FromSeconds(20);
-            }
-
             if (task.IsCompleted)
             {
                 return;
             }
 
-            if (task == await Task.WhenAny(task, Task.Delay(timeout)))
+            if (task == await Task.WhenAny(task, Task.Delay(timeout.Value)))
             {
                 await task;
             }
