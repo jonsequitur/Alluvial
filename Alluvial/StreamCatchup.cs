@@ -263,17 +263,25 @@ namespace Alluvial
                 throw new ArgumentNullException(nameof(catchup));
             }
 
+            lease = lease ?? new Lease(TimeSpan.FromHours(4));
+            var leaseExpiration = lease.Expiration();
+
             using (var counter = catchup.Count())
             {
-                int countBefore;
+                var countBefore = 0;
+
                 do
                 {
+                    if (leaseExpiration.IsCompleted ||
+                        leaseExpiration.IsCanceled ||
+                        leaseExpiration.IsFaulted)
+                    {
+                        break;
+                    }
+
                     countBefore = counter.Value;
 
-                    await catchup.RunSingleBatch(
-                        lease ?? 
-                        Lease.CreateDefault());
-
+                    await catchup.RunSingleBatch(lease);
                 } while (countBefore != counter.Value);
             }
         }
