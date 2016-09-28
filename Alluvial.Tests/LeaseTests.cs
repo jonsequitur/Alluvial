@@ -150,7 +150,7 @@ namespace Alluvial.Tests
         {
             var lease = new Lease(TimeSpan.FromMilliseconds(1));
 
-            await Task.Delay(15);
+            await Task.Delay(35);
 
             lease.IsReleased.Should().BeTrue();
         }
