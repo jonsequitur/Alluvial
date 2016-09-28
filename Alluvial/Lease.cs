@@ -95,6 +95,14 @@ namespace Alluvial
         public Exception Exception { get; internal set; }
 
         /// <summary>
+        /// Gets a value indicating whether the lease has been released.
+        /// </summary>
+        /// <value>
+        /// <c>true</c> if the lease has been released; otherwise, <c>false</c>.
+        /// </value>
+        public bool IsReleased => cancellationTokenSource.IsCancellationRequested;
+  
+        /// <summary>
         /// Releases the lease, making it available for acquisition by other workers.
         /// </summary>
         public async Task Release()

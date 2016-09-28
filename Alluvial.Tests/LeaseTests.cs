@@ -134,5 +134,25 @@ namespace Alluvial.Tests
                   .Should()
                   .Be("Lease cannot be extended by a negative timespan.");
         }
+
+        [Test]
+        public async Task IsReleased_returns_false_when_the_lease_has_not_expired()
+        {
+            var lease = new Lease(TimeSpan.FromSeconds(1));
+
+            await Task.Delay(15);
+
+            lease.IsReleased.Should().BeFalse();
+        }
+
+        [Test]
+        public async Task IsReleased_returns_true_when_the_lease_has_expired()
+        {
+            var lease = new Lease(TimeSpan.FromMilliseconds(1));
+
+            await Task.Delay(15);
+
+            lease.IsReleased.Should().BeTrue();
+        }
     }
 }
