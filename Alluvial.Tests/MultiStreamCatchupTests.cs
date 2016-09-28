@@ -7,7 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Alluvial.Tests.BankDomain;
 using Alluvial.Tests.StreamImplementations.NEventStore;
-using Its.Log.Instrumentation;
 using NEventStore;
 using NUnit.Framework;
 
