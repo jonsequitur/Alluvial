@@ -149,15 +149,22 @@ namespace Alluvial
         public static IQueryable<TData> WithinPartition<TData, TPartition>(
             this IQueryable<TData> source,
             Expression<Func<TData, TPartition>> key,
-            IStreamQueryRangePartition<TPartition> partition)
+            IStreamQueryPartition<TPartition> partition)
         {
+            var rangePartition = partition as IStreamQueryRangePartition<TPartition>;
+
+            if (rangePartition == null)
+            {
+                throw new NotSupportedException("Only range partitions are currently supported.");
+            }
+
             Expression selectKey = key.Body;
-            Expression lower = Expression.Constant(partition.LowerBoundExclusive);
-            Expression upper = Expression.Constant(partition.UpperBoundInclusive);
+            Expression lower = Expression.Constant(rangePartition.LowerBoundExclusive);
+            Expression upper = Expression.Constant(rangePartition.UpperBoundInclusive);
 
             MethodInfo compareTo;
 
-            if (typeof (TPartition) == typeof (Guid) &&
+            if (typeof(TPartition) == typeof(Guid) &&
                 source is EnumerableQuery)
             {
                 compareTo = MethodInfoFor<SqlGuid>.CompareTo;

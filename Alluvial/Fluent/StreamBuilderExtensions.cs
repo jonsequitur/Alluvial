@@ -40,6 +40,7 @@ namespace Alluvial.Fluent
             Func<PartitionBuilder, PartitionBuilder<TPartition>> build) =>
                 new StreamBuilder<TData, TCursor, TPartition>(
                     source,
-                    source.CursorBuilder);
+                    source.CursorBuilder,
+                    build(new PartitionBuilder()));
     }
 }
