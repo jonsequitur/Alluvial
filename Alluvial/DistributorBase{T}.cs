@@ -125,6 +125,8 @@ namespace Alluvial
         {
             EnsureOnReceiveHasBeenCalled();
 
+            stopped = false;
+
             var acquired = new List<T>();
 
             count = Math.Min(count, leasables.Length);
@@ -153,6 +155,8 @@ namespace Alluvial
         public virtual Task Start()
         {
             EnsureOnReceiveHasBeenCalled();
+
+            stopped = false;
 
             Parallel.For(0,
                          maxDegreesOfParallelism,

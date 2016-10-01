@@ -43,6 +43,60 @@ namespace Alluvial.Tests.Distributors
         }
 
         [Test]
+        public async Task Distributor_can_be_restarted()
+        {
+            var distributor = CreateDistributor(maxDegreesOfParallelism: 1)
+                .ReleaseLeasesWhenWorkIsDone()
+                .Trace();
+
+            distributor.OnReceive(async lease => { });
+
+            await distributor.Start();
+            await Task.Delay(20);
+            await distributor.Stop();
+
+            Console.WriteLine("\n\n\n STOPPED \n\n\n");
+
+            var wasCalled = false;
+            distributor.OnReceive(async lease => wasCalled = true);
+
+            await distributor.Start();
+            await Task.Delay(DefaultLeaseDuration);
+            await distributor.Stop();
+
+            wasCalled.Should().BeTrue();
+        }
+
+        [Test]
+        public async Task Distributor_Distribute_works_after_Stop_has_been_called()
+        {
+            var distributor = CreateDistributor(maxDegreesOfParallelism: 1)
+                .ReleaseLeasesWhenWorkIsDone()
+                .Trace();
+
+            distributor.OnReceive(async lease => { });
+
+            await distributor.Start();
+            await Task.Delay(20);
+            await distributor.Stop();
+
+            Console.WriteLine("\n\n\n STOPPED \n\n\n");
+
+            await Task.Delay(DefaultLeaseDuration);
+            await Task.Delay(DefaultLeaseDuration);
+            await Task.Delay(DefaultLeaseDuration);
+
+            var wasCalled = false;
+            distributor.OnReceive(async lease => wasCalled = true);
+
+            await distributor.Distribute(1);
+            await Task.Delay(DefaultLeaseDuration);
+            await distributor.Stop();
+
+            wasCalled.Should().BeTrue();
+        }
+
+        [Test]
         public async Task No_further_acquisitions_occur_after_Stop_is_called()
         {
             var received = 0;
