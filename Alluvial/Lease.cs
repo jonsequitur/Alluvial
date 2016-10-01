@@ -52,6 +52,11 @@ namespace Alluvial
         /// </summary>
         public async Task Expiration()
         {
+            if (IsReleased)
+            {
+                return;
+            }
+
             try
             {
                 await Task.Delay(TimeSpan.FromMinutes(60), CancellationToken);
