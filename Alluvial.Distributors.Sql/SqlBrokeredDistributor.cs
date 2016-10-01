@@ -81,7 +81,6 @@ namespace Alluvial.Distributors.Sql
             {
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.CommandText = @"Alluvial.AcquireLease";
-                cmd.Parameters.AddWithValue(@"@waitIntervalMilliseconds", 0);
                 cmd.Parameters.AddWithValue(@"@leaseDurationMilliseconds", defaultLeaseDuration.TotalMilliseconds);
                 cmd.Parameters.AddWithValue(@"@pool", Pool);
 
