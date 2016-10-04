@@ -241,54 +241,6 @@ namespace Alluvial.Tests.Distributors
         }
 
         [Test]
-        public virtual async Task A_lease_can_be_extended()
-        {
-            var tally = new ConcurrentDictionary<string, int>();
-            var pool = DateTimeOffset.UtcNow.Ticks.ToString();
-            var distributor1 = CreateDistributor(pool: pool).Trace();
-            var distributor2 = CreateDistributor(pool: pool).Trace();
-
-            Func<Lease<int>, Task> onReceive = async lease =>
-            {
-                tally.AddOrUpdate(lease.ResourceName,
-                                  addValueFactory: s => 1,
-                                  updateValueFactory: (s, v) => v + 1);
-
-                if (lease.ResourceName == "5")
-                {
-                    Console.WriteLine($"GOT LEASE 5 @ {DateTime.Now}");
-
-                    // extend the lease
-                    await lease.ExpireIn(TimeSpan.FromDays(2));
-
-                    // wait longer than the lease would normally last
-                    await Task.Delay(5.Seconds());
-
-                    Console.WriteLine($"DONE LEASE 5@ {DateTime.Now}");
-                }
-            };
-
-            distributor1.OnReceive(onReceive);
-            distributor2.OnReceive(onReceive);
-            await Task.WhenAll(
-                distributor1.Start(),
-                distributor2.Start());
-
-            await Task.Delay(2.Seconds());
-
-            await Task.WhenAll(distributor1.Stop(),
-                distributor2.Stop());
-
-            Console.WriteLine(tally.ToLogString());
-
-            tally.Should()
-                 .ContainKey("5")
-                 .And
-                 .Subject["5"].Should().Be(1);
-        }
-
-
-        [Test]
         public virtual async Task A_lease_can_be_extended_using_ExpireIn()
         {
             var tally = new ConcurrentDictionary<string, int>();
