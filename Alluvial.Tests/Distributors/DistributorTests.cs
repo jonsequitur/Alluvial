@@ -259,7 +259,55 @@ namespace Alluvial.Tests.Distributors
                     Console.WriteLine($"GOT LEASE 5 @ {DateTime.Now}");
 
                     // extend the lease
-                    await lease.Extend(TimeSpan.FromDays(2));
+                    await lease.ExpireIn(TimeSpan.FromDays(2));
+
+                    // wait longer than the lease would normally last
+                    await Task.Delay(5.Seconds());
+
+                    Console.WriteLine($"DONE LEASE 5@ {DateTime.Now}");
+                }
+            };
+
+            distributor1.OnReceive(onReceive);
+            distributor2.OnReceive(onReceive);
+            await Task.WhenAll(
+                distributor1.Start(),
+                distributor2.Start());
+
+            await Task.Delay(2.Seconds());
+
+            await Task.WhenAll(distributor1.Stop(),
+                distributor2.Stop());
+
+            Console.WriteLine(tally.ToLogString());
+
+            tally.Should()
+                 .ContainKey("5")
+                 .And
+                 .Subject["5"].Should().Be(1);
+        }
+
+
+        [Test]
+        public virtual async Task A_lease_can_be_extended_using_ExpireIn()
+        {
+            var tally = new ConcurrentDictionary<string, int>();
+            var pool = DateTimeOffset.UtcNow.Ticks.ToString();
+            var distributor1 = CreateDistributor(pool: pool).Trace();
+            var distributor2 = CreateDistributor(pool: pool).Trace();
+
+            Func<Lease<int>, Task> onReceive = async lease =>
+            {
+                tally.AddOrUpdate(lease.ResourceName,
+                                  addValueFactory: s => 1,
+                                  updateValueFactory: (s, v) => v + 1);
+
+                if (lease.ResourceName == "5")
+                {
+                    Console.WriteLine($"GOT LEASE 5 @ {DateTime.Now}");
+
+                    // extend the lease
+                    await lease.ExpireIn(TimeSpan.FromHours(2));
 
                     // wait longer than the lease would normally last
                     await Task.Delay(5.Seconds());
@@ -302,7 +350,42 @@ namespace Alluvial.Tests.Distributors
                 // now try to extend the lease
                 try
                 {
-                    await lease.Extend(TimeSpan.FromMilliseconds(1));
+                    await lease.ExpireIn(1.Milliseconds());
+                }
+                catch (Exception ex)
+                {
+                    exception = ex;
+                }
+
+                mre.Set();
+            });
+
+#pragma warning disable 4014
+            distributor.Distribute(1);
+#pragma warning restore 4014
+            await mre.WaitAsync().Timeout();
+            await Task.Delay(1000);
+
+            exception.Should().BeOfType<InvalidOperationException>();
+            exception.Message.Should().Contain("lease cannot be extended");
+        }
+
+        [Test]
+        public virtual async Task When_ExpireIn_is_called_after_a_lease_has_expired_then_it_throws()
+        {
+            Exception exception = null;
+            var distributor = CreateDistributor().Trace();
+            var mre = new AsyncManualResetEvent();
+
+            distributor.OnReceive(async lease =>
+            {
+                // wait too long, until another receiver gets the lease
+                await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*1.5));
+
+                // now try to extend the lease
+                try
+                {
+                    await lease.ExpireIn(TimeSpan.FromMilliseconds(1));
                 }
                 catch (Exception ex)
                 {
@@ -452,7 +535,28 @@ namespace Alluvial.Tests.Distributors
 
             distributor.OnReceive(async lease =>
             {
-                await lease.Extend(2.Seconds());
+                await lease.ExpireIn(2.Seconds());
+            });
+
+            await distributor.Start();
+            await Task.Delay(1.Seconds());
+            await distributor.Stop();
+
+            receivedLeases.Count().Should().Be(10);
+        }
+
+        [Test]
+        public async Task Distributor_rate_can_be_slowed_by_extending_leases_using_ExpireIn()
+        {
+            var receivedLeases = new ConcurrentBag<Lease<int>>();
+
+            var distributor = CreateDistributor(
+                async lease => receivedLeases.Add(lease),
+                maxDegreesOfParallelism: 10);
+
+            distributor.OnReceive(async lease =>
+            {
+                await lease.ExpireIn(2.Seconds());
             });
 
             await distributor.Start();

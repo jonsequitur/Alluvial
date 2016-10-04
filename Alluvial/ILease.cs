@@ -14,12 +14,10 @@ namespace Alluvial
         Task Expiration();
 
         /// <summary>
-        /// Extends the lease.
+        /// Sets the lease to expire after the specified period of time.
         /// </summary>
-        /// <param name="by">The amount of time by which to extend the lease.</param>
-        /// <returns></returns>
-        /// <exception cref="System.InvalidOperationException">The lease cannot be extended.</exception>
-        Task Extend(TimeSpan by);
+        /// <param name="timespan">The duration after which the lease should expire.</param>
+        Task ExpireIn(TimeSpan timespan);
 
         /// <summary>
         /// Releases the lease, making it available for acquisition by other workers.

@@ -107,7 +107,7 @@ namespace Alluvial.Distributors.Sql
                         lease = new Lease<T>(resource,
                                              defaultLeaseDuration,
                                              (int) token,
-                                             extend: by => ExtendLease(lease, @by),
+                                             expireIn: by => AdjustLeaseExpiration(lease, @by),
                                              release: () => ReleaseLease(lease));
                     }
 
@@ -119,15 +119,15 @@ namespace Alluvial.Distributors.Sql
             }
         }
 
-        private async Task<TimeSpan> ExtendLease(Lease<T> lease, TimeSpan by)
+        private async Task<TimeSpan> AdjustLeaseExpiration(Lease<T> lease, TimeSpan by)
         {
             using (var connection = new SqlConnection(database.ConnectionString))
             using (var cmd = connection.CreateCommand())
             {
                 cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = @"Alluvial.ExtendLease";
+                cmd.CommandText = @"Alluvial.ExpireLeaseIn";
                 cmd.Parameters.AddWithValue(@"@resourceName", lease.ResourceName);
-                cmd.Parameters.AddWithValue(@"@byMilliseconds", by.TotalMilliseconds);
+                cmd.Parameters.AddWithValue(@"@expireInSeconds", by.TotalSeconds);
                 cmd.Parameters.AddWithValue(@"@token", lease.OwnerToken);
 
                 await connection.OpenAsync();
