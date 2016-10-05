@@ -61,7 +61,17 @@ namespace Alluvial
                 resource,
                 defaultLeaseDuration,
                 OwnerToken.Next(),
-                release: () => ReleaseLease(lease));
+                release: async () =>
+                {
+                    try
+                    {
+                        await ReleaseLease(lease);
+                    }
+                    catch (Exception exception)
+                    {
+                        PublishException(exception, lease);
+                    }
+                });
 
             if (workInProgress.TryAdd(resource, lease))
             {

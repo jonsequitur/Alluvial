@@ -105,10 +105,20 @@ namespace Alluvial.Distributors.Sql
                                                          : (DateTimeOffset) leaseLastReleased;
 
                         lease = new Lease<T>(resource,
-                                             defaultLeaseDuration,
-                                             (int) token,
-                                             expireIn: by => AdjustLeaseExpiration(lease, @by),
-                                             release: () => ReleaseLease(lease));
+                            defaultLeaseDuration,
+                            (int) token,
+                            expireIn: by => AdjustLeaseExpiration(lease, @by),
+                            release: async () =>
+                            {
+                                try
+                                {
+                                    await ReleaseLease(lease);
+                                }
+                                catch (Exception exception)
+                                {
+                                    PublishException(exception, lease);
+                                }
+                            });
                     }
 
                     reader.Dispose();

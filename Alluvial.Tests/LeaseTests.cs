@@ -85,6 +85,20 @@ namespace Alluvial.Tests
         }
 
         [Test]
+        public async Task When_a_lease_is_shortened_using_ExpireIn_then_its_cancelation_token_is_shortened()
+        {
+            var lease = new Lease<string>(leasable,
+                1.Hours(),
+                1);
+
+            await lease.ExpireIn(200.Milliseconds());
+
+            await Task.Delay(1.Seconds());
+
+            lease.CancellationToken.IsCancellationRequested.Should().BeTrue();
+        }
+
+        [Test]
         public async Task A_lease_cannot_be_created_with_a_negative_duration()
         {
             Action create = () =>

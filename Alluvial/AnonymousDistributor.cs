@@ -48,7 +48,6 @@ namespace Alluvial
 
         public void OnException(Action<Exception, Lease<T>> notify) =>
             onException(notify);
-     
 
         public Task Start() => start();
 

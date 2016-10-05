@@ -12,8 +12,6 @@ namespace Alluvial
     {
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly Func<TimeSpan, Task<TimeSpan>> expireIn;
-        private readonly Func<Task> release;
-        private TimeSpan duration;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Lease"/> class.
@@ -31,10 +29,13 @@ namespace Alluvial
                 throw new ArgumentException("Lease duration cannot be negative.");
             }
 
-            this.duration = duration;
             this.expireIn = expireIn;
-            this.release = release;
             cancellationTokenSource.CancelAfter(duration);
+
+            if (release != null)
+            {
+                Expiration().ContinueWith(_ => release());
+            }
         }
         
         /// <summary>
@@ -61,9 +62,12 @@ namespace Alluvial
             }
         }
 
+        /// <summary>
+        /// Sets the lease to expire after the specified period of time.
+        /// </summary>
+        /// <param name="timespan">The duration after which the lease should expire.</param>
         public async Task ExpireIn(TimeSpan timespan)
         {
-            // FIX: (ExpireIn) 
             if (timespan < TimeSpan.Zero)
             {
                 throw new ArgumentException("Lease cannot be extended by a negative timespan.");
@@ -100,14 +104,10 @@ namespace Alluvial
         /// <summary>
         /// Releases the lease, making it available for acquisition by other workers.
         /// </summary>
-        public async Task Release()
+        public Task Release()
         {
-            if (release != null)
-            {
-                await release();
-            }
-
             cancellationTokenSource.Cancel();
+            return Unit.Default.CompletedTask();
         }
 
         internal static ILease CreateDefault() => new Lease(TimeSpan.FromMinutes(5));

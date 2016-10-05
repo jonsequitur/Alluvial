@@ -193,7 +193,7 @@ namespace Alluvial
             }
             catch (Exception exception)
             {
-                CaughtException?.Invoke(exception, lease);
+                PublishException(exception, lease);
             }
 
             if (lease != null)
@@ -213,14 +213,12 @@ namespace Alluvial
 
                     if (r.Status == TaskStatus.Faulted)
                     {
-                        lease.Exception = r.Exception;
-
-                        CaughtException?.Invoke(lease.Exception, lease);
+                        PublishException(r.Exception, lease);
                     }
                 }
                 catch (Exception exception)
                 {
-                    lease.Exception = exception;
+                    PublishException(exception, lease);
                 }
 
                 Interlocked.Decrement(ref countOfLeasesInUse);
@@ -255,6 +253,17 @@ namespace Alluvial
             }
 
             return LeaseAcquisitionAttempt.Failed();
+        }
+
+        protected void PublishException(
+            Exception exception, 
+            Lease<T> lease = null)
+        {
+            if (lease != null)
+            {
+                lease.Exception = exception;
+            }
+            CaughtException?.Invoke(exception, lease);
         }
 
         /// <summary>

@@ -61,7 +61,7 @@ namespace Alluvial.Tests.Distributors
             distributor.OnReceive(async lease => wasCalled = true);
 
             await distributor.Start();
-            await Task.Delay(DefaultLeaseDuration);
+            await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*2));
             await distributor.Stop();
 
             wasCalled.Should().BeTrue();
@@ -82,9 +82,7 @@ namespace Alluvial.Tests.Distributors
 
             Console.WriteLine("\n\n\n STOPPED \n\n\n");
 
-            await Task.Delay(DefaultLeaseDuration);
-            await Task.Delay(DefaultLeaseDuration);
-            await Task.Delay(DefaultLeaseDuration);
+            await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*2));
 
             var wasCalled = false;
             distributor.OnReceive(async lease => wasCalled = true);
@@ -245,8 +243,12 @@ namespace Alluvial.Tests.Distributors
         {
             var tally = new ConcurrentDictionary<string, int>();
             var pool = DateTimeOffset.UtcNow.Ticks.ToString();
-            var distributor1 = CreateDistributor(pool: pool).Trace();
-            var distributor2 = CreateDistributor(pool: pool).Trace();
+            var distributor1 = CreateDistributor(pool: pool)
+                .ReleaseLeasesWhenWorkIsDone()
+                .Trace();
+            var distributor2 = CreateDistributor(pool: pool)
+                .ReleaseLeasesWhenWorkIsDone()
+                .Trace();
 
             Func<Lease<int>, Task> onReceive = async lease =>
             {
@@ -288,38 +290,28 @@ namespace Alluvial.Tests.Distributors
         }
 
         [Test]
-        public virtual async Task When_Extend_is_called_after_a_lease_has_expired_then_it_throws()
+        public async Task A_lease_can_be_shortened_using_ExpireIn()
         {
-            Exception exception = null;
-            var distributor = CreateDistributor().Trace();
-            var mre = new AsyncManualResetEvent();
+            var receivedCount = 0;
+
+            var distributor = CreateDistributor(
+                defaultLeaseDuration: 1.Hours()).Trace();
 
             distributor.OnReceive(async lease =>
             {
-                // wait too long, until another receiver gets the lease
-                await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*1.5));
-
-                // now try to extend the lease
-                try
-                {
-                    await lease.ExpireIn(1.Milliseconds());
-                }
-                catch (Exception ex)
-                {
-                    exception = ex;
-                }
-
-                mre.Set();
+                Interlocked.Increment(ref receivedCount);
+                await lease.ExpireIn(2.Milliseconds());
             });
 
-#pragma warning disable 4014
-            distributor.Distribute(1);
-#pragma warning restore 4014
-            await mre.WaitAsync().Timeout();
-            await Task.Delay(1000);
+            var numberOfLeases = DefaultLeasables.Length;
 
-            exception.Should().BeOfType<InvalidOperationException>();
-            exception.Message.Should().Contain("lease cannot be extended");
+            await distributor.Distribute(numberOfLeases);
+            await distributor.Distribute(numberOfLeases)
+                .Timeout(5.Seconds());
+
+            Console.WriteLine(new {receivedCount});
+
+            receivedCount.Should().Be(numberOfLeases * 2);
         }
 
         [Test]
