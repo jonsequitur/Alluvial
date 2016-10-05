@@ -280,8 +280,8 @@ namespace Alluvial.Tests
 
             await distributor.Distribute(1);
 
-            // exception propagation is async, so yield before the assertion
-            await Task.Yield();
+            // exception propagation is async, so wait a moment before the assertion
+            await Task.Delay(10);
 
             caughtException.Should().NotBeNull();
         }
