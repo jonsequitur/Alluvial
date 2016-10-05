@@ -81,7 +81,6 @@ namespace Alluvial.Distributors.Sql
             {
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.CommandText = @"Alluvial.AcquireLease";
-                cmd.Parameters.AddWithValue(@"@waitIntervalMilliseconds", 0);
                 cmd.Parameters.AddWithValue(@"@leaseDurationMilliseconds", defaultLeaseDuration.TotalMilliseconds);
                 cmd.Parameters.AddWithValue(@"@pool", Pool);
 
@@ -106,10 +105,20 @@ namespace Alluvial.Distributors.Sql
                                                          : (DateTimeOffset) leaseLastReleased;
 
                         lease = new Lease<T>(resource,
-                                             defaultLeaseDuration,
-                                             (int) token,
-                                             extend: by => ExtendLease(lease, @by),
-                                             release: () => ReleaseLease(lease));
+                            defaultLeaseDuration,
+                            (int) token,
+                            expireIn: by => AdjustLeaseExpiration(lease, @by),
+                            release: async () =>
+                            {
+                                try
+                                {
+                                    await ReleaseLease(lease);
+                                }
+                                catch (Exception exception)
+                                {
+                                    PublishException(exception, lease);
+                                }
+                            });
                     }
 
                     reader.Dispose();
@@ -120,15 +129,15 @@ namespace Alluvial.Distributors.Sql
             }
         }
 
-        private async Task<TimeSpan> ExtendLease(Lease<T> lease, TimeSpan by)
+        private async Task<TimeSpan> AdjustLeaseExpiration(Lease<T> lease, TimeSpan by)
         {
             using (var connection = new SqlConnection(database.ConnectionString))
             using (var cmd = connection.CreateCommand())
             {
                 cmd.CommandType = CommandType.StoredProcedure;
-                cmd.CommandText = @"Alluvial.ExtendLease";
+                cmd.CommandText = @"Alluvial.ExpireLeaseIn";
                 cmd.Parameters.AddWithValue(@"@resourceName", lease.ResourceName);
-                cmd.Parameters.AddWithValue(@"@byMilliseconds", by.TotalMilliseconds);
+                cmd.Parameters.AddWithValue(@"@expireInSeconds", by.TotalSeconds);
                 cmd.Parameters.AddWithValue(@"@token", lease.OwnerToken);
 
                 await connection.OpenAsync();

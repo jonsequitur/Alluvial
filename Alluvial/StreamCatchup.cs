@@ -15,53 +15,18 @@ namespace Alluvial
         /// Specifies an amount of time to wait if a stream produces no data.
         /// </summary>
         /// <typeparam name="TData">The type of the data in the stream.</typeparam>
-        /// <param name="catchup">The catchup.</param>
-        /// <param name="extendLeaseBy">The duration to wait.</param>
-        public static IStreamCatchup<TData> Backoff<TData>(
-            this IStreamCatchup<TData> catchup,
-            TimeSpan? extendLeaseBy = null)
-        {
-            if (catchup == null)
-            {
-                throw new ArgumentNullException(nameof(catchup));
-            }
-
-            extendLeaseBy = extendLeaseBy ?? TimeSpan.Zero;
-
-            return catchup.Wrap(
-                runSingleBatch: async lease =>
-                {
-                    using (var counter = catchup.Count())
-                    {
-                        await catchup.RunSingleBatch(lease);
-                        
-                        if (counter.Value == 0)
-                        {
-                            await lease.Extend(extendLeaseBy.Value);
-                            await lease.Expiration();
-                        }
-                    }
-                });
-        }
-
-        /// <summary>
-        /// Specifies an amount of time to wait if a stream produces no data.
-        /// </summary>
-        /// <typeparam name="TData">The type of the data in the stream.</typeparam>
         /// <typeparam name="TPartition">The type of the partition.</typeparam>
         /// <param name="catchup">The catchup.</param>
-        /// <param name="extendLeaseBy">The duration to wait.</param>
+        /// <param name="duration">The duration to wait.</param>
         /// <returns></returns>
         public static IDistributedStreamCatchup<TData, TPartition> Backoff<TData, TPartition>(
             this IDistributedStreamCatchup<TData, TPartition> catchup,
-            TimeSpan? extendLeaseBy = null)
+            TimeSpan duration)
         {
             if (catchup == null)
             {
                 throw new ArgumentNullException(nameof(catchup));
             }
-
-            extendLeaseBy = extendLeaseBy ?? TimeSpan.Zero;
 
             catchup.OnReceive(async (lease, next) =>
             {
@@ -71,8 +36,7 @@ namespace Alluvial
 
                     if (counter.Value == 0)
                     {
-                        await lease.Extend(extendLeaseBy.Value);
-                        await lease.Expiration();
+                        await lease.ExpireIn(duration);
                     }
                 }
             });
@@ -263,17 +227,25 @@ namespace Alluvial
                 throw new ArgumentNullException(nameof(catchup));
             }
 
+            lease = lease ?? new Lease(TimeSpan.FromHours(4));
+            var leaseExpiration = lease.Expiration();
+
             using (var counter = catchup.Count())
             {
-                int countBefore;
+                var countBefore = 0;
+
                 do
                 {
+                    if (leaseExpiration.IsCompleted ||
+                        leaseExpiration.IsCanceled ||
+                        leaseExpiration.IsFaulted)
+                    {
+                        break;
+                    }
+
                     countBefore = counter.Value;
 
-                    await catchup.RunSingleBatch(
-                        lease ?? 
-                        Lease.CreateDefault());
-
+                    await catchup.RunSingleBatch(lease);
                 } while (countBefore != counter.Value);
             }
         }

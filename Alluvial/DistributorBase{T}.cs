@@ -125,6 +125,8 @@ namespace Alluvial
         {
             EnsureOnReceiveHasBeenCalled();
 
+            stopped = false;
+
             var acquired = new List<T>();
 
             count = Math.Min(count, leasables.Length);
@@ -153,6 +155,8 @@ namespace Alluvial
         public virtual Task Start()
         {
             EnsureOnReceiveHasBeenCalled();
+
+            stopped = false;
 
             Parallel.For(0,
                          maxDegreesOfParallelism,
@@ -189,7 +193,7 @@ namespace Alluvial
             }
             catch (Exception exception)
             {
-                CaughtException?.Invoke(exception, lease);
+                PublishException(exception, lease);
             }
 
             if (lease != null)
@@ -209,14 +213,12 @@ namespace Alluvial
 
                     if (r.Status == TaskStatus.Faulted)
                     {
-                        lease.Exception = r.Exception;
-
-                        CaughtException?.Invoke(lease.Exception, lease);
+                        PublishException(r.Exception, lease);
                     }
                 }
                 catch (Exception exception)
                 {
-                    lease.Exception = exception;
+                    PublishException(exception, lease);
                 }
 
                 Interlocked.Decrement(ref countOfLeasesInUse);
@@ -251,6 +253,17 @@ namespace Alluvial
             }
 
             return LeaseAcquisitionAttempt.Failed();
+        }
+
+        protected void PublishException(
+            Exception exception, 
+            Lease<T> lease = null)
+        {
+            if (lease != null)
+            {
+                lease.Exception = exception;
+            }
+            CaughtException?.Invoke(exception, lease);
         }
 
         /// <summary>
@@ -289,10 +302,7 @@ namespace Alluvial
         /// <returns>
         /// A <see cref="System.String" /> that represents this instance.
         /// </returns>
-        public override string ToString()
-        {
-            return Pool;
-        }
+        public override string ToString() => Pool;
 
         private struct LeaseAcquisitionAttempt
         {

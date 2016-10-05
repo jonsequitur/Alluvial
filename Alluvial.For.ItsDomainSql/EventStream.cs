@@ -116,7 +116,7 @@ namespace Alluvial.For.ItsDomainSql
         private static async Task<IEnumerable<EventStreamChange>> EventStreamChanges(
             Func<IQueryable<StorableEvent>, IQueryable<StorableEvent>> filter,
             IStreamQuery<long> streamQuery,
-            IStreamQueryRangePartition<Guid> partition = null)
+            IStreamQueryPartition<Guid> partition = null)
         {
             using (var db = Configuration.Current.EventStoreDbContext())
             {

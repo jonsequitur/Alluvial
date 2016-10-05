@@ -7,7 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Alluvial.Tests.BankDomain;
 using Alluvial.Tests.StreamImplementations.NEventStore;
-using Its.Log.Instrumentation;
 using NEventStore;
 using NUnit.Framework;
 
@@ -168,16 +167,42 @@ namespace Alluvial.Tests
                 await catchup.RunUntilCaughtUp();
             }
 
-            Console.WriteLine(projectionStore
-                .Select(p => p.Value)
-                .ToLogString());
-
             projectionStore.Sum(b => b.Balance)
                            .Should()
                            .Be(100);
             projectionStore.Count()
                            .Should()
                            .Be(100);
+        }
+
+        [Test]
+        public async Task When_a_lease_is_released_then_RunUntilCaughtUp_stops()
+        {
+            var projectionStore = new InMemoryProjectionStore<BalanceProjection>();
+
+            var catchup = StreamCatchup.All(streamSource.StreamPerAggregate(), batchSize: 5);
+
+            ILease lease = new Lease(5.Seconds());
+
+            var aggregator = new BalanceProjector().Pipeline(async (projection, batch, next) =>
+            {
+                await next(projection, batch);
+                lease.Release();
+            });
+
+            using (catchup.Subscribe(aggregator, projectionStore))
+            {
+                TaskScheduler.UnobservedTaskException += (sender, args) => Console.WriteLine(args.Exception);
+
+                await catchup.RunUntilCaughtUp(lease);
+            }
+
+            projectionStore.Sum(b => b.Balance)
+                           .Should()
+                           .Be(5, "only one batch should be processed before the lease is released");
+            projectionStore.Count()
+                           .Should()
+                           .Be(5, "only one batch should be processed before the lease is released");
         }
 
         [Test]
@@ -506,38 +531,6 @@ namespace Alluvial.Tests
             getCount.Should().Be(1);
         }
 
-        [Test]
-        public async Task A_backoff_can_be_specified_so_that_polling_slows_when_there_is_no_new_data()
-        {
-            // arrange
-            var fetchCount = 0;
-
-            var streams = Stream.Create<string, int>(q =>
-            {
-                Interlocked.Increment(ref fetchCount);
-                return Enumerable.Empty<string>();
-            }) .Trace()
-                                .IntoMany((item, cursor, toCursor) => Enumerable.Empty<string>().AsSequentialStream());
-
-            var catchup = StreamCatchup.All(streams)
-                                       .Backoff(5.Seconds());
-
-            catchup.Subscribe((p, b) =>
-            {
-                p.Value = p.Value ?? new List<string>();
-                p.Value.AddRange(b);
-                return p;
-            }, new InMemoryProjectionStore<Projection<List<string>, int>>());
-
-            // act
-            using (catchup.Poll(TimeSpan.FromSeconds(.1)))
-            {
-                await Task.Delay(1.Seconds());
-            }
-
-            // assert
-            fetchCount.Should().Be(1);
-        }
 
         [Test]
         public async Task A_backoff_can_be_specified_so_that_distributor_slows_when_there_is_no_new_data()

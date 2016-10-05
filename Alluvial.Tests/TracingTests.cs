@@ -228,7 +228,10 @@ namespace Alluvial.Tests
         {
             var distributor = CreateDistributor().Trace();
 
-            distributor.OnReceive(async lease => { throw new Exception("oops!"); });
+            distributor.OnReceive(async lease =>
+            {
+                throw new Exception("oops!");
+            });
 
             await distributor.Distribute(1);
 
@@ -265,11 +268,20 @@ namespace Alluvial.Tests
                     Enumerable.Range(1, 10)
                               .Select(i => new Leasable<int>(i, i.ToString()))
                               .ToArray(),
-                    beforeRelease: async lease => { throw new Exception("dang!"); })
-                .Trace(onException: (ex, lease) => caughtException = ex)
+                    beforeRelease: async lease =>
+                    {
+                        throw new Exception("dang!");
+                    })
+                .Trace(onException: (ex, lease) =>
+                {
+                    caughtException = ex;
+                })
                 .ReleaseLeasesWhenWorkIsDone();
 
             await distributor.Distribute(1);
+
+            // exception propagation is async, so wait a moment before the assertion
+            await Task.Delay(10);
 
             caughtException.Should().NotBeNull();
         }

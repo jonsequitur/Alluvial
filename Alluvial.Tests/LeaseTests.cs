@@ -18,18 +18,18 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task When_an_extend_delegate_is_provided_then_when_Extend_is_called_it_is_called_with_the_specified_lease_extension_TimeSpan()
+        public async Task When_an_expireIn_delegate_is_provided_then_when_Expire_is_called_it_is_called_with_the_specified_lease_extension_TimeSpan()
         {
-            var extendedBy = TimeSpan.Zero;
+            var expireIn = TimeSpan.Zero;
 
             var lease = new Lease<string>(leasable,
                                           60.Seconds(),
                                           1,
-                                          async ts => extendedBy = ts);
+                                          expireIn: async ts => expireIn = ts);
 
-            await lease.Extend(TimeSpan.FromHours(3));
+            await lease.ExpireIn(TimeSpan.FromHours(3));
 
-            extendedBy.Should().Be(3.Hours());
+            expireIn.Should().Be(3.Hours());
         }
 
         [Test]
@@ -71,13 +71,13 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task When_a_lease_is_extended_then_its_cancelation_token_is_extended()
+        public async Task When_a_lease_is_extended_using_ExpireIn_then_its_cancelation_token_is_extended()
         {
             var lease = new Lease<string>(leasable,
                                           200.Milliseconds(),
                                           1);
 
-            await lease.Extend(TimeSpan.FromHours(3));
+            await lease.ExpireIn(TimeSpan.FromHours(3));
 
             await Task.Delay(1.Seconds());
 
@@ -85,25 +85,17 @@ namespace Alluvial.Tests
         }
 
         [Test]
-        public async Task A_lease_can_be_extended_more_than_once_and_extensions_are_cumulative()
+        public async Task When_a_lease_is_shortened_using_ExpireIn_then_its_cancelation_token_is_shortened()
         {
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-
             var lease = new Lease<string>(leasable,
-                                          50.Milliseconds(),
-                                          1);
+                1.Hours(),
+                1);
 
-            await lease.Extend(25.Milliseconds());
-            await lease.Extend(25.Milliseconds());
-            await lease.Extend(25.Milliseconds());
-            await lease.Extend(25.Milliseconds());
+            await lease.ExpireIn(200.Milliseconds());
 
-            await lease.Expiration();
+            await Task.Delay(1.Seconds());
 
-            stopwatch.Elapsed
-                     .Should()
-                     .BeCloseTo(150.Milliseconds(), 50);
+            lease.CancellationToken.IsCancellationRequested.Should().BeTrue();
         }
 
         [Test]
@@ -126,13 +118,49 @@ namespace Alluvial.Tests
                                           20.Milliseconds(),
                                           1);
 
-            Action extend = () => lease.Extend(-1.Seconds()).Wait();
+            Action extend = () => lease.ExpireIn(-1.Seconds()).Wait();
 
             extend.ShouldThrow<ArgumentException>()
                   .And
                   .Message
                   .Should()
                   .Be("Lease cannot be extended by a negative timespan.");
+        }
+
+        [Test]
+        public async Task Lease_ExpireIn_does_not_accept_a_negative_timespan()
+        {
+            var lease = new Lease<string>(leasable,
+                                          20.Milliseconds(),
+                                          1);
+
+            Action extend = () => lease.ExpireIn(-1.Seconds()).Wait();
+
+            extend.ShouldThrow<ArgumentException>()
+                  .And
+                  .Message
+                  .Should()
+                  .Be("Lease cannot be extended by a negative timespan.");
+        }
+
+        [Test]
+        public async Task IsReleased_returns_false_when_the_lease_has_not_expired()
+        {
+            var lease = new Lease(TimeSpan.FromSeconds(1));
+
+            await Task.Delay(15);
+
+            lease.IsReleased.Should().BeFalse();
+        }
+
+        [Test]
+        public async Task IsReleased_returns_true_when_the_lease_has_expired()
+        {
+            var lease = new Lease(TimeSpan.FromMilliseconds(1));
+
+            await Task.Delay(35);
+
+            lease.IsReleased.Should().BeTrue();
         }
     }
 }

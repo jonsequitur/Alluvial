@@ -24,15 +24,9 @@ namespace Alluvial.Tests.Distributors
 
         protected abstract TimeSpan ClockDriftTolerance { get; }
 
-        protected Leasable<int>[] DefaultLeasables;
-
-        [SetUp]
-        public void SetUp()
-        {
-            DefaultLeasables = Enumerable.Range(1, 10)
-                                         .Select(i => new Leasable<int>(i, i.ToString()))
-                                         .ToArray();
-        }
+        protected readonly Leasable<int>[] DefaultLeasables = Enumerable.Range(1, 10)
+                                                                        .Select(i => new Leasable<int>(i, i.ToString()))
+                                                                        .ToArray();
 
         [Test]
         public async Task When_the_distributor_is_started_then_notifications_begin()
@@ -46,6 +40,58 @@ namespace Alluvial.Tests.Distributors
             await distributor.Stop();
 
             // no TimeoutException, success!
+        }
+
+        [Test]
+        public async Task Distributor_can_be_restarted()
+        {
+            var distributor = CreateDistributor(maxDegreesOfParallelism: 1)
+                .ReleaseLeasesWhenWorkIsDone()
+                .Trace();
+
+            distributor.OnReceive(async lease => { });
+
+            await distributor.Start();
+            await Task.Delay(20);
+            await distributor.Stop();
+
+            Console.WriteLine("\n\n\n STOPPED \n\n\n");
+
+            var wasCalled = false;
+            distributor.OnReceive(async lease => wasCalled = true);
+
+            await distributor.Start();
+            await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*2));
+            await distributor.Stop();
+
+            wasCalled.Should().BeTrue();
+        }
+
+        [Test]
+        public async Task Distributor_Distribute_works_after_Stop_has_been_called()
+        {
+            var distributor = CreateDistributor(maxDegreesOfParallelism: 1)
+                .ReleaseLeasesWhenWorkIsDone()
+                .Trace();
+
+            distributor.OnReceive(async lease => { });
+
+            await distributor.Start();
+            await Task.Delay(20);
+            await distributor.Stop();
+
+            Console.WriteLine("\n\n\n STOPPED \n\n\n");
+
+            await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*2));
+
+            var wasCalled = false;
+            distributor.OnReceive(async lease => wasCalled = true);
+
+            await distributor.Distribute(1);
+            await Task.Delay(DefaultLeaseDuration);
+            await distributor.Stop();
+
+            wasCalled.Should().BeTrue();
         }
 
         [Test]
@@ -193,12 +239,16 @@ namespace Alluvial.Tests.Distributors
         }
 
         [Test]
-        public virtual async Task A_lease_can_be_extended()
+        public virtual async Task A_lease_can_be_extended_using_ExpireIn()
         {
             var tally = new ConcurrentDictionary<string, int>();
             var pool = DateTimeOffset.UtcNow.Ticks.ToString();
-            var distributor1 = CreateDistributor(pool: pool).Trace();
-            var distributor2 = CreateDistributor(pool: pool).Trace();
+            var distributor1 = CreateDistributor(pool: pool)
+                .ReleaseLeasesWhenWorkIsDone()
+                .Trace();
+            var distributor2 = CreateDistributor(pool: pool)
+                .ReleaseLeasesWhenWorkIsDone()
+                .Trace();
 
             Func<Lease<int>, Task> onReceive = async lease =>
             {
@@ -211,7 +261,7 @@ namespace Alluvial.Tests.Distributors
                     Console.WriteLine($"GOT LEASE 5 @ {DateTime.Now}");
 
                     // extend the lease
-                    await lease.Extend(TimeSpan.FromDays(2));
+                    await lease.ExpireIn(TimeSpan.FromHours(2));
 
                     // wait longer than the lease would normally last
                     await Task.Delay(5.Seconds());
@@ -240,7 +290,32 @@ namespace Alluvial.Tests.Distributors
         }
 
         [Test]
-        public virtual async Task When_Extend_is_called_after_a_lease_has_expired_then_it_throws()
+        public async Task A_lease_can_be_shortened_using_ExpireIn()
+        {
+            var receivedCount = 0;
+
+            var distributor = CreateDistributor(
+                defaultLeaseDuration: 1.Hours()).Trace();
+
+            distributor.OnReceive(async lease =>
+            {
+                Interlocked.Increment(ref receivedCount);
+                await lease.ExpireIn(2.Milliseconds());
+            });
+
+            var numberOfLeases = DefaultLeasables.Length;
+
+            await distributor.Distribute(numberOfLeases);
+            await distributor.Distribute(numberOfLeases)
+                .Timeout(5.Seconds());
+
+            Console.WriteLine(new {receivedCount});
+
+            receivedCount.Should().Be(numberOfLeases * 2);
+        }
+
+        [Test]
+        public virtual async Task When_ExpireIn_is_called_after_a_lease_has_expired_then_it_throws()
         {
             Exception exception = null;
             var distributor = CreateDistributor().Trace();
@@ -254,7 +329,7 @@ namespace Alluvial.Tests.Distributors
                 // now try to extend the lease
                 try
                 {
-                    await lease.Extend(TimeSpan.FromMilliseconds(1));
+                    await lease.ExpireIn(TimeSpan.FromMilliseconds(1));
                 }
                 catch (Exception ex)
                 {
@@ -404,7 +479,28 @@ namespace Alluvial.Tests.Distributors
 
             distributor.OnReceive(async lease =>
             {
-                await lease.Extend(2.Seconds());
+                await lease.ExpireIn(2.Seconds());
+            });
+
+            await distributor.Start();
+            await Task.Delay(1.Seconds());
+            await distributor.Stop();
+
+            receivedLeases.Count().Should().Be(10);
+        }
+
+        [Test]
+        public async Task Distributor_rate_can_be_slowed_by_extending_leases_using_ExpireIn()
+        {
+            var receivedLeases = new ConcurrentBag<Lease<int>>();
+
+            var distributor = CreateDistributor(
+                async lease => receivedLeases.Add(lease),
+                maxDegreesOfParallelism: 10);
+
+            distributor.OnReceive(async lease =>
+            {
+                await lease.ExpireIn(2.Seconds());
             });
 
             await distributor.Start();

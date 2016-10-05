@@ -13,20 +13,21 @@ namespace Alluvial
         private readonly int ownerToken;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Lease{T}"/> class.
+        /// Initializes a new instance of the <see cref="Lease{T}" /> class.
         /// </summary>
         /// <param name="leasable">The leasable resource.</param>
         /// <param name="duration">The duration of the lease.</param>
         /// <param name="ownerToken">The owner token.</param>
-        /// <param name="extend">A delegate which can be called to extend the lease.</param>
+        /// <param name="expireIn">A delegate which can be called to change the lease duration.</param>
+        /// <param name="release">A delegate to be called to release the lease.</param>
         /// <exception cref="System.ArgumentNullException">leasable</exception>
         public Lease(
             Leasable<T> leasable,
             TimeSpan duration,
             int ownerToken,
-            Func<TimeSpan, Task<TimeSpan>> extend = null,
+            Func<TimeSpan, Task<TimeSpan>> expireIn = null,
             Func<Task> release = null) :
-            base(duration, extend, release)
+            base(duration, expireIn, release)
         {
             if (leasable == null)
             {
@@ -67,7 +68,7 @@ namespace Alluvial
         /// <returns>
         /// A string that represents the current object.
         /// </returns>
-        public override string ToString() => $"lease:{ResourceName} ({OwnerToken}) total duration {Duration} (last granted @ {LastGranted}, last released @ {LastReleased})";
+        public override string ToString() => $"lease:{ResourceName} ({OwnerToken}) (last granted @ {LastGranted}, last released @ {LastReleased})";
 
         internal Leasable<T> Leasable => leasable;
 
