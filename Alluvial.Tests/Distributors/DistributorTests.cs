@@ -24,9 +24,15 @@ namespace Alluvial.Tests.Distributors
 
         protected abstract TimeSpan ClockDriftTolerance { get; }
 
-        protected readonly Leasable<int>[] DefaultLeasables = Enumerable.Range(1, 10)
-                                                                        .Select(i => new Leasable<int>(i, i.ToString()))
-                                                                        .ToArray();
+        protected Leasable<int>[] DefaultLeasables;
+
+        [SetUp]
+        public void SetUp()
+        {
+            DefaultLeasables = Enumerable.Range(1, 10)
+                                         .Select(i => new Leasable<int>(i, i.ToString()))
+                                         .ToArray();
+        }
 
         [Test]
         public async Task When_the_distributor_is_started_then_notifications_begin()
@@ -38,7 +44,7 @@ namespace Alluvial.Tests.Distributors
             await distributor.Start();
             await mre.WaitAsync().Timeout();
             await distributor.Stop();
-
+            
             // no TimeoutException, success!
         }
 
