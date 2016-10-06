@@ -12,23 +12,6 @@ namespace Alluvial
     public static class Distributor
     {
         /// <summary>
-        /// Configures the distributor to release leases as soon as the work on the lease is completed.
-        /// </summary>
-        /// <typeparam name="T">The type of the distributed resource.</typeparam>
-        /// <param name="distributor">The distributor.</param>
-        public static IDistributor<T> ReleaseLeasesWhenWorkIsDone<T>(
-            this IDistributor<T> distributor)
-        {
-            distributor.OnReceive(async (lease, next) =>
-            {
-                await next(lease);
-                await lease.Release();
-            });
-
-            return distributor;
-        }
-
-        /// <summary>
         /// Creates an anonymous distributor.
         /// </summary>
         /// <typeparam name="T">The type of the distributed resource.</typeparam>
@@ -94,6 +77,54 @@ namespace Alluvial
         /// <param name="distributor">The distributor.</param>
         public static async Task<IEnumerable<T>> DistributeAll<T>(this IDistributor<T> distributor) =>
             await distributor.Distribute(int.MaxValue);
+
+        /// <summary>
+        /// Specifies a delegate to be called when a lease is available.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="distributor">The distributor.</param>
+        /// <param name="receive">The delegate called when work is available to be done.</param>
+        /// <exception cref="System.ArgumentNullException">
+        /// </exception>
+        /// <remarks>
+        /// For the duration of the lease, the leased resource will not be available to any other instance.
+        /// </remarks>
+        public static void OnReceive<T>(
+            this IDistributor<T> distributor,
+            Func<Lease<T>, Task> receive)
+        {
+            if (distributor == null)
+            {
+                throw new ArgumentNullException(nameof(distributor));
+            }
+            if (receive == null)
+            {
+                throw new ArgumentNullException(nameof(receive));
+            }
+
+            distributor.OnReceive(async (lease, next) =>
+            {
+                await receive(lease);
+                await next(lease);
+            });
+        }
+
+        /// <summary>
+        /// Configures the distributor to release leases as soon as the work on the lease is completed.
+        /// </summary>
+        /// <typeparam name="T">The type of the distributed resource.</typeparam>
+        /// <param name="distributor">The distributor.</param>
+        public static IDistributor<T> ReleaseLeasesWhenWorkIsDone<T>(
+            this IDistributor<T> distributor)
+        {
+            distributor.OnReceive(async (lease, next) =>
+            {
+                await next(lease);
+                await lease.Release();
+            });
+
+            return distributor;
+        }
 
         /// <summary>
         /// Wraps a distributor with tracing behaviors when leases are acquired and released.
@@ -165,37 +196,6 @@ namespace Alluvial
             {
                 WriteLine($"[Distribute] {distributor}: Exception: {exception}");
             }
-        }
-
-        /// <summary>
-        /// Specifies a delegate to be called when a lease is available.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="distributor">The distributor.</param>
-        /// <param name="receive">The delegate called when work is available to be done.</param>
-        /// <exception cref="System.ArgumentNullException">
-        /// </exception>
-        /// <remarks>
-        /// For the duration of the lease, the leased resource will not be available to any other instance.
-        /// </remarks>
-        public static void OnReceive<T>(
-            this IDistributor<T> distributor,
-            Func<Lease<T>, Task> receive)
-        {
-            if (distributor == null)
-            {
-                throw new ArgumentNullException(nameof(distributor));
-            }
-            if (receive == null)
-            {
-                throw new ArgumentNullException(nameof(receive));
-            }
-
-            distributor.OnReceive(async (lease, next) =>
-            {
-                await receive(lease);
-                await next(lease);
-            });
         }
 
         private static void TraceOnLeaseAcquired<T>(IDistributor<T> distributor, Lease<T> lease) =>
