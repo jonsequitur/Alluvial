@@ -102,7 +102,7 @@
     <Compile Include="BankDomain\AccountClosed.cs" />
     <Compile Include="BankDomain\AccountOpened.cs" />
     <Compile Include="BankDomain\BankAccountType.cs" />
-    <Compile Include="BankDomain\Projections\AccountHistoryProjector.cs" />
+    <Compile Include="BankDomain\Projections\AccountHistoryAggregator.cs" />
     <Compile Include="Distributors\DistributorBaseTests.cs" />
     <Compile Include="GuidPartioningTests.cs" />
     <Compile Include="Infrastructure\AlluvialSqlTestsDbContext.cs" />
@@ -112,7 +112,7 @@
     <Compile Include="Infrastructure\Background.cs" />
     <Compile Include="BankDomain\Projections\AccountHistoryProjection.cs" />
     <Compile Include="BankDomain\Projections\BalanceProjection.cs" />
-    <Compile Include="BankDomain\Projections\BalanceProjector.cs" />
+    <Compile Include="BankDomain\Projections\BalanceAggregator.cs" />
     <Compile Include="BankDomain\FundsDeposited.cs" />
     <Compile Include="BankDomain\IDomainEvent.cs" />
     <Compile Include="BankDomain\Projections\ProjectionBase.cs" />
