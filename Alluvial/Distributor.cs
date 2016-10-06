@@ -102,7 +102,7 @@ namespace Alluvial
         public static IDistributor<T> Trace<T>(
             this IDistributor<T> distributor,
             Action<Lease<T>> onLeaseAcquired = null,
-            Action<Lease<T>> onLeaseReleasing = null,
+            Action<Lease<T>> onLeaseWorkDone = null,
             Action<Exception, Lease<T>> onException = null)
         {
             if (distributor == null)
@@ -111,17 +111,17 @@ namespace Alluvial
             }
 
             if (onLeaseAcquired == null &&
-                onLeaseReleasing == null &&
+                onLeaseWorkDone == null &&
                 onException == null)
             {
                 onLeaseAcquired = lease => TraceOnLeaseAcquired(distributor, lease);
-                onLeaseReleasing = lease => TraceOnLeaseReleasing(distributor, lease);
+                onLeaseWorkDone = lease => TraceOnLeaseWorkDone(distributor, lease);
                 onException = (exception, lease) => TraceOnException(distributor, exception, lease);
             }
             else
             {
                 onLeaseAcquired = onLeaseAcquired ?? (l => { });
-                onLeaseReleasing = onLeaseReleasing ?? (l => { });
+                onLeaseWorkDone = onLeaseWorkDone ?? (l => { });
                 onException = onException ?? ((exception, lease) => { });
             }
 
@@ -144,7 +144,7 @@ namespace Alluvial
             {
                 onLeaseAcquired(lease);
                 await next(lease);
-                onLeaseReleasing(lease);
+                onLeaseWorkDone(lease);
             });
 
             distributor.OnException(onException);
@@ -201,7 +201,7 @@ namespace Alluvial
         private static void TraceOnLeaseAcquired<T>(IDistributor<T> distributor, Lease<T> lease) =>
             WriteLine($"[Distribute] {distributor}: OnReceive " + lease);
 
-        private static void TraceOnLeaseReleasing<T>(IDistributor<T> distributor, Lease<T> lease) =>
+        private static void TraceOnLeaseWorkDone<T>(IDistributor<T> distributor, Lease<T> lease) =>
             WriteLine($"[Distribute] {distributor}: OnReceive (done) " + lease);
     }
 }

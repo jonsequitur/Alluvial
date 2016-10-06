@@ -314,7 +314,7 @@ namespace Alluvial.Tests
                 new Leasable<int>(1, "1")
             }).Trace(
                 onLeaseAcquired: l => { leaseAcquired = l; },
-                onLeaseReleasing: l => { leaseReleased = l; });
+                onLeaseWorkDone: l => { leaseReleased = l; });
 
             distributor1.OnReceive((async _ => { }));
             var distributor = distributor1;
