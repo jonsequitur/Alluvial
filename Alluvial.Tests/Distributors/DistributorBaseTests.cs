@@ -10,15 +10,9 @@ namespace Alluvial.Tests.Distributors
     [TestFixture]
     public class DistributorBaseTests
     {
-        private Leasable<int>[] leasables;
-
-        [SetUp]
-        public void SetUp()
-        {
-            leasables = Enumerable.Range(1, 10)
-                                  .Select(i => new Leasable<int>(i, i.ToString()))
-                                  .ToArray();
-        }
+        private readonly Leasable<int>[] leasables = Enumerable.Range(1, 10)
+                                                               .Select(i => new Leasable<int>(i, i.ToString()))
+                                                               .ToArray();
 
         [Test]
         public async Task An_exception_during_AcquireLease_doesnt_stop_the_distributor()
@@ -84,7 +78,7 @@ namespace Alluvial.Tests.Distributors
             Func<Lease<T>, Task> beforeRelease = null,
             string pool = null,
             int maxDegreesOfParallelism = 5) :
-                base(leasables, pool ?? Guid.NewGuid().ToString(), maxDegreesOfParallelism)
+            base(leasables, pool ?? Guid.NewGuid().ToString(), maxDegreesOfParallelism)
         {
             this.beforeAcquire = beforeAcquire ?? (async () => { });
             this.beforeRelease = beforeRelease ?? (async lease => { });
