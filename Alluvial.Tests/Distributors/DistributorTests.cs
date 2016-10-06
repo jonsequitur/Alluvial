@@ -469,27 +469,6 @@ namespace Alluvial.Tests.Distributors
         }
 
         [Test]
-        public async Task Distributor_rate_can_be_slowed_by_extending_leases()
-        {
-            var receivedLeases = new ConcurrentBag<Lease<int>>();
-
-            var distributor = CreateDistributor(
-                async lease => receivedLeases.Add(lease),
-                maxDegreesOfParallelism: 10);
-
-            distributor.OnReceive(async lease =>
-            {
-                await lease.ExpireIn(2.Seconds());
-            });
-
-            await distributor.Start();
-            await Task.Delay(1.Seconds());
-            await distributor.Stop();
-
-            receivedLeases.Count().Should().Be(10);
-        }
-
-        [Test]
         public async Task Distributor_rate_can_be_slowed_by_extending_leases_using_ExpireIn()
         {
             var receivedLeases = new ConcurrentBag<Lease<int>>();
