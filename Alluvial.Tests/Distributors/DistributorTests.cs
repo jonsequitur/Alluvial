@@ -43,9 +43,9 @@ namespace Alluvial.Tests.Distributors
         }
 
         [Test]
-        public async Task Distributor_can_be_restarted()
+        public async Task When_Stop_has_been_called_then_Distributor_can_be_resumed_using_Start()
         {
-            var distributor = CreateDistributor(maxDegreesOfParallelism: 1)
+            var distributor = CreateDistributor(maxDegreesOfParallelism: 10)
                 .ReleaseLeasesWhenWorkIsDone()
                 .Trace();
 
@@ -61,14 +61,14 @@ namespace Alluvial.Tests.Distributors
             distributor.OnReceive(async lease => wasCalled = true);
 
             await distributor.Start();
-            await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*2));
+            await Task.Delay(20);
             await distributor.Stop();
 
             wasCalled.Should().BeTrue();
         }
 
         [Test]
-        public async Task Distributor_Distribute_works_after_Stop_has_been_called()
+        public async Task When_Stop_has_been_called_then_Distributor_can_be_resumed_using_Distribute()
         {
             var distributor = CreateDistributor(maxDegreesOfParallelism: 1)
                 .ReleaseLeasesWhenWorkIsDone()
