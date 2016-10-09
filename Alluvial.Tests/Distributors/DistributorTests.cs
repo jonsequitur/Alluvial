@@ -509,5 +509,26 @@ namespace Alluvial.Tests.Distributors
 
             leasesDistributed.Should().Be(DefaultLeasables.Length);
         }
+
+        [Test]
+        public async Task A_lease_can_be_continuously_extended_as_work_is_being_done_using_KeepAlive()
+        {
+            var distributor = CreateDistributor(defaultLeaseDuration: 1000.Milliseconds());
+            bool? wasReleased = null;
+
+            distributor.OnReceive(async (lease, next) =>
+            {
+                await Task.Delay(1500.Milliseconds());
+                wasReleased = lease.IsReleased;
+            });
+
+            distributor = distributor
+                .KeepExtendingLeasesWhileWorking(frequency: 600.Milliseconds())
+                .ReleaseLeasesWhenWorkIsDone();
+
+            await distributor.Distribute(1);
+            
+            wasReleased.Should().BeFalse();
+        }
     }
 }

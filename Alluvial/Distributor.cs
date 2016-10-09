@@ -59,6 +59,12 @@ namespace Alluvial
                 defaultLeaseDuration);
         }
 
+        /// <summary>
+        /// Creates leasables from the specified partitions.
+        /// </summary>
+        /// <typeparam name="TPartition">The type of the partition.</typeparam>
+        /// <param name="partitions">The partitions.</param>
+        /// <exception cref="System.ArgumentNullException"></exception>
         public static Leasable<IStreamQueryPartition<TPartition>>[] CreateLeasables<TPartition>(
             this IEnumerable<IStreamQueryPartition<TPartition>> partitions)
         {
@@ -77,6 +83,27 @@ namespace Alluvial
         /// <param name="distributor">The distributor.</param>
         public static async Task<IEnumerable<T>> DistributeAll<T>(this IDistributor<T> distributor) =>
             await distributor.Distribute(int.MaxValue);
+
+        /// <summary>
+        /// Continuously extends leases while work in progress.
+        /// </summary>
+        /// <param name="distributor">The distributor.</param>
+        /// <param name="frequency">The frequency with which to refresh the lease.</param>
+        /// <returns></returns>
+        public static IDistributor<T> KeepExtendingLeasesWhileWorking<T>(
+            this IDistributor<T> distributor,
+            TimeSpan frequency)
+        {
+            distributor.OnReceive(async (lease, next) =>
+            {
+                using (lease.KeepAlive(frequency))
+                {
+                    await next(lease);
+                }
+            });
+
+            return distributor;
+        }
 
         /// <summary>
         /// Specifies a delegate to be called when a lease is available.
