@@ -511,7 +511,7 @@ namespace Alluvial.Tests.Distributors
         }
 
         [Test]
-        public async Task A_lease_can_be_continuously_extended_as_work_is_being_done_using_KeepAlive()
+        public async Task A_lease_can_be_continuously_extended_as_work_is_being_done_using_KeepExtendingLeasesWhileWorking()
         {
             var distributor = CreateDistributor(defaultLeaseDuration: 1000.Milliseconds());
             bool? wasReleased = null;
