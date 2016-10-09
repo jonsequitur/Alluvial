@@ -73,7 +73,7 @@ namespace Alluvial
                 throw new ArgumentException("Lease cannot be extended by a negative timespan.");
             }
             
-            if (cancellationTokenSource.IsCancellationRequested)
+            if (IsReleased)
             {
                 throw new InvalidOperationException("The lease cannot be extended.");
             }

@@ -321,41 +321,6 @@ namespace Alluvial.Tests.Distributors
         }
 
         [Test]
-        public virtual async Task When_ExpireIn_is_called_after_a_lease_has_expired_then_it_throws()
-        {
-            Exception exception = null;
-            var distributor = CreateDistributor().Trace();
-            var mre = new AsyncManualResetEvent();
-
-            distributor.OnReceive(async lease =>
-            {
-                // wait too long, until another receiver gets the lease
-                await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*1.5));
-
-                // now try to extend the lease
-                try
-                {
-                    await lease.ExpireIn(TimeSpan.FromMilliseconds(1));
-                }
-                catch (Exception ex)
-                {
-                    exception = ex;
-                }
-
-                mre.Set();
-            });
-
-#pragma warning disable 4014
-            distributor.Distribute(1);
-#pragma warning restore 4014
-            await mre.WaitAsync().Timeout();
-            await Task.Delay(1000);
-
-            exception.Should().BeOfType<InvalidOperationException>();
-            exception.Message.Should().Contain("lease cannot be extended");
-        }
-
-        [Test]
         public async Task When_Start_is_called_before_OnReceive_it_throws()
         {
             var distributor = CreateDistributor();
