@@ -255,6 +255,11 @@ namespace Alluvial
             return LeaseAcquisitionAttempt.Failed();
         }
 
+        /// <summary>
+        /// Publishes an exception caught by the distributor so that it can be observed asynchronously.
+        /// </summary>
+        /// <param name="exception">The exception.</param>
+        /// <param name="lease">The lease, if any, that was held when the exception was thrown.</param>
         protected void PublishException(
             Exception exception, 
             Lease<T> lease = null)

@@ -4,20 +4,27 @@ using System.Threading.Tasks;
 
 namespace Alluvial.Fluent
 {
+    /// <summary>
+    /// Defines the structure and behavior of a stream.
+    /// </summary>
     public class StreamBuilder<TData, TCursor, TPartition> :
         StreamBuilder<TData, TCursor>
     {
         private readonly PartitionBuilder<TPartition> partitionBuilder;
 
         internal StreamBuilder(
-            StreamBuilder<TData, TCursor> streamBuilder, 
-            CursorBuilder<TCursor> cursorBuilder, 
+            StreamBuilder<TData, TCursor> streamBuilder,
+            CursorBuilder<TCursor> cursorBuilder,
             PartitionBuilder<TPartition> partitionBuilder) : base(streamBuilder, cursorBuilder)
         {
             this.partitionBuilder = partitionBuilder;
             AdvanceCursor = streamBuilder.AdvanceCursor;
         }
 
+        /// <summary>
+        /// Creates a stream instance.
+        /// </summary>
+        /// <param name="query">The query used to pull data from the stream.</param>
         public IPartitionedStream<TData, TCursor, TPartition> Create(Func<IStreamQuery<TCursor>, IStreamQueryPartition<TPartition>, Task<IEnumerable<TData>>> query)
         {
             if (partitionBuilder.PartitionByRange)
@@ -36,6 +43,10 @@ namespace Alluvial.Fluent
                 newCursor: CursorBuilder.NewCursor);
         }
 
+        /// <summary>
+        /// Creates a stream instance.
+        /// </summary>
+        /// <param name="query">The query used to pull data from the stream.</param>
         public IPartitionedStream<TData, TCursor, TPartition> Create(Func<IStreamQuery<TCursor>, IStreamQueryPartition<TPartition>, IEnumerable<TData>> query)
         {
             if (partitionBuilder.PartitionByRange)

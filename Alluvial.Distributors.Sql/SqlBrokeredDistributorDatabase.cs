@@ -73,6 +73,9 @@ ELSE
             }
         }
 
+        /// <summary>
+        /// Gets the leasables available in the data store.
+        /// </summary>
         public async Task<IEnumerable<Leasable>> GetLeasables()
         {
             var leasables = new List<Leasable>();

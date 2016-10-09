@@ -26,7 +26,7 @@ namespace Alluvial.Tests
                                        {
                                        });
 
-            aggregator.Aggregate(null, null);
+            await aggregator.Aggregate(null, null);
 
             wasCalled.Should().BeFalse();
         }
