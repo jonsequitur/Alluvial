@@ -67,6 +67,7 @@
     <Compile Include="ILease.cs" />
     <Compile Include="Leasable{T}.cs" />
     <Compile Include="Lease.cs" />
+    <Compile Include="LeaseExtensions.cs" />
     <Compile Include="Lease{T}.cs" />
     <Compile Include="Grouping.cs" />
     <Compile Include="InMemoryDistributor.cs" />

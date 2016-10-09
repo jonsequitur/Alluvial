@@ -61,7 +61,7 @@ namespace Alluvial.Tests
             var catchup = StreamCatchup.All(streamSource.StreamPerAggregate().Trace());
 
             // subscribe a flaky projector
-            catchup.Subscribe(new BalanceProjector()
+            catchup.Subscribe(new BalanceAggregator()
                                   .Pipeline(async (projection, batch, next) =>
                                   {
                                       bool shouldThrow = true; // declared outside to nudge the compiler into inferring the correct .Pipeline overload
@@ -87,7 +87,7 @@ namespace Alluvial.Tests
             // first catch up all the projections
             var stream = streamSource.StreamPerAggregate().Trace();
             var catchup = StreamCatchup.All(stream);
-            var initialSubscription = catchup.Subscribe(new BalanceProjector(), projections);
+            var initialSubscription = catchup.Subscribe(new BalanceAggregator(), projections);
             await catchup.RunUntilCaughtUp();
             initialSubscription.Dispose();
 
@@ -100,7 +100,7 @@ namespace Alluvial.Tests
             }
 
             // subscribe a flaky projector
-            catchup.Subscribe(new BalanceProjector()
+            catchup.Subscribe(new BalanceAggregator()
                                   .Pipeline(async (projection, batch, next) =>
                                   {
                                       var aggregateId = batch.Select(i => i.AggregateId).First();

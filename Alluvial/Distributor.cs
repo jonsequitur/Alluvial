@@ -12,23 +12,6 @@ namespace Alluvial
     public static class Distributor
     {
         /// <summary>
-        /// Configures the distributor to release leases as soon as the work on the lease is completed.
-        /// </summary>
-        /// <typeparam name="T">The type of the distributed resource.</typeparam>
-        /// <param name="distributor">The distributor.</param>
-        public static IDistributor<T> ReleaseLeasesWhenWorkIsDone<T>(
-            this IDistributor<T> distributor)
-        {
-            distributor.OnReceive(async (lease, next) =>
-            {
-                await next(lease);
-                await lease.Release();
-            });
-
-            return distributor;
-        }
-
-        /// <summary>
         /// Creates an anonymous distributor.
         /// </summary>
         /// <typeparam name="T">The type of the distributed resource.</typeparam>
@@ -76,6 +59,12 @@ namespace Alluvial
                 defaultLeaseDuration);
         }
 
+        /// <summary>
+        /// Creates leasables from the specified partitions.
+        /// </summary>
+        /// <typeparam name="TPartition">The type of the partition.</typeparam>
+        /// <param name="partitions">The partitions.</param>
+        /// <exception cref="System.ArgumentNullException"></exception>
         public static Leasable<IStreamQueryPartition<TPartition>>[] CreateLeasables<TPartition>(
             this IEnumerable<IStreamQueryPartition<TPartition>> partitions)
         {
@@ -96,75 +85,24 @@ namespace Alluvial
             await distributor.Distribute(int.MaxValue);
 
         /// <summary>
-        /// Wraps a distributor with tracing behaviors when leases are acquired and released.
+        /// Continuously extends leases while work in progress.
         /// </summary>
-        /// <exception cref="System.ArgumentNullException"></exception>
-        public static IDistributor<T> Trace<T>(
+        /// <param name="distributor">The distributor.</param>
+        /// <param name="frequency">The frequency with which to refresh the lease.</param>
+        /// <returns></returns>
+        public static IDistributor<T> KeepExtendingLeasesWhileWorking<T>(
             this IDistributor<T> distributor,
-            Action<Lease<T>> onLeaseAcquired = null,
-            Action<Lease<T>> onLeaseReleasing = null,
-            Action<Exception, Lease<T>> onException = null)
+            TimeSpan frequency)
         {
-            if (distributor == null)
-            {
-                throw new ArgumentNullException(nameof(distributor));
-            }
-
-            if (onLeaseAcquired == null &&
-                onLeaseReleasing == null &&
-                onException == null)
-            {
-                onLeaseAcquired = lease => TraceOnLeaseAcquired(distributor, lease);
-                onLeaseReleasing = lease => TraceOnLeaseReleasing(distributor, lease);
-                onException = (exception, lease) => TraceOnException(distributor, exception, lease);
-            }
-            else
-            {
-                onLeaseAcquired = onLeaseAcquired ?? (l => { });
-                onLeaseReleasing = onLeaseReleasing ?? (l => { });
-                onException = onException ?? ((exception, lease) => { });
-            }
-
-            var newDistributor = Create(
-                start: () =>
-                {
-                    WriteLine($"[Distribute] {distributor}: Start");
-                    return distributor.Start();
-                },
-                stop: () =>
-                {
-                    WriteLine($"[Distribute] {distributor}: Stop");
-                    return distributor.Stop();
-                },
-                distribute: distributor.Distribute,
-                onReceive: distributor.OnReceive,
-                onException: distributor.OnException);
-
             distributor.OnReceive(async (lease, next) =>
             {
-                onLeaseAcquired(lease);
-                await next(lease);
-                onLeaseReleasing(lease);
+                using (lease.KeepAlive(frequency))
+                {
+                    await next(lease);
+                }
             });
 
-            distributor.OnException(onException);
-
-            return newDistributor;
-        }
-
-        private static void TraceOnException<T>(
-            IDistributor<T> distributor,
-            Exception exception,
-            Lease<T> lease)
-        {
-            if (lease != null)
-            {
-                WriteLine($"[Distribute] {distributor}: Exception: {lease.Exception}");
-            }
-            else if (exception != null)
-            {
-                WriteLine($"[Distribute] {distributor}: Exception: {exception}");
-            }
+            return distributor;
         }
 
         /// <summary>
@@ -198,10 +136,99 @@ namespace Alluvial
             });
         }
 
+        /// <summary>
+        /// Configures the distributor to release leases as soon as the work on the lease is completed.
+        /// </summary>
+        /// <typeparam name="T">The type of the distributed resource.</typeparam>
+        /// <param name="distributor">The distributor.</param>
+        public static IDistributor<T> ReleaseLeasesWhenWorkIsDone<T>(
+            this IDistributor<T> distributor)
+        {
+            distributor.OnReceive(async (lease, next) =>
+            {
+                await next(lease);
+                await lease.Release();
+            });
+
+            return distributor;
+        }
+
+        /// <summary>
+        /// Wraps a distributor with tracing behaviors when leases are acquired and released.
+        /// </summary>
+        /// <exception cref="System.ArgumentNullException"></exception>
+        public static IDistributor<T> Trace<T>(
+            this IDistributor<T> distributor,
+            Action<Lease<T>> onLeaseAcquired = null,
+            Action<Lease<T>> onLeaseWorkDone = null,
+            Action<Exception, Lease<T>> onException = null)
+        {
+            if (distributor == null)
+            {
+                throw new ArgumentNullException(nameof(distributor));
+            }
+
+            if (onLeaseAcquired == null &&
+                onLeaseWorkDone == null &&
+                onException == null)
+            {
+                onLeaseAcquired = lease => TraceOnLeaseAcquired(distributor, lease);
+                onLeaseWorkDone = lease => TraceOnLeaseWorkDone(distributor, lease);
+                onException = (exception, lease) => TraceOnException(distributor, exception, lease);
+            }
+            else
+            {
+                onLeaseAcquired = onLeaseAcquired ?? (l => { });
+                onLeaseWorkDone = onLeaseWorkDone ?? (l => { });
+                onException = onException ?? ((exception, lease) => { });
+            }
+
+            var newDistributor = Create(
+                start: () =>
+                {
+                    WriteLine($"[Distribute] {distributor}: Start");
+                    return distributor.Start();
+                },
+                stop: () =>
+                {
+                    WriteLine($"[Distribute] {distributor}: Stop");
+                    return distributor.Stop();
+                },
+                distribute: distributor.Distribute,
+                onReceive: distributor.OnReceive,
+                onException: distributor.OnException);
+
+            distributor.OnReceive(async (lease, next) =>
+            {
+                onLeaseAcquired(lease);
+                await next(lease);
+                onLeaseWorkDone(lease);
+            });
+
+            distributor.OnException(onException);
+
+            return newDistributor;
+        }
+
+        private static void TraceOnException<T>(
+            IDistributor<T> distributor,
+            Exception exception,
+            Lease<T> lease)
+        {
+            if (lease != null)
+            {
+                WriteLine($"[Distribute] {distributor}: Exception: {lease.Exception}");
+            }
+            else if (exception != null)
+            {
+                WriteLine($"[Distribute] {distributor}: Exception: {exception}");
+            }
+        }
+
         private static void TraceOnLeaseAcquired<T>(IDistributor<T> distributor, Lease<T> lease) =>
             WriteLine($"[Distribute] {distributor}: OnReceive " + lease);
 
-        private static void TraceOnLeaseReleasing<T>(IDistributor<T> distributor, Lease<T> lease) =>
+        private static void TraceOnLeaseWorkDone<T>(IDistributor<T> distributor, Lease<T> lease) =>
             WriteLine($"[Distribute] {distributor}: OnReceive (done) " + lease);
     }
 }

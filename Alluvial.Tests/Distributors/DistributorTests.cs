@@ -24,9 +24,15 @@ namespace Alluvial.Tests.Distributors
 
         protected abstract TimeSpan ClockDriftTolerance { get; }
 
-        protected readonly Leasable<int>[] DefaultLeasables = Enumerable.Range(1, 10)
-                                                                        .Select(i => new Leasable<int>(i, i.ToString()))
-                                                                        .ToArray();
+        protected Leasable<int>[] DefaultLeasables;
+
+        [SetUp]
+        public void SetUp()
+        {
+            DefaultLeasables = Enumerable.Range(1, 10)
+                                         .Select(i => new Leasable<int>(i, i.ToString()))
+                                         .ToArray();
+        }
 
         [Test]
         public async Task When_the_distributor_is_started_then_notifications_begin()
@@ -38,14 +44,14 @@ namespace Alluvial.Tests.Distributors
             await distributor.Start();
             await mre.WaitAsync().Timeout();
             await distributor.Stop();
-
+            
             // no TimeoutException, success!
         }
 
         [Test]
-        public async Task Distributor_can_be_restarted()
+        public async Task When_Stop_has_been_called_then_Distributor_can_be_resumed_using_Start()
         {
-            var distributor = CreateDistributor(maxDegreesOfParallelism: 1)
+            var distributor = CreateDistributor(maxDegreesOfParallelism: 10)
                 .ReleaseLeasesWhenWorkIsDone()
                 .Trace();
 
@@ -61,14 +67,14 @@ namespace Alluvial.Tests.Distributors
             distributor.OnReceive(async lease => wasCalled = true);
 
             await distributor.Start();
-            await Task.Delay((int) (DefaultLeaseDuration.TotalMilliseconds*2));
+            await Task.Delay(20);
             await distributor.Stop();
 
             wasCalled.Should().BeTrue();
         }
 
         [Test]
-        public async Task Distributor_Distribute_works_after_Stop_has_been_called()
+        public async Task When_Stop_has_been_called_then_Distributor_can_be_resumed_using_Distribute()
         {
             var distributor = CreateDistributor(maxDegreesOfParallelism: 1)
                 .ReleaseLeasesWhenWorkIsDone()
@@ -469,27 +475,6 @@ namespace Alluvial.Tests.Distributors
         }
 
         [Test]
-        public async Task Distributor_rate_can_be_slowed_by_extending_leases()
-        {
-            var receivedLeases = new ConcurrentBag<Lease<int>>();
-
-            var distributor = CreateDistributor(
-                async lease => receivedLeases.Add(lease),
-                maxDegreesOfParallelism: 10);
-
-            distributor.OnReceive(async lease =>
-            {
-                await lease.ExpireIn(2.Seconds());
-            });
-
-            await distributor.Start();
-            await Task.Delay(1.Seconds());
-            await distributor.Stop();
-
-            receivedLeases.Count().Should().Be(10);
-        }
-
-        [Test]
         public async Task Distributor_rate_can_be_slowed_by_extending_leases_using_ExpireIn()
         {
             var receivedLeases = new ConcurrentBag<Lease<int>>();
@@ -523,6 +508,27 @@ namespace Alluvial.Tests.Distributors
             await distributor.Distribute(10000000);
 
             leasesDistributed.Should().Be(DefaultLeasables.Length);
+        }
+
+        [Test]
+        public async Task A_lease_can_be_continuously_extended_as_work_is_being_done_using_KeepAlive()
+        {
+            var distributor = CreateDistributor(defaultLeaseDuration: 1000.Milliseconds());
+            bool? wasReleased = null;
+
+            distributor.OnReceive(async (lease, next) =>
+            {
+                await Task.Delay(1500.Milliseconds());
+                wasReleased = lease.IsReleased;
+            });
+
+            distributor = distributor
+                .KeepExtendingLeasesWhileWorking(frequency: 600.Milliseconds())
+                .ReleaseLeasesWhenWorkIsDone();
+
+            await distributor.Distribute(1);
+            
+            wasReleased.Should().BeFalse();
         }
     }
 }
