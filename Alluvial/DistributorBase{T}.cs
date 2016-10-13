@@ -74,7 +74,7 @@ namespace Alluvial
         /// Gets or sets the name of the pool from which the distributor distributes leases.
         /// </summary>
         protected string Pool { get; set; }
-        
+
         /// <summary>
         /// Gets the leasables that the distributor can distribute.
         /// </summary>
@@ -100,12 +100,7 @@ namespace Alluvial
             }
             else
             {
-                var previousPipeline = pipeline;
-
-                pipeline = (lease, next) =>
-                           receive(lease,
-                                   l => previousPipeline(l,
-                                                         _ => Unit.Default.CompletedTask()));
+                pipeline = receive.PipeInto(next: pipeline);
             }
         }
 
@@ -159,8 +154,8 @@ namespace Alluvial
             stopped = false;
 
             Parallel.For(0,
-                         maxDegreesOfParallelism,
-                         async _ => await TryRunOne(loop: true));
+                maxDegreesOfParallelism,
+                async _ => await TryRunOne(loop: true));
 
             return Unit.Default.CompletedTask();
         }
@@ -206,8 +201,19 @@ namespace Alluvial
 
                 try
                 {
-                    var receive = pipeline(lease,
-                        _ => Unit.Default.CompletedTask());
+                    var receive = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await pipeline(
+                                lease,
+                                _ => Unit.Default.CompletedTask());
+                        }
+                        catch (Exception ex)
+                        {
+                            PublishException(ex, lease);
+                        }
+                    });
 
                     var r = await Task.WhenAny(receive, lease.Expiration());
 
@@ -264,6 +270,13 @@ namespace Alluvial
             Exception exception, 
             Lease<T> lease = null)
         {
+            if (exception.HasBeenPublished())
+            {
+                return;
+            }
+
+            exception.MarkAsPublished();
+
             if (lease != null)
             {
                 lease.Exception = exception;

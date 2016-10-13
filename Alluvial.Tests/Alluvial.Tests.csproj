@@ -121,6 +121,7 @@
     <Compile Include="Infrastructure\Event.cs" />
     <Compile Include="Infrastructure\Values.cs" />
     <Compile Include="Infrastructure\AsyncQueryable.cs" />
+    <Compile Include="LeaseExtensionsTests.cs" />
     <Compile Include="LeaseTests.cs" />
     <Compile Include="PartioningTests.cs" />
     <Compile Include="PipelineTests.cs" />

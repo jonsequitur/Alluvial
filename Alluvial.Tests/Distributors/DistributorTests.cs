@@ -492,8 +492,56 @@ namespace Alluvial.Tests.Distributors
                 .ReleaseLeasesWhenWorkIsDone();
 
             await distributor.Distribute(1);
-            
+
             wasReleased.Should().BeFalse();
+        }
+
+        [Test]
+        public async Task When_a_lease_has_been_released_and_ExpireIn_is_called_then_OnException_publishes_an_exception()
+        {
+            // arrange
+            var distributor = CreateDistributor(async lease =>
+            {
+                // trigger a lease expiration exception
+                await lease.Release();
+                await lease.ExpireIn(1.Milliseconds());
+            });
+
+            Exception handledException = null;
+
+            distributor.OnException((exception, lease) => { handledException = exception; });
+
+            // act
+            await distributor.Distribute(1);
+
+            await Task.Delay(10);
+
+            // assert
+            handledException.Should().NotBeNull();
+        }
+
+        [Test]
+        public async Task When_a_lease_has_expired_and_ExpireIn_is_called_then_OnException_publishes_an_exception()
+        {
+            // arrange
+            var distributor = CreateDistributor(async lease =>
+            {
+                // trigger a lease expiration exception
+                await lease.Expiration();
+                await lease.ExpireIn(1.Milliseconds());
+            });
+
+            Exception handledException = null;
+
+            distributor.OnException((exception, lease) => { handledException = exception; });
+
+            // act
+            await distributor.Distribute(1);
+
+            await Task.Delay(10);
+
+            // assert
+            handledException.Should().NotBeNull();
         }
     }
 }
