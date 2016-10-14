@@ -128,6 +128,42 @@ namespace Alluvial.Tests
         }
 
         [Test]
+        public async Task When_ExpireIn_is_called_after_the_lease_has_expired_then_it_throws()
+        {
+            var lease = new Lease(1.Milliseconds());
+
+            await lease.Expiration();
+
+            Action extend = () => lease.ExpireIn(1.Seconds()).Wait();
+
+            extend.ShouldThrow<InvalidOperationException>()
+                  .And
+                  .Message
+                  .Should()
+                  .Be("The lease cannot be extended.");
+        }
+
+        [Test]
+        public async Task When_ExpireIn_is_called_after_the_lease_has_expired_then_the_Exception_property_is_populated_with_the_resulting_exception()
+        {
+            var lease = new Lease(1.Milliseconds());
+
+            await lease.Expiration();
+
+            try
+            {
+                lease.ExpireIn(1.Seconds()).Wait();
+            }
+            catch (Exception)
+            {
+            }
+
+            lease.Exception.Should().NotBeNull();
+            lease.Exception.Message.Should().Be("The lease cannot be extended.");
+
+        }
+
+        [Test]
         public async Task Lease_ExpireIn_does_not_accept_a_negative_timespan()
         {
             var lease = new Lease<string>(leasable,

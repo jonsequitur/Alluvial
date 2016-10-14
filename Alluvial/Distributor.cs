@@ -230,5 +230,11 @@ namespace Alluvial
 
         private static void TraceOnLeaseWorkDone<T>(IDistributor<T> distributor, Lease<T> lease) =>
             WriteLine($"[Distribute] {distributor}: OnReceive (done) " + lease);
+
+        internal static DistributorPipeAsync<T> PipeInto<T>(
+            this DistributorPipeAsync<T> first,
+            DistributorPipeAsync<T> next) => (lease, _ignored_) =>
+            first(lease,
+                l => next(l, _ => Unit.Default.CompletedTask()));
     }
 }

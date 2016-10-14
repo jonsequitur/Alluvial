@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace Alluvial
@@ -25,8 +26,15 @@ namespace Alluvial
                 {
                     do
                     {
-                        await lease.ExpireIn(timeToExpiration);
-                        await Task.Delay(frequency);
+                        try
+                        {
+                            await lease.ExpireIn(timeToExpiration);
+                            await Task.Delay(frequency);
+                        }
+                        catch (Exception ex) when (ex.IsTransient())
+                        {
+                            Debug.WriteLine($"[KeepAlive] Caught transient exception: {ex}");
+                        }
                     } while (!disposed);
                 }, TaskCreationOptions.LongRunning);
 
