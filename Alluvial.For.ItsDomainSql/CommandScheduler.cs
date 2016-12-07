@@ -91,7 +91,7 @@ namespace Alluvial.For.ItsDomainSql
                 {
                     var configuration = Configuration.Current;
 
-                    using (var commandSchedulerDb =  Configuration.Current.CommandSchedulerDbContext())
+                    using (var commandSchedulerDb =  configuration.CommandSchedulerDbContext())
                     {
                         foreach (var cmd in batch)
                         {
