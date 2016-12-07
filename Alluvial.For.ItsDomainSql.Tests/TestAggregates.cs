@@ -74,6 +74,10 @@ namespace Alluvial.For.ItsDomainSql.Tests
 
     public class CreateAggregateA : ConstructorCommand<AggregateA>, ISpecifySchedulingBehavior
     {
+        public CreateAggregateA(Guid aggregateId, string etag = null) : base(aggregateId, etag)
+        {
+        }
+
         public override bool Authorize(AggregateA aggregate)
         {
             return true;
@@ -141,6 +145,10 @@ namespace Alluvial.For.ItsDomainSql.Tests
 
     public class CreateAggregateB : ConstructorCommand<AggregateB>
     {
+        public CreateAggregateB(Guid aggregateId, string etag = null) : base(aggregateId, etag)
+        {
+        }
+
         public override bool Authorize(AggregateB aggregate)
         {
             return true;

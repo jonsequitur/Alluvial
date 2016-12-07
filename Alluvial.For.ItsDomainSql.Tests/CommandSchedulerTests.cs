@@ -138,10 +138,7 @@ namespace Alluvial.For.ItsDomainSql.Tests
             {
                 var scheduler = Configuration.Current.CommandScheduler<AggregateA>();
                 var command = await scheduler.Schedule(id,
-                                                       new CreateAggregateA
-                                                       {
-                                                           AggregateId = id
-                                                       },
+                                                       new CreateAggregateA(id),
                                                        dueTime);
                 commandsScheduled.Add(command);
             }
